@@ -1,0 +1,55 @@
+# Python virtual environments
+.venv/
+venv/
+pyvenv.cfg
+env/
+.python/
+Lib/
+Scripts/
+Include/
+
+# VSCode extensions and settings
+.vscode/
+.vscode/extensions/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Package build directories
+build/
+dist/
+*.egg-info/
+
+# Environment files
+.env
+*.env
+
+# Other unnecessary stuff
+.idea/
+.DS_Store
+
+# Virtual environments
+venv/
+.venv/
+env/
+.python/
+Lib/
+Scripts/
+Include/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+#svelte node_module
+node_modules/
+.svelte-kit/
+dist/
+build/
+.env
+.env.*

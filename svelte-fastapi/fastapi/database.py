@@ -3,7 +3,8 @@
 # from sqlalchemy.orm import sessionmaker
 # from sqlalchemy.ext.declarative import declarative_base
 
-# URL_DATABASE = "postgresql://postgres:Revive@localhost:8000/account_database"
+# # URL_DATABASE = "postgresql://postgres:Revive@localhost:8000/account_database"
+# URL_DATABASE = "postgresql://postgres:Revive@localhost:8000/mydatabase"
 
 # engine = create_engine(URL_DATABASE)
 
@@ -12,5 +13,3 @@
 # Base = declarative_base()
 
 # Base.metadata.create_all(bind=engine)
-
-    

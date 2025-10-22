@@ -6,22 +6,17 @@ from sqlalchemy.orm import Session
 import uvicorn
 import uuid
 from sqlalchemy import Column, String, Float, Integer
-
-# database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-URL_DATABASE = "postgresql://postgres:Revive@localhost:8000/account_database"
-
+# URL_DATABASE = "postgresql://postgres:Revive@localhost:8000/account_database"
+# URL_DATABASE = "postgresql://postgres:Revive@localhost:5432/mydatabase"
+URL_DATABASE = "postgresql://postgres:Revive@localhost:5432/db_3"
 engine = create_engine(URL_DATABASE)
-
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
-Base.metadata.create_all(bind=engine)
-
 
 class SavingAccountBase(Base):
     __tablename__ = "accounts"
@@ -31,6 +26,8 @@ class SavingAccountBase(Base):
     balance = Column(Float, default=0.0)
     interest_rate = Column(Float, default=0.0)
     max_withdraw_count = Column(Integer, default=0)
+
+Base.metadata.create_all(bind=engine)
 
 
 class SavingAccount(BaseModel):

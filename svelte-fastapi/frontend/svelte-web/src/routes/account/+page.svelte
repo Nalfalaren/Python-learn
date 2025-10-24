@@ -38,7 +38,13 @@
     }
 
     async function fetchAllAccount(url: URL) {
-        let response = await fetch(url);
+        let token = localStorage.getItem("accessToken")
+        let response = await fetch(url, {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        });
         if (response.ok) {
             let res = await response.json();
             loadingState = "idle";
@@ -84,7 +90,7 @@
 
             if (response.ok) {
                 message = await response.json();
-                fetchAllAccount(buildAccountUrl({ id, owner } as SearchParams))
+                fetchAllAccount(buildAccountUrl({ id, owner } as SearchParams));
                 loadingState = "idle";
             }
         } catch (error) {
@@ -171,7 +177,8 @@
                             <td>{account?.max_withdraw_count}</td>
                             <td
                                 style="background-color: blue; color: white; font-weight: bold; padding: 8px; border-radius: 4px;"
-                                onclick={() => goto(`/account/update/${account.id}`)}
+                                onclick={() =>
+                                    goto(`/account/update/${account.id}`)}
                                 >Update</td
                             >
                             <td

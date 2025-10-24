@@ -19,9 +19,10 @@
     const payload = { owner: owner.trim(), type };
 
     try {
+      const token = localStorage.getItem("accessToken")
       const res = await fetch(`${env.PUBLIC_API_URL}/account`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {

@@ -29,6 +29,11 @@ def create_token(data: dict, expires_delta: timedelta):
 def verify_token(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        exp = payload.get("exp")
+        if exp is None:
+           raise HTTPException(status_code=401, detail="Token invalid")
+        elif datetime.utcnow().timestamp > exp:
+            raise HTTPException(status_code=401, detail="Token expired")
         return payload  # trả lại thông tin user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")

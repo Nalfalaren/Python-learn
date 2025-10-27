@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";  
+  import { onMount } from "svelte";
   import styles from "$lib/styles/update-employee/Update.module.css";
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
@@ -9,10 +9,9 @@
     employee_name: "",
     role: "",
     email: "",
-    is_active: 1
+    is_active: false,
   };
 
-  // SvelteKit params (from route: /employee/[id])
   export let params;
   employeeId = params.id;
 
@@ -21,8 +20,8 @@
     const token = localStorage.getItem("accessToken");
     const res = await fetch(`${env.PUBLIC_API_URL}/employee/${employeeId}`, {
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (res.ok) {
@@ -39,9 +38,9 @@
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(employee)
+      body: JSON.stringify(employee),
     });
 
     if (res.ok) {
@@ -59,7 +58,11 @@
 
   <div class={styles.formGroup}>
     <label class={styles.label}>Employee Name</label>
-    <input type="text" bind:value={employee.employee_name} class={styles.input} />
+    <input
+      type="text"
+      bind:value={employee.employee_name}
+      class={styles.input}
+    />
   </div>
 
   <div class={styles.formGroup}>
@@ -73,8 +76,13 @@
   </div>
 
   <div class={styles.formGroup}>
-    <label class={styles.label}>Active Status (1 = Active, 0 = Inactive)</label>
-    <input type="number" bind:value={employee.is_active} min="0" max="1" class={styles.input} />
+    <label class={styles.label}> Active Status </label>
+
+    <input
+      type="checkbox"
+      bind:checked={employee.is_active}
+      class={styles.checkbox}
+    />
   </div>
 
   <button on:click={handleUpdate} class={styles.button}>Save Changes</button>

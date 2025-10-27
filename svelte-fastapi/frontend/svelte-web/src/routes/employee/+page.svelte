@@ -160,6 +160,14 @@
         fetchAllEmployee(url);
     }
 
+    function handleLogout() {
+        let token = localStorage.getItem("accessToken");
+        if (token) {
+            localStorage.removeItem("accessToken");
+        }
+        goto("/login");
+    }
+
     $effect(() => {
         const url = buildEmployeeUrl({
             id,
@@ -175,9 +183,12 @@
     <div class={styles.headerContainer}>
         <div class={styles.headerContent}>
             <div><h1>Content</h1></div>
-            <button onclick={() => goto("/employee/sign-up")}
-                >+ Add Content</button
-            >
+            <div>
+                <button onclick={() => goto("/employee/sign-up")}
+                    >+ Add Content</button
+                >
+                <button onclick={handleLogout}>Log out</button>
+            </div>
         </div>
         <TabNavigation />
     </div>

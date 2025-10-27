@@ -37,7 +37,7 @@
         loading = true;
 
         try {
-            const res = await fetch(`${env.PUBLIC_API_URL}/sign-up`, {
+            const res = await fetch(`${env.PUBLIC_API_URL}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password, confirmPassword }),

@@ -15,7 +15,7 @@ services:
     container_name: pgadmin4_container
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_EMAIL: admin1@admin.com
       PGADMIN_DEFAULT_PASSWORD: Revive
     ports:
       - "5050:80"

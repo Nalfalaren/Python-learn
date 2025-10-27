@@ -43,7 +43,7 @@
                 const data = await res.json().catch(() => ({}));
                 message = data.message || "Đăng nhập thành công!";
                 localStorage.setItem("accessToken", data.access_token)
-                window.location.href = '/account';
+                window.location.href = '/employee';
             }
         } catch (err) {
             console.error(err);

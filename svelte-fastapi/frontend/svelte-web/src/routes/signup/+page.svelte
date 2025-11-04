@@ -5,14 +5,15 @@
     let email = "";
     let password = "";
     let confirmPassword = "";
+    let role = "";
     let showPassword = false;
     let loading = false;
     let message = "";
-    let errors = { email: "", password: "", confirmPassword: "" };
+    let errors = { email: "", password: "", confirmPassword: "", role: "" };
 
     // ✅ Kiểm tra dữ liệu form
     function validate() {
-        errors = { email: "", password: "", confirmPassword: "" };
+        errors = { email: "", password: "", confirmPassword: "", role: "" };
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!email.trim()) errors.email = "Vui lòng nhập email.";
@@ -40,17 +41,22 @@
             const res = await fetch(`${env.PUBLIC_API_URL}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password, confirmPassword }),
+                body: JSON.stringify({
+                    email,
+                    password,
+                    confirmPassword,
+                    role,
+                }),
             });
 
             const data = await res.json().catch(() => ({}));
-            
+
             if (!res.ok) {
                 message = data.detail || "Đăng ký thất bại. Vui lòng thử lại.";
             } else {
                 message = data.message || "Đăng ký thành công!";
                 // 👉 Có thể redirect sang trang đăng nhập
-                // window.location.href = '/login';
+                window.location.href = "/login";
             }
         } catch (err) {
             console.error(err);
@@ -110,6 +116,19 @@
             {/if}
         </label>
 
+        <label class="field">
+            <span>Role</span>
+            <select bind:value={role}>
+                <option value="">-- Chọn vai trò --</option>
+                <option value="admin">Admin</option>
+                <option value="leader">Leader</option>
+                <option value="member">Member</option>
+            </select>
+            {#if errors.role}
+                <div class="error">{errors.role}</div>
+            {/if}
+        </label>
+
         <button class="submit" type="submit" disabled={loading}>
             {#if loading}
                 <span class="spinner"></span> Đang xử lý...
@@ -148,6 +167,12 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
+    }
+    .field select {
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #ccc;
     }
     h1 {
         margin: 0 0 10px;

@@ -8,14 +8,16 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 import uvicorn
 import uuid
-from sqlalchemy import Column, String, Boolean
+from sqlalchemy import Column, DateTime, String, Boolean
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Mapped, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
-from auth import create_token, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
+from auth import create_token, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, get_current_user
+from role import StatusCode
 from jose import JWTError, jwt
 from security.security import verify_password, hash_password
 from middleware import AuthMiddleware
+from datetime import datetime
 import logging
 
 # Cấu hình logger
@@ -36,28 +38,30 @@ class EmployeeBase(Base):
     role = Column(String, nullable=False, index=True)
     email = Column(String, index=True)
     is_active = Column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-class employeeBase(Base):
+class AccountBase(Base):
     __tablename__ = "employee_register_information"
 
     id = Column(String, primary_key=True, nullable=False, index=True)
     email = Column(String, nullable=False, index=True)
     password = Column(String, index=True, nullable=False)
-
+    role = Column(String, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
 
-class employeeSchema(BaseModel):
-    id: Optional[str] = None
+class AccountSchema(BaseModel):
     email: str = Field(..., description='Please input the email!')
     password: str = Field(..., description='Please input the password!')
     remember: bool = Optional
 
-class employeeSignUpSchema(BaseModel):
+class EmployeeSignUpSchema(BaseModel):
     id: Optional[str] = None
     email: str
     password: str
     confirmPassword: str
+    role: str
 
 class EmployeeSchema(BaseModel):
     id: Optional[str] = None
@@ -103,62 +107,87 @@ origins = ['http://localhost:5173']
 
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
+@app.get("/me")
+def get_account(current_user: dict = Depends(get_current_user)):
+    return current_user
+    
 #Get and search employee
-@app.get('/employees', response_model=SearchResultBase)
+@app.get("/employees")
 def search_employee(
-    search_id: str = Query(None, description='Search by ID'),
-    search_employee: str = Query(None, description='Search by Employee Name'),
-    page: int = Query(10, ge=1, description='Choose page'),
-    limit: int = Query(10, ge=1),
-    db: Session = Depends(get_db)
-):    
-    query = db.query(EmployeeBase)
+    search_id: str | None = Query(None, description="Search by ID"),
+    search_employee: str | None = Query(None, description="Search by Employee Name"),
+    page: int = Query(1, ge=1, description="Page number (starts at 1)"),
+    limit: int = Query(10, ge=1, le=100, description="Items per page"),
+    created_at: str = None,
+    employee_id: str = None,
+    db: Session = Depends(get_db),
+    account_info: dict = Depends(get_account)
+):
+    account_role = account_info.get("role")
+    if account_role not in 'admin':
+        raise HTTPException(status_code=StatusCode.HTTP_FORBIDDEN_403.value, detail="You are not allowed to access to this data!")
+    # Example: verify dependencies return valid data
+    if not account_info:
+        raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Unauthorized")
+    # Example query logic
+    total_employee = len(db.query(EmployeeBase).all())
+    employees = (
+        db.query(EmployeeBase)
+        .filter(EmployeeBase.id.contains(search_id) if search_id else True)
+        .filter(EmployeeBase.name.contains(search_employee) if search_employee else True)
+        .limit(limit)
+        .all()
+    )
+    if(created_at and employee_id):
+        employees = (db.query(EmployeeBase).where(EmployeeBase.created_at == created_at and EmployeeBase.id <= employee_id or EmployeeBase.created_at < created_at).order_by(EmployeeBase.id.desc(), EmployeeBase.created_at.desc()))
+    items = db.query(EmployeeBase).limit(limit).all()
 
-    # Apply filters dynamically
-    if search_id:
-        query = query.filter(EmployeeBase.id == search_id)
-    if search_employee:
-        query = query.filter(EmployeeBase.employee_name == search_employee)
+    # Compute next_cursor from the last record
+    next_cursor = None
+    if items:
+        last = items[-1]
+        next_cursor = {"date": last.created_at, "id": last.id}
+        logger.info(last)
 
-    offset = (page - 1) * limit
-    total_employee = len(query.all())
-    results = query.offset(offset=offset).limit(limit).all()
     return {
         'message': 'Search successfully',
-        'search_result': results,
-        'employee_count': len(results),
-        'total_employee': total_employee
+        'search_result': employees,
+        'employee_count': len(employees),
+        'total_employee': total_employee,
+        'next_cursor': next_cursor
     }
 
 @app.post('/signup')
-def sign_up(employee_info: employeeSignUpSchema, db: Session = Depends(get_db)):
-    employee_filter = db.query(employeeBase).filter(employeeBase.email == employee_info.email).first()
-    if employee_filter is not None:
+def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
+    account_filter = db.query(AccountBase).filter(AccountBase.email == account_info.email).first()
+    if account_filter is not None:
         raise HTTPException(status_code=400, detail="employee has already existed!")
-    elif employee_info.password != employee_info.confirmPassword:
+    elif account_info.password != account_info.confirmPassword:
         raise HTTPException(status_code=400, detail="Password did not match")
-    
-    employee = employeeBase(
+    account = AccountBase(
         id = str(uuid.uuid4()),
-        email = employee_info.email,
-        password = hash_password(employee_info.password)
+        email = account_info.email,
+        password = hash_password(account_info.password),
+        role = account_info.role,
+        created_at=datetime.utcnow()
     )
-    db.add(employee)
+    db.add(account)
     db.commit()
-    db.refresh(employee)
+    db.refresh(account)
     return {"message": "Sign up successfully"}
 
 @app.post('/login')
-def login(employee_info: employeeSchema, db: Session = Depends(get_db)):
-    employee = db.query(employeeBase).filter(employeeBase.email == employee_info.email).first()
+def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
+    employee = db.query(AccountBase).filter(AccountBase.email == employee_info.email).first()
     if not employee:
-        raise HTTPException(status_code=404, detail="employee not found")
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail="employee not found")
     if not verify_password(employee_info.password, employee.password):
-        raise HTTPException(status_code=401, detail="Incorrect password")
+        raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect password")
     
-    access_token = create_token({"sub": employee_info.email}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    refresh_token = create_token({"sub": employee_info.email}, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
-        
+    access_token = create_token({"sub": employee_info.email, "role": employee.role}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    refresh_token = create_token({"sub": employee_info.email, "role": employee.role}, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
+    a = get_account()
+    logger.info(a)
     return {
         "message": "Register successfully",
         "access_token": access_token,
@@ -168,7 +197,7 @@ def login(employee_info: employeeSchema, db: Session = Depends(get_db)):
 @app.post("/refresh")
 def refresh_token(authorization: str = Header(None)):
     if not authorization:
-        return JSONResponse(status_code=401, content={"message": "Missing refresh token"})
+        return JSONResponse(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, content={"message": "Missing refresh token"})
 
     refresh_token = authorization.replace("Bearer ", "")
     try:
@@ -179,9 +208,9 @@ def refresh_token(authorization: str = Header(None)):
         )
         return {"access_token": new_access_token}
     except jwt.ExpiredSignatureError:
-        return JSONResponse(status_code=401, content={"message": "Refresh token expired"})
+        return JSONResponse(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, content={"message": "Refresh token expired"})
     except JWTError:
-        return JSONResponse(status_code=401, content={"message": "Invalid refresh token"})
+        return JSONResponse(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, content={"message": "Invalid refresh token"})
     
 
 #Get detail employee
@@ -199,7 +228,8 @@ def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db)
         employee_name = employee.employee_name,
         role = employee.role,
         email = employee.email,
-        is_active = employee.is_active
+        is_active = employee.is_active,
+        created_at=datetime.utcnow()
     )
     db.add(new_employee)
     db.commit()
@@ -213,7 +243,7 @@ def delete_employee(employeeId: str, db: Session = Depends(get_db)):
         db.delete(delete_user)
         db.commit()
         return {'message': 'employee deleted successfully'}
-    raise HTTPException(status_code=404, detail='employee not found')
+    raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='employee not found')
 
 @app.put('/employee/{employeeId}', response_model=SuccessMessageSchema)
 def update_employee(
@@ -223,7 +253,7 @@ def update_employee(
 ):
     update_user = db.query(EmployeeBase).filter(EmployeeBase.id == employeeId).first()
     if not update_user:
-        raise HTTPException(status_code=404, detail='employee not found')
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='employee not found')
     
     # Update giá trị vào SQLAlchemy model
     for key, value in employee_update_data.dict(exclude_unset=True).items():

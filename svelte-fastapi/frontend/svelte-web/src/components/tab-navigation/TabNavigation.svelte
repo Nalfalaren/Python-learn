@@ -1,9 +1,11 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
     import styles from "./tab-navigation.module.css";
-    let tabList = ["Content", "Files", "Media"];
+    let tabList = ["Employee", "Products", "Media"];
     let chosenTab = "Content";
     const handleClick = (tabListName: string) => {
         chosenTab = tabListName;
+        goto(`/${tabListName.toLowerCase()}`)
     };
 </script>
 

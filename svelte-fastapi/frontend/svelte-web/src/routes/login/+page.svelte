@@ -30,7 +30,7 @@
         if (!validate()) return;
         loading = true;
         try {
-            const url = new URL(`${env.PUBLIC_API_URL}/login`);
+            const url = new URL(`${env.PUBLIC_API_URL}/auth/login`);
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

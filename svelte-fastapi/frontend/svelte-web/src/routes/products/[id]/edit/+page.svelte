@@ -11,7 +11,7 @@
   let product_name: string = "";
   let category: string = "";
   let price: number | string = "";
-  let status: boolean = true;
+  let is_active: boolean = true;
   let message: string = "";
   let loading = false;
   let saving = false;
@@ -48,7 +48,7 @@
       product_name = data.product_name ?? "";
       category = data.category ?? "";
       price = data.price ?? "";
-      status = typeof data.status === "number" ? Boolean(data.status) : !!data.status;
+      is_active = typeof data.is_active === "number" ? Boolean(data.is_active) : !!data.is_active;
 
       message = "";
     } catch (err) {
@@ -74,7 +74,7 @@
         product_name: product_name.trim(),
         category: category.trim(),
         price: Number(price),
-        status: status ? 1 : 0,
+        is_active: is_active ? 1 : 0,
       };
 
       const token = localStorage.getItem("accessToken");
@@ -110,7 +110,7 @@
     // optionally re-fetch or clear — here we re-fetch by calling onMount logic
     onMount; // no-op to satisfy linter; to re-load you can call the fetch block logic instead
     // simple reset to blank if you prefer:
-    // product_name = ""; category = ""; price = ""; status = true;
+    // product_name = ""; category = ""; price = ""; is_active = true;
   }
 </script>
 
@@ -170,7 +170,7 @@
         <span class={styles.label}>Active</span>
         <input
           type="checkbox"
-          bind:checked={status}
+          bind:checked={is_active}
           class={styles.checkbox}
         />
       </label>

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import styles from "./tab-navigation.module.css";
-    let tabList = ["Employee", "Products", "Media"];
+    let tabList = ["Employee", "Products", "Orders", "Order Items"];
     let chosenTab = "Content";
     const handleClick = (tabListName: string) => {
         chosenTab = tabListName;

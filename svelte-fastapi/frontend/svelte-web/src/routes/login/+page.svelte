@@ -12,7 +12,7 @@
 
     function validate() {
         errors = { email: "", password: "", confirmPassword: "" };
-        
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email.trim()) errors.email = "Vui lòng nhập email.";
         else if (!emailRegex.test(email)) errors.email = "Email không hợp lệ.";
@@ -26,7 +26,6 @@
 
     async function handleSubmit(e) {
         e.preventDefault();
-        message = "";
         if (!validate()) return;
         loading = true;
         try {
@@ -39,12 +38,12 @@
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
                 message = errorData.detail;
-            } else {
-                const data = await res.json().catch(() => ({}));
-                message = data.message || "Đăng nhập thành công!";
-                localStorage.setItem("accessToken", data.access_token)
-                window.location.href = '/employee';
             }
+            const data = await res.json().catch(() => ({}));
+            message = data.message;
+            localStorage.setItem("accessToken", data.access_token);
+            if(data.role === 'admin' || data.role === 'leader') window.location.href = "/employee";
+            if(data.role === 'customer') window.location.href = "/"
         } catch (err) {
             console.error(err);
             message = "Không thể kết nối tới server.";

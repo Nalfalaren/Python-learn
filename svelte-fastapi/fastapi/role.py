@@ -3,7 +3,7 @@ from enum import Enum
 class UserRole(str, Enum):
     ADMIN = 'admin'
     LEADER = 'leader'
-    MEMBER = 'member'
+    MEMBER = 'customer'
 
 class StatusCode(int, Enum):
     HTTP_UNAUTHORIZE_401 = 401

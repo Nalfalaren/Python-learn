@@ -9,6 +9,6 @@ class EmployeeBase(Base):
     id = Column(String, primary_key=True, index=True)
     employee_name = Column(String, nullable=False, index=True)
     role = Column(String, nullable=False, index=True)
-    email = Column(String, index=True)
+    email = Column(String, nullable=False, index=True)
     is_active = Column(Boolean)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

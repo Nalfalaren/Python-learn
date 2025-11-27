@@ -38,7 +38,7 @@
         loading = true;
 
         try {
-            const res = await fetch(`${env.PUBLIC_API_URL}auth/signup`, {
+            const res = await fetch(`${env.PUBLIC_API_URL}/auth/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -122,7 +122,7 @@
                 <option value="">-- Chọn vai trò --</option>
                 <option value="admin">Admin</option>
                 <option value="leader">Leader</option>
-                <option value="member">Member</option>
+                <option value="customer">Member</option>
             </select>
             {#if errors.role}
                 <div class="error">{errors.role}</div>

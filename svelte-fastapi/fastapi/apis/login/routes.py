@@ -15,7 +15,7 @@ from role import StatusCode
 from .models import AccountBase
 from .schema import EmployeeSignUpSchema, AccountSchema
 from database import SessionLocal
-from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_token
+from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_token, handle_login_role
 
 router = APIRouter(prefix='/auth', tags=["Authentication"])
 load_dotenv()
@@ -64,20 +64,15 @@ def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
         raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Employee not found")
     if not argon2.verify(employee_info.password, employee.password):
         raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect password")
-
-    access_token = create_token(
-        {"sub": employee.email, "role": employee.role},
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
-    )
-    refresh_token = create_token(
-        {"sub": employee.email, "role": employee.role},
-        timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
-    )
+    
+    access_token = handle_login_role(employee)['access_token']
+    refresh_token = handle_login_role(employee)['refresh_token']
 
     return {
         "message": "✅ Login successful",
         "access_token": access_token,
         "refresh_token": refresh_token,
+        "role": employee.role
     }
 
 # === Refresh Token ===

@@ -2,41 +2,40 @@
   import styles from "$lib/styles/register/Register.module.css";
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
-
+  import { v4 as uuidv4 } from 'uuid';
   // Form state
-  let product_id: string = "";
-  let product_name: string = "";
-  let category: string = "";
+  let product_id = "";
+  let product_name = "";
+  let category = "";
   let price: number | string = "";
-  let status: boolean = true;
-  let message: string = "";
+  let status = true;
+  let message = "";
 
   async function handleSubmit(e?: Event) {
     e?.preventDefault();
 
-    // Basic validation
-    if (!product_id.trim() || !product_name.trim() || !category.trim() || !price) {
-      alert("Please fill in all required fields");
+    if (!product_name || !category || !price) {
+      alert("Please fill all required fields");
       return;
     }
 
-    const payload = {
-      product_id: product_id.trim(),
-      product_name: product_name.trim(),
-      category: category.trim(),
-      price: Number(price),
-      is_active: status ? 1 : 0,
-    };
+    const token = localStorage.getItem("accessToken");
+
+    // 👇 Create multipart form data
+    const formData = new FormData();
+    formData.append("product_id", String(uuidv4()));
+    formData.append("product_name", product_name.trim());
+    formData.append("category", category.trim());
+    formData.append("price", String(price));
+    formData.append("is_active", status ? "1" : "0");
 
     try {
-      const token = localStorage.getItem("accessToken");
       const res = await fetch(`${env.PUBLIC_API_URL}/products`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: formData, // 👈 Send file + text
       });
 
       if (!res.ok) {
@@ -44,22 +43,18 @@
         throw new Error(errText || "Failed to create product");
       }
 
-      const data = await res.json();
       message = "✅ Product created successfully!";
-      console.log("Product created:", data);
 
-      // Reset form
+      // Reset
       product_id = "";
       product_name = "";
       category = "";
       price = "";
       status = true;
-
-      // Redirect to product list
       goto("/products");
     } catch (err) {
-      console.error("Error creating product:", err);
-      message = "❌ Failed to create product — check console for details";
+      console.error("Product creation failed:", err);
+      message = "❌ Failed to create product — check backend logs.";
     }
   }
 </script>
@@ -69,72 +64,35 @@
 
   <form class={styles.form} on:submit|preventDefault={handleSubmit}>
     <label class={styles.field}>
-      <span class={styles.label}>Product ID</span>
-      <input
-        class={styles.input}
-        type="text"
-        bind:value={product_id}
-        placeholder="Enter product ID"
-        required
-      />
-    </label>
-
-    <label class={styles.field}>
       <span class={styles.label}>Product Name</span>
-      <input
-        class={styles.input}
-        type="text"
-        bind:value={product_name}
-        placeholder="Enter product name"
-        required
-      />
+      <input class={styles.input} type="text" bind:value={product_name} required />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Category</span>
-      <input
-        class={styles.input}
-        type="text"
-        bind:value={category}
-        placeholder="Enter category"
-        required
-      />
+      <input class={styles.input} type="text" bind:value={category} required />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Price</span>
-      <input
-        class={styles.input}
-        type="number"
-        step="0.01"
-        bind:value={price}
-        placeholder="Enter price"
-        required
-      />
+      <input class={styles.input} type="number" bind:value={price} step="0.01" required />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Active</span>
-      <input
-        type="checkbox"
-        bind:checked={status}
-        class={styles.checkbox}
-      />
+      <input type="checkbox" bind:checked={status} class={styles.checkbox} />
     </label>
 
     <div class={styles.actions}>
       <button type="submit" class={styles.button}>Create</button>
-      <button
-        type="button"
-        class={styles.secondary}
-        on:click={() => {
-          product_id = "";
-          product_name = "";
-          category = "";
-          price = "";
-          status = true;
-        }}
-      >
+
+      <button type="button" class={styles.secondary} on:click={() => {
+        product_id = "";
+        product_name = "";
+        category = "";
+        price = "";
+        status = true;
+      }}>
         Reset
       </button>
     </div>

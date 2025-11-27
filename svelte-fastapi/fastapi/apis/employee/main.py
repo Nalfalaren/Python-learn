@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title='Demo employee', version='1.0')
 app.include_router(employee_router, prefix="/employees")
-app.add_middleware(AuthMiddleware)
 
 origins = ['http://localhost:5173']
 
+app.add_middleware(AuthMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
 @app.get("/me")

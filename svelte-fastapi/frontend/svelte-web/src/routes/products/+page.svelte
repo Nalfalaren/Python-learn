@@ -13,6 +13,7 @@
     price: number;
     created_at: string;
     is_active: boolean;
+    image_url?: string;
   }
 
   // === State ===
@@ -80,7 +81,7 @@
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this product?")) return;
     const token = localStorage.getItem("accessToken");
-    const res = await fetch(`${env.PUBLIC_API_URL}/product/${id}`, {
+    const res = await fetch(`${env.PUBLIC_API_URL}/products/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -107,8 +108,8 @@
     <div class={styles.headerContent}>
       <h1>🛍️ Products</h1>
       <div>
-        <button on:click={() => goto("/products/add")}>+ Add Product</button>
-        <button on:click={handleLogout}>Logout</button>
+        <button onclick={() => goto("/products/add")}>+ Add Product</button>
+        <button onclick={handleLogout}>Logout</button>
       </div>
     </div>
     <TabNavigation />
@@ -118,6 +119,7 @@
   <div class={styles.tableSearch}>
     <div class={styles.tableSearchInput}>
       <TextField
+        name="id"
         title="ID"
         type="text"
         placeholder="Search ID"
@@ -127,6 +129,7 @@
     </div>
     <div class={styles.tableSearchInput}>
       <TextField
+        name="productName"
         title="Product Name"
         type="text"
         placeholder="Search Product Name"
@@ -134,7 +137,7 @@
         onValueChange={(v: string) => (searchName = v)}
       />
     </div>
-    <button on:click={handleSearch}>Search</button>
+    <button onclick={handleSearch}>Search</button>
   </div>
 
   <!-- Table -->
@@ -157,15 +160,31 @@
         </thead>
         <tbody>
           {#each products as p}
-            <tr on:click={() => goto(`/products/${p.id}`)}>
+            <tr onclick={() => goto(`/products/${p.id}`)}>
               <td>{p.id}</td>
               <td>{p.product_name}</td>
               <td>{p.category}</td>
               <td>{p.price.toFixed(2)}</td>
               <td>{p.is_active ? "Active" : "Inactive"}</td>
+
               <td>
-                <button on:click={() => goto(`/products/${p.id}/edit`)}>Edit</button>
-                <button on:click={() => handleDelete(p.id)}>Delete</button>
+                <button
+                  onclick={(event) => {
+                    event.stopPropagation();
+                    goto(`/products/${p.id}/edit`);
+                  }}
+                >
+                  Edit
+                </button>
+
+                <button
+                  onclick={(event) => {
+                    event.stopPropagation();
+                    handleDelete(p.id);
+                  }}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
           {/each}
@@ -174,9 +193,11 @@
 
       <!-- Pagination -->
       <div class={styles.paginationControls}>
-        <button on:click={handlePrev} disabled={cursorStack.length === 0}>Previous</button>
+        <button onclick={handlePrev} disabled={cursorStack.length === 0}
+          >Previous</button
+        >
         <span>Page {cursorStack.length + 1}</span>
-        <button on:click={handleNext} disabled={!nextCursor}>Next</button>
+        <button onclick={handleNext} disabled={!nextCursor}>Next</button>
       </div>
     {/if}
   </div>

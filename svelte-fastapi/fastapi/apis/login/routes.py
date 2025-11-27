@@ -49,12 +49,13 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
         password=argon2.hash(account_info.password),  # ✅ use passlib
         role=account_info.role,
         created_at=datetime.utcnow(),
+        is_active = 'Inactive'
     )
     db.add(account)
     db.commit()
     db.refresh(account)
 
-    return {"message": "✅ Sign up successful"}
+    return {"message": "✅ Sign up successfully"}
 
 # === Login ===
 @router.post("/login")
@@ -62,18 +63,23 @@ def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
     employee = db.query(AccountBase).filter(AccountBase.email == employee_info.email).first()
     if not employee:
         raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Employee not found")
+    
     if not argon2.verify(employee_info.password, employee.password):
         raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect password")
-    
-    access_token = handle_login_role(employee)['access_token']
-    refresh_token = handle_login_role(employee)['refresh_token']
+
+    employee.is_active = "Active"
+    db.commit()
+    db.refresh(employee)
+
+    tokens = handle_login_role(employee)
 
     return {
         "message": "✅ Login successful",
-        "access_token": access_token,
-        "refresh_token": refresh_token,
+        "access_token": tokens['access_token'],
+        "refresh_token": tokens['refresh_token'],
         "role": employee.role
     }
+
 
 # === Refresh Token ===
 @router.post("/refresh")
@@ -102,3 +108,24 @@ def refresh_token(authorization: str = Header(None)):
             status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
             content={"message": "Invalid refresh token"},
         )
+
+from pydantic import BaseModel
+
+class LogoutRequest(BaseModel):
+    id: str
+
+@router.post("/logout")
+def inactive_user_login(
+    request: LogoutRequest, 
+    db: Session = Depends(get_db)
+):
+    employee = db.query(AccountBase).filter(AccountBase.id == request.id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    employee.is_active = 'Inactive'
+    db.commit() 
+    db.refresh(employee)
+    
+    return {"message": "Log out successfully", "user_id": request.id}
+        

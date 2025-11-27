@@ -5,13 +5,14 @@
   import styles from "$lib/styles/header/employees.module.css";
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
+  import { jwtDecode } from "jwt-decode"; /** Product type */
 
   interface Employee {
     id: string;
     employee_name: string;
     role: string;
     email: string;
-    is_active: boolean;
+    is_active: string;
     created_at: string;
   }
 
@@ -26,6 +27,7 @@
   let nextCursor: string | null = null;
   let currentCursor: string | null = null;
   let cursorStack: (string | null)[] = []; // keep history for Previous
+  let loadedCount = $state(0);
 
   // search
   let searchId = $state("");
@@ -55,11 +57,14 @@
       if (!response.ok) throw new Error("Failed to fetch employees");
 
       const res = await response.json();
+      console.log(res);
       employees = res.search_result || [];
       totalRecords = res.total_employee || 0;
       nextCursor = res.next_cursor || null;
+      console.log(nextCursor);
       currentCursor = cursor; // record which cursor we used
-      console.log("✅ Employees fetched:", { cursor, nextCursor });
+      loadedCount = (cursorStack.length + 1) * pageSize;
+
     } catch (error) {
       console.error(error);
       message = "Failed to load employees";
@@ -106,16 +111,37 @@
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("accessToken");
-    goto("/login");
-  }
+ async function handleLogout() {
+        try {
+            const token = localStorage.getItem("accessToken");
+            const decoded = token ? jwtDecode<{ id: string }>(token) : null;
+            const currentUserId = decoded?.id;
+            console.log(currentUserId);
+            const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ id: currentUserId }),
+            });
+
+            if (!res.ok) {
+                console.error("Logout API failed:", res.status);
+            }
+        } catch (err) {
+            console.error("Logout request error:", err);
+        } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            goto("/login");
+        }
+    }
 
   onMount(() => {
     fetchEmployees(null);
   });
 </script>
-
 
 <!-- === UI === -->
 <div>
@@ -179,7 +205,7 @@
               <td>{emp.employee_name}</td>
               <td>{emp.role}</td>
               <td>{emp.email}</td>
-              <td>{emp.is_active ? "Active" : "Inactive"}</td>
+              <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
               <td>
                 <button onclick={() => goto(`/employee/update/${emp.id}`)}
                   >Edit</button
@@ -196,7 +222,7 @@
         <button onclick={handlePrev} disabled={cursorStack.length === 0}>
           Previous
         </button>
-        <button onclick={handleNext} disabled={!nextCursor}> Next </button>
+        <button onclick={handleNext} disabled={!nextCursor || loadedCount >= totalRecords}> Next </button>
       </div>
     {/if}
   </div>

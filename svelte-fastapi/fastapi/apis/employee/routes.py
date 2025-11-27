@@ -7,7 +7,7 @@ import uuid
 from auth import get_current_user
 from role import StatusCode
 from datetime import datetime
-from .models import EmployeeBase
+from apis.login.models import AccountBase
 import logging
 from .schema import EmployeeSchema, SuccessMessageSchema, EmployeeInputSchema, SavingEmployeeUpdateSchema
 from sqlalchemy.orm import Session
@@ -62,12 +62,12 @@ def search_employee(
             raise HTTPException(status_code=400, detail=f"Invalid cursor: {str(e)}")
 
     # --- Query employees ---
-    query = db.query(EmployeeBase)
+    query = db.query(AccountBase)
 
     if search_id:
-        query = query.filter(EmployeeBase.id.contains(search_id))
+        query = query.filter(AccountBase.id.contains(search_id))
     if search_employee:
-        query = query.filter(EmployeeBase.employee_name.contains(search_employee))
+        query = query.filter(AccountBase.employee_name.contains(search_employee))
 
     # Cursor-based pagination logic
     if decoded_cursor:
@@ -77,16 +77,16 @@ def search_employee(
         # Only add this if both exist
         if last_date and last_id:
             query = query.filter(
-                (EmployeeBase.created_at < last_date)
-                | ((EmployeeBase.created_at == last_date) & (EmployeeBase.id < last_id))
+                (AccountBase.created_at < last_date)
+                | ((AccountBase.created_at == last_date) & (AccountBase.id < last_id))
             )
 
     # Sort newest first
-    query = query.order_by(EmployeeBase.created_at.desc(), EmployeeBase.id.desc())
+    query = query.order_by(AccountBase.created_at.desc(), AccountBase.id.desc())
     
     # Get paginated results
     employees = query.limit(limit).all()
-    total_employee = db.query(EmployeeBase).count()
+    total_employee = db.query(AccountBase).count()
 
     # --- Compute next_cursor ---
     next_cursor_value = None
@@ -113,14 +113,14 @@ def search_employee(
 #Get detail employee
 @router.get('/employee/{employeeId}', response_model=EmployeeSchema)
 def get_employee_detail(employeeId: str, db: Session = Depends(get_db)):
-    employee = db.query(EmployeeBase).filter(EmployeeBase.id == employeeId).first()
+    employee = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if not employee:
         raise HTTPException(status_code=404, detail='Employee not found')
     return employee
     
 @router.post('/employees', response_model=SuccessMessageSchema)
 def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db)):
-    new_employee = EmployeeBase(
+    new_employee = AccountBase(
         id=str(uuid.uuid4()),
         employee_name = employee.employee_name,
         role = employee.role,
@@ -135,7 +135,7 @@ def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db)
 
 @router.delete('/employee/{employeeId}', response_model=SuccessMessageSchema)
 def delete_employee(employeeId: str, db: Session = Depends(get_db)):
-    delete_user = db.query(EmployeeBase).filter(EmployeeBase.id == employeeId).first()
+    delete_user = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if delete_user:
         db.delete(delete_user)
         db.commit()
@@ -148,7 +148,7 @@ def update_employee(
     employee_update_data: SavingEmployeeUpdateSchema,
     db: Session = Depends(get_db)
 ):
-    update_user = db.query(EmployeeBase).filter(EmployeeBase.id == employeeId).first()
+    update_user = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if not update_user:
         raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='employee not found')
     

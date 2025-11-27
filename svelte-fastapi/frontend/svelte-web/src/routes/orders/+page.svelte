@@ -42,6 +42,14 @@
         return url;
     }
 
+    console.log("A: component loaded");
+
+onMount(() => {
+    console.log("B: onMount triggered");
+    console.log("C: API URL = ", `${env.PUBLIC_API_URL}/orders`);
+    fetchOrders();
+});
+
     // === Fetch Orders ===
     async function fetchOrders() {
         loading = true;
@@ -117,7 +125,6 @@
     <div class={styles.headerContent}>
         <h1>Orders</h1>
         <div>
-            <button onclick={() => goto("/orders/add")}>+ Add Order</button>
             <button onclick={handleLogout}>Logout</button>
         </div>
     </div>

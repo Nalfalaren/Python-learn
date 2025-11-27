@@ -1,7 +1,7 @@
 <script>
     import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
-
+    let employeeName = "";
     let email = "";
     let password = "";
     let confirmPassword = "";
@@ -9,13 +9,25 @@
     let showPassword = false;
     let loading = false;
     let message = "";
-    let errors = { email: "", password: "", confirmPassword: "", role: "" };
+    let errors = {
+        employeeName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        role: "",
+    };
 
     // ✅ Kiểm tra dữ liệu form
     function validate() {
-        errors = { email: "", password: "", confirmPassword: "", role: "" };
+        errors = {
+            employeeName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            role: "",
+        };
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+        if(!employeeName.trim()) errors.employeeName = "Vui lòng nhập tên nhân viên"
         if (!email.trim()) errors.email = "Vui lòng nhập email.";
         else if (!emailRegex.test(email)) errors.email = "Email không hợp lệ.";
 
@@ -26,7 +38,7 @@
         if (confirmPassword !== password)
             errors.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
 
-        return !errors.email && !errors.password && !errors.confirmPassword;
+        return !errors.employeeName && !errors.email && !errors.password && !errors.confirmPassword;
     }
 
     // ✅ Gửi dữ liệu đăng ký tới API FastAPI
@@ -42,6 +54,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    employee_name: employeeName,
                     email,
                     password,
                     confirmPassword,
@@ -73,6 +86,16 @@
 <section class="container">
     <form class="card" on:submit|preventDefault={handleSubmit}>
         <h1>Tạo tài khoản</h1>
+
+        <label class="field">
+            <span>Employee Name</span>
+            <input
+                type="text"
+                bind:value={employeeName}
+                placeholder="Ryan"
+            />
+            {#if errors.employeeName}<div class="error">{errors.employeeName}</div>{/if}
+        </label>
 
         <label class="field">
             <span>Email</span>

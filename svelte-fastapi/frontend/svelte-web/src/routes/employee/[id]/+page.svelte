@@ -11,7 +11,7 @@
     employee_name: "",
     role: "",
     email: "",
-    is_active: false,
+    is_active: "Inactive",
     created_at: "",
     updated_at: "",
   };
@@ -65,7 +65,7 @@
             employee.is_active ? styles.active : styles.inactive
           }`}
         >
-          {employee.is_active ? "Active" : "Inactive"}
+          {employee.is_active === 'Active' ? "Active" : "Inactive"}
         </span>
       </div>
 

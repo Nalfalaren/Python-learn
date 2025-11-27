@@ -61,13 +61,14 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 
 def handle_login_role(employee_info: any):
     access_token = create_token(
-        {"sub": employee_info.email, "role": employee_info.role},
+        {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id},
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
     refresh_token = create_token(
-        {"sub": employee_info.email, "role": employee_info.role},
+        {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id},
         timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
     return {"access_token": access_token, "refresh_token": refresh_token}
+

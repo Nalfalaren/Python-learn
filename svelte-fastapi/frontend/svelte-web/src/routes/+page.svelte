@@ -2,8 +2,7 @@
     import { goto } from "$app/navigation";
     import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
-
-    /** Product type */
+    import { jwtDecode } from "jwt-decode"; /** Product type */
     type Product = {
         id?: string;
         product_name: string;
@@ -45,6 +44,7 @@
     let showAddToCardListModal = false;
     let cartList: any[] = [];
     let addToCartQuantity = 1;
+    let isLoggedIn = false;
 
     /** Fetch products from API */
     const fetchProducts = async (
@@ -110,6 +110,10 @@
         };
     }
 
+    onMount(() => {
+        isLoggedIn = !!localStorage.getItem("accessToken");
+    });
+
     onMount(() => fetchProducts());
 
     // Derived: filtered products
@@ -171,14 +175,18 @@
         showAddToCardListModal = true;
     }
 
+    function redirectToLogin() {
+        goto("/login");
+    }
+
     function closeCartList() {
         cartList = [];
         showAddToCardListModal = false;
     }
 
-    function deleteCart(id: string){
+    function deleteCart(id: string) {
         let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        cart = cart.filter((item) => item.id !== id)
+        cart = cart.filter((item) => item.id !== id);
         localStorage.setItem("cart", JSON.stringify(cart));
         cartList = cart;
     }
@@ -231,6 +239,35 @@
         nextCursor = null;
         fetchProducts(null);
     }, 400);
+
+    async function logout() {
+        try {
+            const token = localStorage.getItem("accessToken");
+            const decoded = token ? jwtDecode<{ id: string }>(token) : null;
+            const currentUserId = decoded?.id;
+            console.log(currentUserId);
+            const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ id: currentUserId }),
+            });
+
+            if (!res.ok) {
+                console.error("Logout API failed:", res.status);
+            }
+        } catch (err) {
+            console.error("Logout request error:", err);
+        } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("cart");
+            isLoggedIn = false;
+            goto("/login");
+        }
+    }
 </script>
 
 <!-- HEADER -->
@@ -247,8 +284,27 @@
         <a href="#">Sell</a>
         <button
             style="background-color: transparent; border-color: transparent"
-            on:click={openCartList}>My Orders</button
+            on:click={() => openCartList()}
         >
+            My Orders
+        </button>
+        {#if isLoggedIn}
+            <button
+                style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
+                on:click={logout}
+            >
+                Log out
+            </button>
+        {:else}
+            <button
+                style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
+                on:click={() => {
+                    goto("/login");
+                }}
+            >
+                Sign in
+            </button>
+        {/if}
     </nav>
 </header>
 
@@ -475,105 +531,151 @@
     </div>
 {/if}
 
-<!-- ADD TO CART MODAL -->
-{#if showAddToCartModal && addToCartProduct}
-    <div class="modal-backdrop" on:click={closeAddToCartModal}>
-        <div class="modal" on:click|stopPropagation>
-            <div
-                style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap"
-            >
-                <img
-                    src={addToCartProduct.img}
-                    alt={addToCartProduct.product_name}
-                    style="width:200px; max-width:40%; border-radius:8px; object-fit:cover"
-                />
-                <div style="flex:1; min-width:220px">
-                    <h2>{addToCartProduct.product_name}</h2>
-                    <div style="color:#64748b; margin-top:6px">
-                        {addToCartProduct.category} • Rating: {addToCartProduct.rating?.toFixed(
-                            1,
-                        ) ?? "—"}
-                    </div>
-                    <p style="margin-top:12px; color:#334155">
-                        Mô tả ngắn: demo content
-                    </p>
-                    <div
-                        style="margin-top:16px; display:flex; align-items:center; gap:12px"
-                    >
-                        <div style="font-size:20px; font-weight:800">
-                            ${addToCartProduct.price}
+<!-- ADD TO CART MODAL OR LOGIN REQUIRED -->
+{#if isLoggedIn}
+    {#if showAddToCartModal && addToCartProduct}
+        <!-- Add to Cart Modal -->
+        <div class="modal-backdrop" on:click={closeAddToCartModal}>
+            <div class="modal" on:click|stopPropagation>
+                <div
+                    style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap"
+                >
+                    <img
+                        src={addToCartProduct.img}
+                        alt={addToCartProduct.product_name}
+                        style="width:200px; max-width:40%; border-radius:8px; object-fit:cover"
+                    />
+                    <div style="flex:1; min-width:220px">
+                        <h2>{addToCartProduct.product_name}</h2>
+                        <div style="color:#64748b; margin-top:6px">
+                            {addToCartProduct.category} • Rating: {addToCartProduct.rating?.toFixed(
+                                1,
+                            ) ?? "—"}
                         </div>
-                        <div>
-                            <label>Quantity:</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max={addToCartProduct.stock ?? 99}
-                                bind:value={addToCartQuantity}
-                                style="width:60px; padding:4px; border-radius:6px; border:1px solid #ccc"
-                            />
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:12px; margin-top:18px">
-                        <button on:click={confirmAddToCart} class="btn-primary"
-                            >Add to Cart</button
+                        <p style="margin-top:12px; color:#334155">
+                            Mô tả ngắn: demo content
+                        </p>
+                        <div
+                            style="margin-top:16px; display:flex; align-items:center; gap:12px"
                         >
-                        <button
-                            on:click={closeAddToCartModal}
-                            class="btn-secondary">Cancel</button
-                        >
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{/if}
-
-<!-- CART LIST MODAL -->
-{#if showAddToCardListModal}
-    <div class="modal-backdrop" on:click={closeCartList}>
-        <div class="modal" on:click|stopPropagation style="max-width:600px;">
-            <h2 style="margin-bottom:12px">Giỏ hàng của bạn</h2>
-
-            {#if cartList.length === 0}
-                <p>Chưa có sản phẩm nào trong giỏ hàng.</p>
-            {:else}
-                <div style="display:flex; flex-direction:column; gap:12px; max-height:340px; overflow-y:auto">
-                    {#each cartList as item}
-                        <div style="display:flex; gap:12px; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px">
-                            <img src={item.img} alt={item.product_name} style="width:80px; height:80px; border-radius:8px; object-fit:cover" />
-                            
-                            <div style="flex:1">
-                                <div style="font-weight:700">{item.product_name}</div>
-                                <div style="font-size:13px; color:#64748b">
-                                    {item.category} • ${item.price}
-                                </div>
-                                <div style="margin-top:4px; font-size:13px">
-                                    Quantity: {item.quantity}
-                                </div>
+                            <div style="font-size:20px; font-weight:800">
+                                ${addToCartProduct.price}
                             </div>
-
-                            <button 
-                                class="btn-small-ghost" 
-                                on:click={() => deleteCart(item.id)}
-                            >
-                                Remove
-                            </button>
+                            <div>
+                                <label>Quantity:</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={addToCartProduct.stock ?? 99}
+                                    bind:value={addToCartQuantity}
+                                    style="width:60px; padding:4px; border-radius:6px; border:1px solid #ccc"
+                                />
+                            </div>
                         </div>
-                    {/each}
+                        <div style="display:flex; gap:12px; margin-top:18px">
+                            <button
+                                on:click={confirmAddToCart}
+                                class="btn-primary">Add to Cart</button
+                            >
+                            <button
+                                on:click={closeAddToCartModal}
+                                class="btn-secondary">Cancel</button
+                            >
+                        </div>
+                    </div>
                 </div>
-            {/if}
+            </div>
+        </div>
+    {:else if !addToCartProduct && showAddToCardListModal}
+        <div class="modal-backdrop" on:click={closeCartList}>
+            <div
+                class="modal"
+                on:click|stopPropagation
+                style="max-width:600px;"
+            >
+                <h2 style="margin-bottom:12px">Giỏ hàng của bạn</h2>
 
-            <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px">
-                <button on:click={closeCartList} class="btn-secondary">Close</button>
-                <button class="btn-primary" on:click={() => goto('/checkout')}>
-                    Checkout
-                </button>
+                {#if cartList.length === 0}
+                    <p>Chưa có sản phẩm nào trong giỏ hàng.</p>
+                {:else}
+                    <div
+                        style="display:flex; flex-direction:column; gap:12px; max-height:340px; overflow-y:auto"
+                    >
+                        {#each cartList as item}
+                            <div
+                                style="display:flex; gap:12px; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px"
+                            >
+                                <img
+                                    src={item.img}
+                                    alt={item.product_name}
+                                    style="width:80px; height:80px; border-radius:8px; object-fit:cover"
+                                />
+
+                                <div style="flex:1">
+                                    <div style="font-weight:700">
+                                        {item.product_name}
+                                    </div>
+                                    <div style="font-size:13px; color:#64748b">
+                                        {item.category} • ${item.price}
+                                    </div>
+                                    <div style="margin-top:4px; font-size:13px">
+                                        Quantity: {item.quantity}
+                                    </div>
+                                </div>
+
+                                <button
+                                    class="btn-small-ghost"
+                                    on:click={() => deleteCart(item.id)}
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+
+                <div
+                    style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px"
+                >
+                    <button on:click={closeCartList} class="btn-secondary"
+                        >Close</button
+                    >
+                    <button
+                        class={cartList.length === 0
+                            ? "btn-disabled"
+                            : "btn-primary"}
+                        on:click={() => goto("/checkout")}
+                        disabled={cartList.length === 0}
+                    >
+                        Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    {/if}
+{:else if !isLoggedIn && showAddToCardListModal}
+    <!-- Login Required Modal -->
+    <div class="modal-backdrop" on:click={closeAddToCartModal}>
+        <div
+            class="modal"
+            on:click|stopPropagation
+            style="padding:24px; text-align:center"
+        >
+            <h2>Please Login</h2>
+            <p>You need to log in to add items to your cart.</p>
+            <div
+                style="margin-top:16px; display:flex; justify-content:center; gap:12px"
+            >
+                <button on:click={redirectToLogin} class="btn-primary"
+                    >Login</button
+                >
+                <button on:click={closeCartList} class="btn-secondary"
+                    >Cancel</button
+                >
             </div>
         </div>
     </div>
 {/if}
-
 
 <!-- FOOTER -->
 <footer class="footer">
@@ -944,6 +1046,16 @@
         transform: translateY(-1px) scale(1.02);
         box-shadow: 0 18px 40px rgba(22, 163, 74, 0.45);
         filter: brightness(1.02);
+    }
+
+    .btn-disabled {
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: none;
+        background: #94a3b8; /* gray-ish */
+        color: #f1f5f9;
+        cursor: not-allowed;
+        filter: grayscale(20%);
     }
 
     .btn-ghost,

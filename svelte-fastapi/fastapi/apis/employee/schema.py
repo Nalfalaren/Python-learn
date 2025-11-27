@@ -13,7 +13,7 @@ class EmployeeSchema(BaseModel):
     employee_name: str
     role: str
     email: str
-    is_active: bool
+    is_active: str
 
 class EmployeeInputSchema(BaseModel):
     employee_name: str

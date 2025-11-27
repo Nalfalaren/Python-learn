@@ -5,7 +5,10 @@
     let chosenTab = "Content";
     const handleClick = (tabListName: string) => {
         chosenTab = tabListName;
-        goto(`/${tabListName.toLowerCase()}`)
+        if(chosenTab.includes(" ")){
+            goto(`/${chosenTab.toLowerCase().replace(" ", "_")}`)
+        }
+        else goto(`/${tabListName.toLowerCase()}`)
     };
 </script>
 

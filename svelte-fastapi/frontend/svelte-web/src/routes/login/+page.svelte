@@ -38,12 +38,13 @@
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
                 message = errorData.detail;
+                return
             }
             const data = await res.json().catch(() => ({}));
             message = data.message;
             localStorage.setItem("accessToken", data.access_token);
             if(data.role === 'admin' || data.role === 'leader') window.location.href = "/employee";
-            if(data.role === 'customer') window.location.href = "/"
+            else window.location.href = "/"
         } catch (err) {
             console.error(err);
             message = "Không thể kết nối tới server.";

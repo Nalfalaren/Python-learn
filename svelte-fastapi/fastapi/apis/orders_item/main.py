@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from middleware import AuthMiddleware
 import logging
-from .routes import router as order_items_router
+from .routes import order_items_router
 
 # Cấu hình logger
 logging.basicConfig(level=logging.INFO)

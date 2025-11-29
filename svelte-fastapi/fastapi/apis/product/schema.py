@@ -7,7 +7,6 @@ class ProductSchema(BaseModel):
     product_name: str
     category: str
     price: float
-    is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -18,6 +17,5 @@ class ProductUpdatePropsSchema(BaseModel):
     product_name: str
     category: str
     price: float
-    is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

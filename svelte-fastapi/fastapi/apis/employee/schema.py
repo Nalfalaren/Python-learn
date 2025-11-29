@@ -19,7 +19,7 @@ class EmployeeInputSchema(BaseModel):
     employee_name: str
     role: str
     email: str
-    is_active: bool
+    is_active: str
 
 class SuccessMessageSchema(BaseModel):
     message: str
@@ -34,4 +34,4 @@ class SavingEmployeeUpdateSchema(BaseModel):
     employee_name: Optional[str] = None
     role: Optional[str] = None
     email: Optional[str] = None
-    is_active: Optional[int] = None
+    is_active: Optional[str] = None

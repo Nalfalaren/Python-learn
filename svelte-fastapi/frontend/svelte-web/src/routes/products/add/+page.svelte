@@ -8,7 +8,6 @@
   let product_name = "";
   let category = "";
   let price: number | string = "";
-  let status = true;
   let message = "";
 
   async function handleSubmit(e?: Event) {
@@ -21,21 +20,19 @@
 
     const token = localStorage.getItem("accessToken");
 
-    // 👇 Create multipart form data
-    const formData = new FormData();
-    formData.append("product_id", String(uuidv4()));
-    formData.append("product_name", product_name.trim());
-    formData.append("category", category.trim());
-    formData.append("price", String(price));
-    formData.append("is_active", status ? "1" : "0");
-
+    const payload = {
+      product_name: product_name?.trim(),
+      category: category?.trim(),
+      price
+    }
     try {
-      const res = await fetch(`${env.PUBLIC_API_URL}/products`, {
+      const res = await fetch(`${env.PUBLIC_API_URL}/admin/products`, {
         method: "POST",
         headers: {
+          "Content-Type": "application/json", 
           "Authorization": `Bearer ${token}`,
         },
-        body: formData, // 👈 Send file + text
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
@@ -50,7 +47,6 @@
       product_name = "";
       category = "";
       price = "";
-      status = true;
       goto("/products");
     } catch (err) {
       console.error("Product creation failed:", err);
@@ -78,11 +74,6 @@
       <input class={styles.input} type="number" bind:value={price} step="0.01" required />
     </label>
 
-    <label class={styles.field}>
-      <span class={styles.label}>Active</span>
-      <input type="checkbox" bind:checked={status} class={styles.checkbox} />
-    </label>
-
     <div class={styles.actions}>
       <button type="submit" class={styles.button}>Create</button>
 
@@ -91,7 +82,6 @@
         product_name = "";
         category = "";
         price = "";
-        status = true;
       }}>
         Reset
       </button>

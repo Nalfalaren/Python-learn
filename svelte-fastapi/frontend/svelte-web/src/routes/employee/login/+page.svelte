@@ -29,7 +29,7 @@
         if (!validate()) return;
         loading = true;
         try {
-            const url = new URL(`${env.PUBLIC_API_URL}/login`);
+            const url = new URL(`${env.PUBLIC_API_URL}/auth/login`);
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -43,7 +43,7 @@
             const data = await res.json().catch(() => ({}));
             message = data.message;
             localStorage.setItem("accessToken", data.access_token);
-            window.location.href = `/`;
+            window.location.href = `/employee?role=${data?.role?.toLowerCase()}`;
         } catch (err) {
             console.error(err);
             message = "Không thể kết nối tới server.";
@@ -126,8 +126,8 @@
         </button>
 
         <div class="links">
-            <a href="/forgot">Quên mật khẩu?</a>
-            <a href="/signup">Tạo tài khoản mới</a>
+            <a href="/employee/forgot">Quên mật khẩu?</a>
+            <a href="/employee/signup">Tạo tài khoản mới</a>
         </div>
 
         {#if message}

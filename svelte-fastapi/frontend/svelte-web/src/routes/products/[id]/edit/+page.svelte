@@ -28,7 +28,7 @@
     loading = true;
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${env.PUBLIC_API_URL}/products/${productId}`, {
+      const res = await fetch(`${env.PUBLIC_API_URL}/admin/products/${productId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@
       };
 
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${env.PUBLIC_API_URL}/products/${productId}`, {
+      const res = await fetch(`${env.PUBLIC_API_URL}/admin/products/${productId}`, {
         method: "PUT", // or PATCH depending on your backend
         headers: {
           "Content-Type": "application/json",

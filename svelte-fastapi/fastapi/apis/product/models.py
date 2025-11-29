@@ -10,6 +10,5 @@ class ProductBase(Base):
     product_name = Column(String, nullable=False, index=True)
     category = Column(String, nullable=False, index=True)
     price = Column(Float, nullable=False, index=True)
-    is_active = Column(Boolean)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

@@ -5,6 +5,7 @@
     import styles from "$lib/styles/header/Orders.module.css";
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
+    import { authStore } from "../../lib/stores/AuthStore";
 
     interface OrderItem {
         id: string;
@@ -107,7 +108,7 @@
             <button onclick={handleLogout}>Logout</button>
         </div>
     </div>
-    <TabNavigation />
+    <TabNavigation is_admin={$authStore.role === "admin"} />
 </div>
 
 <div class={styles.tableSearch}>
@@ -131,6 +132,11 @@
 <div class={styles.tableContainer}>
     {#if loading}
         <p>Loading...</p>
+    {:else if $authStore.role !== "admin"}
+        <div class={styles.forbiddenBox}>
+            <h2>403 – Forbidden</h2>
+            <p>You do not have permission to access this page.</p>
+        </div>
     {:else if items.length === 0}
         <p>No Order Items found.</p>
     {:else}
@@ -157,15 +163,15 @@
                                 onclick={(e) => {
                                     e.stopPropagation();
                                     goto(`/order-items/${item.id}/edit`);
-                                }}
-                            >Edit</button>
+                                }}>Edit</button
+                            >
 
                             <button
                                 onclick={(e) => {
                                     e.stopPropagation();
                                     handleDelete(item.id);
-                                }}
-                            >Delete</button>
+                                }}>Delete</button
+                            >
                         </td>
                     </tr>
                 {/each}
@@ -173,16 +179,13 @@
         </table>
 
         <div class={styles.paginationControls}>
-            <button disabled={page === 1} onclick={handlePrevPage}>Previous</button>
-
-            <span>
-                Page {page} / {Math.ceil(totalRecords / pageSize)}
-            </span>
-
+            <button disabled={page === 1} onclick={handlePrevPage}
+                >Previous</button
+            >
             <button
                 disabled={page === Math.ceil(totalRecords / pageSize)}
-                onclick={handleNextPage}
-            >Next</button>
+                onclick={handleNextPage}>Next</button
+            >
         </div>
     {/if}
 </div>

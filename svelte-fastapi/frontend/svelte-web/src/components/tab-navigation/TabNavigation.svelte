@@ -1,21 +1,40 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { page } from "$app/stores";
     import styles from "./tab-navigation.module.css";
-    let tabList = ["Employee", "Products", "Orders", "Order Items"];
-    let chosenTab = "Content";
-    const handleClick = (tabListName: string) => {
-        chosenTab = tabListName;
-        if(chosenTab.includes(" ")){
-            goto(`/${chosenTab.toLowerCase().replace(" ", "_")}`)
-        }
-        else goto(`/${tabListName.toLowerCase()}`)
+
+    export let is_admin: boolean = false;
+
+    let tabList = is_admin
+        ? ["Employee", "Products", "Orders", "Order Items"]
+        : ["Employee Orders"];
+
+    $: currentPath = $page.url.pathname;
+    
+    $: chosenTab = tabList.find(tab => {
+        const tabPath = tab.includes(" ")
+            ? `/${tab.toLowerCase().replace(" ", "_")}`
+            : `/${tab.toLowerCase()}`;
+        return currentPath === tabPath;
+    }) || tabList[0];
+
+    const handleClick = (tabName: string) => {
+        const path = tabName.includes(" ")
+            ? `/${tabName.toLowerCase().replace(" ", "_")}`
+            : `/${tabName.toLowerCase()}`;
+        goto(path);
     };
 </script>
 
-<div class={styles.tabContainer}>
-    {#each tabList as tabName}
-        <div class={styles.tabElement}>
-            <button onclick={() => handleClick(tabName)}>{tabName}</button>
-        </div>
-    {/each}
-</div>
+{#if tabList.length > 0}
+    <div class={styles.tabContainer}>
+        {#each tabList as tabName}
+            <button
+                class={`${styles.tabButton} ${chosenTab === tabName ? styles.active : ""}`}
+                on:click={() => handleClick(tabName)}
+            >
+                {tabName}
+            </button>
+        {/each}
+    </div>
+{/if}

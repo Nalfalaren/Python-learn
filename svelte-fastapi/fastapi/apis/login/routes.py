@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from passlib.hash import argon2  # ✅ use passlib for Argon2
+from passlib.hash import argon2 
 from dotenv import load_dotenv
 
 from role import StatusCode
@@ -62,7 +62,7 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
 def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
     employee = db.query(AccountBase).filter(AccountBase.email == employee_info.email).first()
     if not employee:
-        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Employee not found")
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Employee not existed!")
     
     if not argon2.verify(employee_info.password, employee.password):
         raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect password")
@@ -121,7 +121,7 @@ def inactive_user_login(
 ):
     employee = db.query(AccountBase).filter(AccountBase.id == request.id).first()
     if not employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
+        raise HTTPException(status_code=404, detail="Employee not existed!")
     
     employee.is_active = 'Inactive'
     db.commit() 

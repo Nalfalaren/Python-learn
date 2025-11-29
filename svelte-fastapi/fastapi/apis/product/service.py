@@ -4,7 +4,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from .models import ProductBase
 from .repository import get_products_query
-
 def encode_cursor(last_item):
     obj = {
         "date": last_item.created_at.isoformat() if last_item.created_at else None,

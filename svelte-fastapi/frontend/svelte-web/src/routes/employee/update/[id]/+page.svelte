@@ -9,12 +9,12 @@
     employee_name: "",
     role: "",
     email: "",
-    is_active: false,
+    is_active: "",
   };
 
   export let params;
   employeeId = params.id;
-
+  let active_status = false
   // Fetch employee
   onMount(async () => {
     const token = localStorage.getItem("accessToken");
@@ -24,6 +24,7 @@
 
     if (res.ok) {
       employee = await res.json();
+      active_status = employee.is_active === 'Active'
     } else {
       alert("❌ Failed to load employee data");
     }
@@ -68,12 +69,11 @@
 
     <div class={styles.formGroup}>
       <label class={styles.label}>Role</label>
-      <input
-        type="text"
-        bind:value={employee.role}
-        class={styles.input}
-        placeholder="e.g. Manager, Developer"
-      />
+       <select bind:value={employee.role} class={styles.input}>
+        <option value="admin">Admin</option>
+        <option value="leader">Leader</option>
+        <option value="EMPLOYEE">Employee</option>
+      </select>
     </div>
 
     <div class={styles.formGroup}>
@@ -90,8 +90,9 @@
       <label class={styles.checkboxLabel}>
         <input
           type="checkbox"
-          bind:checked={employee.is_active}
+          bind:checked={active_status}
           class={styles.checkbox}
+          disabled
         />
         Active Employee
       </label>

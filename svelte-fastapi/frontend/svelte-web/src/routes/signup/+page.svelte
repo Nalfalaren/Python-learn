@@ -1,79 +1,93 @@
 <script>
     import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
-    let employeeName = "";
+
+    let name = "";
     let email = "";
+    let phone = "";
+    let address = "";
+    let is_active = 'Inactive'
     let password = "";
     let confirmPassword = "";
-    let role = "";
     let showPassword = false;
     let loading = false;
     let message = "";
+
     let errors = {
-        employeeName: "",
+        name: "",
         email: "",
+        phone: "",
+        address: "",
         password: "",
         confirmPassword: "",
-        role: "",
     };
 
-    // ✅ Kiểm tra dữ liệu form
+    // Validate
     function validate() {
-        errors = {
-            employeeName: "",
-            email: "",
-            password: "",
-            confirmPassword: "",
-            role: "",
-        };
+        errors = { name: "", email: "", password: "", confirmPassword: "" };
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if(!employeeName.trim()) errors.employeeName = "Vui lòng nhập tên nhân viên"
+
+        if (!phone.trim()) errors.phone = "Vui lòng nhập số điện thoại.";
+        else if (!/^[0-9]{9,11}$/.test(phone))
+            errors.phone = "Số điện thoại không hợp lệ.";
+
+        if (!address.trim()) errors.address = "Vui lòng nhập địa chỉ.";
+
+        if (!name.trim()) errors.name = "Vui lòng nhập họ tên";
+
         if (!email.trim()) errors.email = "Vui lòng nhập email.";
         else if (!emailRegex.test(email)) errors.email = "Email không hợp lệ.";
 
         if (!password.trim()) errors.password = "Vui lòng nhập mật khẩu.";
         else if (password.length < 6)
-            errors.password = "Mật khẩu ít nhất 6 ký tự.";
+            errors.password = "Mật khẩu phải tối thiểu 6 kí tự.";
 
         if (confirmPassword !== password)
             errors.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
 
-        return !errors.employeeName && !errors.email && !errors.password && !errors.confirmPassword;
+        return (
+            !errors.name &&
+            !errors.email &&
+            !errors.password &&
+            !errors.confirmPassword
+        );
     }
 
-    // ✅ Gửi dữ liệu đăng ký tới API FastAPI
+    // Submit
     async function handleSubmit(e) {
         e.preventDefault();
         message = "";
 
         if (!validate()) return;
+
         loading = true;
 
         try {
-            const res = await fetch(`${env.PUBLIC_API_URL}/auth/signup`, {
+            const res = await fetch(`${env.PUBLIC_API_URL}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    employee_name: employeeName,
+                    customer_name: name,
                     email,
+                    phone,
+                    address,
                     password,
                     confirmPassword,
-                    role,
+                    is_active: 'Inactive'
                 }),
             });
 
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                message = data.detail || "Đăng ký thất bại. Vui lòng thử lại.";
+                message = data.detail || "Đăng ký thất bại.";
             } else {
                 message = data.message || "Đăng ký thành công!";
-                // 👉 Có thể redirect sang trang đăng nhập
                 window.location.href = "/login";
             }
         } catch (err) {
-            console.error(err);
-            message = "Không thể kết nối tới server.";
+            message = "Không thể kết nối server.";
         } finally {
             loading = false;
         }
@@ -85,16 +99,12 @@
 
 <section class="container">
     <form class="card" on:submit|preventDefault={handleSubmit}>
-        <h1>Tạo tài khoản</h1>
+        <h1>Đăng ký tài khoản khách hàng</h1>
 
         <label class="field">
-            <span>Employee Name</span>
-            <input
-                type="text"
-                bind:value={employeeName}
-                placeholder="Ryan"
-            />
-            {#if errors.employeeName}<div class="error">{errors.employeeName}</div>{/if}
+            <span>Họ tên</span>
+            <input type="text" bind:value={name} placeholder="Nguyễn Văn A" />
+            {#if errors.name}<div class="error">{errors.name}</div>{/if}
         </label>
 
         <label class="field">
@@ -109,20 +119,35 @@
         </label>
 
         <label class="field">
+            <span>Số điện thoại</span>
+            <input type="text" bind:value={phone} placeholder="0123456789" />
+            {#if errors.phone}<div class="error">{errors.phone}</div>{/if}
+        </label>
+
+        <label class="field">
+            <span>Địa chỉ</span>
+            <input
+                type="text"
+                bind:value={address}
+                placeholder="Số nhà, đường, quận/huyện..."
+            />
+            {#if errors.address}<div class="error">{errors.address}</div>{/if}
+        </label>
+
+        <label class="field">
             <span>Mật khẩu</span>
             <div class="password-row">
                 <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Nhập mật khẩu"
                     bind:value={password}
+                    placeholder="Nhập mật khẩu"
                 />
                 <button
                     type="button"
                     class="toggle"
                     on:click={() => (showPassword = !showPassword)}
+                    >{showPassword ? "Ẩn" : "Hiện"}</button
                 >
-                    {showPassword ? "Ẩn" : "Hiện"}
-                </button>
             </div>
             {#if errors.password}<div class="error">{errors.password}</div>{/if}
         </label>
@@ -131,37 +156,21 @@
             <span>Xác nhận mật khẩu</span>
             <input
                 type="password"
-                placeholder="Nhập lại mật khẩu"
                 bind:value={confirmPassword}
+                placeholder="Nhập lại mật khẩu"
             />
-            {#if errors.confirmPassword}
-                <div class="error">{errors.confirmPassword}</div>
-            {/if}
-        </label>
-
-        <label class="field">
-            <span>Role</span>
-            <select bind:value={role}>
-                <option value="">-- Chọn vai trò --</option>
-                <option value="admin">Admin</option>
-                <option value="leader">Leader</option>
-                <option value="customer">Member</option>
-            </select>
-            {#if errors.role}
-                <div class="error">{errors.role}</div>
-            {/if}
+            {#if errors.confirmPassword}<div class="error">
+                    {errors.confirmPassword}
+                </div>{/if}
         </label>
 
         <button class="submit" type="submit" disabled={loading}>
-            {#if loading}
-                <span class="spinner"></span> Đang xử lý...
-            {:else}
-                Đăng ký
-            {/if}
+            {#if loading}<span class="spinner"></span> Đang xử lý...{:else}Đăng
+                ký{/if}
         </button>
 
         <div class="links">
-            <a href="/login">Đã có tài khoản? Đăng nhập</a>
+            <a href="/customer/login">Đã có tài khoản? Đăng nhập</a>
         </div>
 
         {#if message}<div class="status">{message}</div>{/if}

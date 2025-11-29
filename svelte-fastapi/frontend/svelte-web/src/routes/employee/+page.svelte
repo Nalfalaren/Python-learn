@@ -2,10 +2,11 @@
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import styles from "$lib/styles/header/employees.module.css";
+  import styles from "$lib/styles/header/Employees.module.css";
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode"; /** Product type */
+  import { authStore } from "../../lib/stores/AuthStore";
 
   interface Employee {
     id: string;
@@ -64,7 +65,6 @@
       console.log(nextCursor);
       currentCursor = cursor; // record which cursor we used
       loadedCount = (cursorStack.length + 1) * pageSize;
-
     } catch (error) {
       console.error(error);
       message = "Failed to load employees";
@@ -111,32 +111,31 @@
     }
   }
 
- async function handleLogout() {
-        try {
-            const token = localStorage.getItem("accessToken");
-            const decoded = token ? jwtDecode<{ id: string }>(token) : null;
-            const currentUserId = decoded?.id;
-            console.log(currentUserId);
-            const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ id: currentUserId }),
-            });
+  async function handleLogout() {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const decoded = token ? jwtDecode<{ id: string }>(token) : null;
+      const currentUserId = decoded?.id;
+      const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: currentUserId }),
+      });
 
-            if (!res.ok) {
-                console.error("Logout API failed:", res.status);
-            }
-        } catch (err) {
-            console.error("Logout request error:", err);
-        } finally {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            goto("/login");
-        }
+      if (!res.ok) {
+        console.error("Logout API failed:", res.status);
+      }
+    } catch (err) {
+      console.error("Logout request error:", err);
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      goto("/employee/login");
     }
+  }
 
   onMount(() => {
     fetchEmployees(null);
@@ -149,12 +148,15 @@
     <div class={styles.headerContent}>
       <div><h1>Employees</h1></div>
       <div>
-        <button onclick={() => goto("/employee/sign-up")}>+ Add Employee</button
-        >
+        {#if $authStore.role === "admin"}
+          <button onclick={() => goto("/employee/sign-up")}
+            >+ Add Employee</button
+          >
+        {/if}
         <button onclick={handleLogout}>Logout</button>
       </div>
     </div>
-    <TabNavigation />
+    <TabNavigation is_admin={$authStore.role === "admin"} />
   </div>
 
   <!-- Search -->
@@ -184,6 +186,11 @@
   <div class={styles.tableContainer}>
     {#if loading}
       <p>Loading...</p>
+    {:else if $authStore.role !== "admin"}
+      <div class={styles.forbiddenBox}>
+        <h2>403 – Forbidden</h2>
+        <p>You do not have permission to access this page.</p>
+      </div>
     {:else if employees.length === 0}
       <p>No employees found.</p>
     {:else}
@@ -207,10 +214,18 @@
               <td>{emp.email}</td>
               <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
               <td>
-                <button onclick={() => goto(`/employee/update/${emp.id}`)}
-                  >Edit</button
+                <button
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    goto(`/employee/update/${emp.id}`);
+                  }}>Edit</button
                 >
-                <button onclick={() => handleDelete(emp.id)}>Delete</button>
+                <button
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(emp.id);
+                  }}>Delete</button
+                >
               </td>
             </tr>
           {/each}
@@ -222,7 +237,12 @@
         <button onclick={handlePrev} disabled={cursorStack.length === 0}>
           Previous
         </button>
-        <button onclick={handleNext} disabled={!nextCursor || loadedCount >= totalRecords}> Next </button>
+        <button
+          onclick={handleNext}
+          disabled={!nextCursor || loadedCount >= totalRecords}
+        >
+          Next
+        </button>
       </div>
     {/if}
   </div>

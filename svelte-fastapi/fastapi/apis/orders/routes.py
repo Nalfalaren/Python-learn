@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from database import SessionLocal
 from .models import OrderBase
 from role import StatusCode
-from auth import get_current_user
+from auth import get_current_user, require_admin
 from sqlalchemy.orm import Session
 from .schema import OrderUpdateSchema
 order_router = APIRouter(tags=["Order Route"])
@@ -25,20 +25,13 @@ def get_account(current_user: dict = Depends(get_current_user)):
 
 @order_router.get('/orders')
 def get_list_orders(
-    account_info: dict = Depends(get_account),
+    _: dict = Depends(require_admin),
     db: Session = Depends(get_db),
     search_id: str = '',
     order_name: str = '',
     page: int = 1,
     limit: int = 10,
 ):
-     # --- Role check ---
-    account_role = account_info.get("role")
-    if account_role != "admin":
-        raise HTTPException(
-            status_code=StatusCode.HTTP_FORBIDDEN_403.value,
-            detail="You are not allowed to access this data!",
-        )
     order_list = db.query(OrderBase).order_by(OrderBase.created_at.desc())
     if search_id:
         order_list = order_list.filter(OrderBase.id == search_id)
@@ -69,7 +62,7 @@ def get_list_orders(
     } 
 
 @order_router.get('/orders/{order_id}')
-def get_order_detail(order_id: str, db: Session = Depends(get_db)):
+def get_order_detail(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order_info:
         return HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail="Order not found")
@@ -80,7 +73,7 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db)):
     return {"order": order_info, "items": items}
 
 @order_router.put("/orders/{order_id}")
-def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Depends(get_db)):
+def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -94,7 +87,7 @@ def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Dep
     }
 
 @order_router.delete("/orders/{order_id}")
-def delete_product(order_id: str, db: Session = Depends(get_db)):
+def delete_product(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order_info:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -104,7 +97,7 @@ def delete_product(order_id: str, db: Session = Depends(get_db)):
 
 
 @order_router.patch("/orders/{order_id}/status")
-def update_order_status(order_id: int, status: str, db: Session = Depends(get_db)):
+def update_order_status(order_id: int, status: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     order = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")

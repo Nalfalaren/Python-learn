@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from sqlalchemy.orm import Session
 import uuid
-from auth import get_current_user
+from auth import get_current_user, require_admin
 from role import StatusCode
 from datetime import datetime
 from apis.login.models import AccountBase
@@ -42,16 +42,8 @@ def search_employee(
     limit: int = Query(10, ge=1, le=100, description="Items per page"),
     next_cursor: str | None = Query(None, description="Pagination cursor"),
     db: Session = Depends(get_db),
-    account_info: dict = Depends(get_account),
+    _: dict = Depends(require_admin),
 ):
-    # --- Role check ---
-    account_role = account_info.get("role")
-    if account_role != "admin":
-        raise HTTPException(
-            status_code=StatusCode.HTTP_FORBIDDEN_403.value,
-            detail="You are not allowed to access this data!",
-        )
-
     # --- Decode next_cursor if provided ---
     decoded_cursor = None
     if next_cursor:
@@ -112,14 +104,14 @@ def search_employee(
 
 #Get detail employee
 @router.get('/employee/{employeeId}', response_model=EmployeeSchema)
-def get_employee_detail(employeeId: str, db: Session = Depends(get_db)):
+def get_employee_detail(employeeId: str, db: Session = Depends(get_db), _: dict = Depends(require_admin),):
     employee = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if not employee:
-        raise HTTPException(status_code=404, detail='Employee not found')
+        raise HTTPException(status_code=404, detail='Employee not existed!')
     return employee
     
 @router.post('/employees', response_model=SuccessMessageSchema)
-def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db)):
+def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     new_employee = AccountBase(
         id=str(uuid.uuid4()),
         employee_name = employee.employee_name,
@@ -134,23 +126,24 @@ def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db)
     return SuccessMessageSchema(message='employee created successfully')
 
 @router.delete('/employee/{employeeId}', response_model=SuccessMessageSchema)
-def delete_employee(employeeId: str, db: Session = Depends(get_db)):
+def delete_employee(employeeId: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     delete_user = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if delete_user:
         db.delete(delete_user)
         db.commit()
         return {'message': 'employee deleted successfully'}
-    raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='employee not found')
+    raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='Employee not existed!')
 
 @router.put('/employee/{employeeId}', response_model=SuccessMessageSchema)
 def update_employee(
     employeeId: str,
     employee_update_data: SavingEmployeeUpdateSchema,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin),
 ):
     update_user = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if not update_user:
-        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='employee not found')
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='Employee not existed!')
     
     # Update giá trị vào SQLAlchemy model
     for key, value in employee_update_data.dict(exclude_unset=True).items():

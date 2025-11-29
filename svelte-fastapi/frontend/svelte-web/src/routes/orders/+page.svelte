@@ -5,7 +5,8 @@
     import styles from "$lib/styles/header/Orders.module.css";
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
-
+    import { authStore } from "../../lib/stores/AuthStore";
+    
     interface Order {
         id: string;
         customer_name: string;
@@ -44,11 +45,11 @@
 
     console.log("A: component loaded");
 
-onMount(() => {
-    console.log("B: onMount triggered");
-    console.log("C: API URL = ", `${env.PUBLIC_API_URL}/orders`);
-    fetchOrders();
-});
+    onMount(() => {
+        console.log("B: onMount triggered");
+        console.log("C: API URL = ", `${env.PUBLIC_API_URL}/orders`);
+        fetchOrders();
+    });
 
     // === Fetch Orders ===
     async function fetchOrders() {
@@ -128,7 +129,7 @@ onMount(() => {
             <button onclick={handleLogout}>Logout</button>
         </div>
     </div>
-    <TabNavigation />
+    <TabNavigation is_admin={$authStore.role === "admin"} />
 </div>
 
 <!-- SEARCH -->
@@ -156,6 +157,11 @@ onMount(() => {
 <div class={styles.tableContainer}>
     {#if loading}
         <p>Loading...</p>
+    {:else if $authStore.role !== "admin"}
+        <div class={styles.forbiddenBox}>
+            <h2>403 – Forbidden</h2>
+            <p>You do not have permission to access this page.</p>
+        </div>
     {:else if orders.length === 0}
         <p>No Orders found.</p>
     {:else}
@@ -205,7 +211,6 @@ onMount(() => {
             <button disabled={page === 1} onclick={handlePrevPage}
                 >Previous</button
             >
-            <span>Page {page} / {Math.ceil(totalRecords / pageSize)}</span>
             <button
                 disabled={page === Math.ceil(totalRecords / pageSize)}
                 onclick={handleNextPage}>Next</button

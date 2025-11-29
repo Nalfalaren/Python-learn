@@ -146,7 +146,7 @@
 <div>
   <div class={styles.headerContainer}>
     <div class={styles.headerContent}>
-      <div><h1>Employees</h1></div>
+      <div><h1 style="font-family: system-ui, sans-serif;">Employees</h1></div>
       <div>
         {#if $authStore.role === "admin"}
           <button onclick={() => goto("/employee/sign-up")}

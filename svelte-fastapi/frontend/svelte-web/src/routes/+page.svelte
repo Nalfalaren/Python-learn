@@ -686,7 +686,6 @@
     /* Basic responsive layout, modern clean look */
     :global(body) {
         font-family:
-            Inter,
             system-ui,
             -apple-system,
             "Segoe UI",

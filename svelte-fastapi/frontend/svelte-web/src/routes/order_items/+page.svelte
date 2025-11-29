@@ -103,7 +103,7 @@
 
 <div class={styles.headerContainer}>
     <div class={styles.headerContent}>
-        <h1>Order Items</h1>
+        <h1 style="font-family: system-ui, sans-serif;">Order Items</h1>
         <div>
             <button onclick={handleLogout}>Logout</button>
         </div>

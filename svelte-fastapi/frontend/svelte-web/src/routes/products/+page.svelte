@@ -133,7 +133,7 @@
 
 <div class={styles.headerContainer}>
   <div class={styles.headerContent}>
-    <h1>Products</h1>
+    <h1 style="font-family: system-ui, sans-serif;">Products</h1>
     <div>
       {#if $authStore.role === "admin"}
         <button onclick={() => goto("/products/add")}>+ Add Product</button>

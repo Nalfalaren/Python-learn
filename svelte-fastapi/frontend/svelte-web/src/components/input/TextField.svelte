@@ -11,7 +11,7 @@
 </script>
 
 <div class={styles.textFieldContainer}>
-    <label>
+    <label style="font-family: system-ui, sans-serif;">
         {title}
         <input
             name={name}

@@ -2,19 +2,8 @@
     import { goto } from "$app/navigation";
     import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
-    import { jwtDecode } from "jwt-decode"; /** Product type */
-    type Product = {
-        id?: string;
-        product_name: string;
-        category: string;
-        price: number;
-        is_active: boolean;
-        created_at?: string;
-        updated_at?: string;
-        img?: string;
-        rating?: number;
-        stock?: number;
-    };
+    import { jwtDecode } from "jwt-decode";
+    import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
 
     /** Products list */
     let products: Product[] = [];
@@ -31,7 +20,6 @@
     let nextCursor: string | null = null;
     let currentCursor: string | null = null;
     let cursorStack: (string | null)[] = [];
-
     let totalRecords = 0;
 
     // local pagination
@@ -42,9 +30,14 @@
     let addToCartProduct: Product | null = null;
     let showAddToCartModal = false;
     let showAddToCardListModal = false;
-    let cartList: any[] = [];
     let addToCartQuantity = 1;
     let isLoggedIn = false;
+
+    // Subscribe to cart store
+    let cartItems: CartItem[] = [];
+    cart.subscribe(value => {
+        cartItems = value;
+    });
 
     /** Fetch products from API */
     const fetchProducts = async (
@@ -55,7 +48,6 @@
 
         try {
             const token = localStorage.getItem("accessToken");
-
             const params = new URLSearchParams();
 
             if (query) params.append("search_product", query);
@@ -101,7 +93,6 @@
 
     export function debounce(fn, delay = 300) {
         let timeout: number | undefined;
-
         return (...args) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
@@ -112,9 +103,8 @@
 
     onMount(() => {
         isLoggedIn = !!localStorage.getItem("accessToken");
+        fetchProducts();
     });
-
-    onMount(() => fetchProducts());
 
     // Derived: filtered products
     $: filtered = products
@@ -148,6 +138,9 @@
     // categories
     $: categories = ["All", ...new Set(products.map((p) => p.category))];
 
+    // Cart total count
+    $: cartCount = cart.getTotalCount();
+
     // actions
     function openQuickView(product: Product) {
         quickView = product;
@@ -170,8 +163,6 @@
     }
 
     function openCartList() {
-        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        cartList = cart;
         showAddToCardListModal = true;
     }
 
@@ -180,32 +171,17 @@
     }
 
     function closeCartList() {
-        cartList = [];
         showAddToCardListModal = false;
     }
 
     function deleteCart(id: string) {
-        let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        cart = cart.filter((item) => item.id !== id);
-        localStorage.setItem("cart", JSON.stringify(cart));
-        cartList = cart;
+        cart.removeItem(id);
     }
 
     function confirmAddToCart() {
         if (!addToCartProduct) return;
-
-        const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-        const existingIndex = cart.findIndex(
-            (p) => p.id === addToCartProduct.id,
-        );
-        if (existingIndex !== -1) {
-            cart[existingIndex].quantity += addToCartQuantity;
-        } else {
-            cart.push({ ...addToCartProduct, quantity: addToCartQuantity });
-        }
-
-        localStorage.setItem("cart", JSON.stringify(cart));
+        
+        cart.addItem(addToCartProduct, addToCartQuantity);
         closeAddToCartModal();
         alert(
             `Added ${addToCartQuantity} × ${addToCartProduct.product_name} to cart!`,
@@ -245,7 +221,7 @@
             const token = localStorage.getItem("accessToken");
             const decoded = token ? jwtDecode<{ id: string }>(token) : null;
             const currentUserId = decoded?.id;
-            console.log(currentUserId);
+            
             const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
                 method: "POST",
                 headers: {
@@ -263,7 +239,7 @@
         } finally {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
-            localStorage.removeItem("cart");
+            cart.clear();
             isLoggedIn = false;
             goto("/login");
         }
@@ -283,10 +259,13 @@
         <a href="#">Explore</a>
         <a href="#">Sell</a>
         <button
-            style="background-color: transparent; border-color: transparent"
+            style="background-color: transparent; border-color: transparent; position:relative"
             on:click={() => openCartList()}
         >
             My Orders
+            {#if cartCount > 0}
+                <span class="cart-badge">{cartCount}</span>
+            {/if}
         </button>
         {#if isLoggedIn}
             <button
@@ -298,9 +277,7 @@
         {:else}
             <button
                 style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
-                on:click={() => {
-                    goto("/login");
-                }}
+                on:click={() => goto("/login")}
             >
                 Sign in
             </button>
@@ -586,7 +563,7 @@
                 </div>
             </div>
         </div>
-    {:else if !addToCartProduct && showAddToCardListModal}
+    {:else if showAddToCardListModal}
         <div class="modal-backdrop" on:click={closeCartList}>
             <div
                 class="modal"
@@ -595,13 +572,13 @@
             >
                 <h2 style="margin-bottom:12px">Giỏ hàng của bạn</h2>
 
-                {#if cartList.length === 0}
+                {#if cartItems.length === 0}
                     <p>Chưa có sản phẩm nào trong giỏ hàng.</p>
                 {:else}
                     <div
                         style="display:flex; flex-direction:column; gap:12px; max-height:340px; overflow-y:auto"
                     >
-                        {#each cartList as item}
+                        {#each cartItems as item}
                             <div
                                 style="display:flex; gap:12px; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px"
                             >
@@ -625,12 +602,19 @@
 
                                 <button
                                     class="btn-small-ghost"
-                                    on:click={() => deleteCart(item.id)}
+                                    on:click={() => deleteCart(item.id!)}
                                 >
                                     Remove
                                 </button>
                             </div>
                         {/each}
+                    </div>
+                    
+                    <div style="margin-top:16px; padding-top:12px; border-top:2px solid #e2e8f0">
+                        <div style="display:flex; justify-content:space-between; font-size:18px; font-weight:700">
+                            <span>Total:</span>
+                            <span>${cart.getTotalPrice().toFixed(2)}</span>
+                        </div>
                     </div>
                 {/if}
 
@@ -641,11 +625,11 @@
                         >Close</button
                     >
                     <button
-                        class={cartList.length === 0
+                        class={cartItems.length === 0
                             ? "btn-disabled"
                             : "btn-primary"}
                         on:click={() => goto("/checkout")}
-                        disabled={cartList.length === 0}
+                        disabled={cartItems.length === 0}
                     >
                         Checkout
                     </button>
@@ -655,14 +639,14 @@
     {/if}
 {:else if !isLoggedIn && showAddToCardListModal}
     <!-- Login Required Modal -->
-    <div class="modal-backdrop" on:click={closeAddToCartModal}>
+    <div class="modal-backdrop" on:click={closeCartList}>
         <div
             class="modal"
             on:click|stopPropagation
             style="padding:24px; text-align:center"
         >
             <h2>Please Login</h2>
-            <p>You need to log in to add items to your cart.</p>
+            <p>You need to log in to view your cart.</p>
             <div
                 style="margin-top:16px; display:flex; justify-content:center; gap:12px"
             >
@@ -778,6 +762,11 @@
             0 16px 30px rgba(15, 118, 110, 0.4);
     }
 
+    nav {
+        display: flex;
+        align-items: center;
+    }
+
     nav a {
         margin-right: 16px;
         color: #0f172a;
@@ -805,6 +794,20 @@
 
     nav a:hover::after {
         width: 100%;
+    }
+
+    .cart-badge {
+        position: absolute;
+        top: -6px;
+        right: -8px;
+        background: #ef4444;
+        color: white;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        min-width: 18px;
+        text-align: center;
     }
 
     .hero {
@@ -864,10 +867,16 @@
             border 160ms ease,
             background 160ms ease;
         border: 1px solid transparent;
+        cursor: pointer;
     }
 
     .card.anim-in {
         animation: fadeUp 380ms ease forwards;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(12, 20, 40, 0.12);
     }
 
     .card img {
@@ -875,6 +884,10 @@
         height: 160px;
         object-fit: cover;
         transition: transform 220ms ease;
+    }
+
+    .card:hover img {
+        transform: scale(1.05);
     }
 
     .card-body {
@@ -936,7 +949,7 @@
     }
 
     .top-list-scroll {
-        max-height: 240px; /* 5 items nhỏ + scroll */
+        max-height: 240px;
         overflow-y: auto;
         padding-right: 4px;
     }
@@ -1051,7 +1064,7 @@
         padding: 12px 16px;
         border-radius: 10px;
         border: none;
-        background: #94a3b8; /* gray-ish */
+        background: #94a3b8;
         color: #f1f5f9;
         cursor: not-allowed;
         filter: grayscale(20%);
@@ -1194,6 +1207,9 @@
         }
         .card img {
             height: 140px;
+        }
+        .controls {
+            flex-wrap: wrap;
         }
     }
 </style>

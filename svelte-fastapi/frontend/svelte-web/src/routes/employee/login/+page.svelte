@@ -43,7 +43,10 @@
             const data = await res.json().catch(() => ({}));
             message = data.message;
             localStorage.setItem("accessToken", data.access_token);
-            window.location.href = `/employee?role=${data?.role?.toLowerCase()}`;
+            if(data?.role === 'admin') window.location.href = `/employee?role=${data?.role?.toLowerCase()}`;
+            else {
+                window.location.href = '/employee-orders'
+            }
         } catch (err) {
             console.error(err);
             message = "Không thể kết nối tới server.";

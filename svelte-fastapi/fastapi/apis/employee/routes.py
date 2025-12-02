@@ -12,7 +12,7 @@ import logging
 from .schema import EmployeeSchema, SuccessMessageSchema, EmployeeInputSchema, SavingEmployeeUpdateSchema
 from sqlalchemy.orm import Session
 from database import SessionLocal
- 
+from sqlalchemy.orm import load_only
 router = APIRouter(tags=["Employees"])
 
 def get_db():
@@ -54,8 +54,14 @@ def search_employee(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid cursor: {str(e)}")
 
-    # --- Query employees ---
-    query = db.query(AccountBase)
+    query = db.query(AccountBase).options(
+    load_only(
+        AccountBase.id,
+        AccountBase.employee_name,
+        AccountBase.email,
+        AccountBase.role
+    )
+)
     if role:
         query = query.filter(AccountBase.role.contains(role))
     elif search_id:

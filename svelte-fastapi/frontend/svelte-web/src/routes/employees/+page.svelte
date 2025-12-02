@@ -167,6 +167,7 @@
   <div class={styles.tableSearch}>
     <div class={styles.tableSearchInput}>
       <TextField
+        name="id"
         title="ID"
         type="text"
         placeholder="Search ID"
@@ -176,6 +177,7 @@
     </div>
     <div class={styles.tableSearchInput}>
       <TextField
+        name="employee_name"
         title="Employee Name"
         type="text"
         placeholder="Search Employee Name"

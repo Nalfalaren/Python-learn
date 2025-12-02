@@ -24,6 +24,7 @@
 
     // Validate
     function validate() {
+        // @ts-ignore
         errors = { name: "", email: "", password: "", confirmPassword: "" };
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,6 +56,9 @@
     }
 
     // Submit
+    /**
+     * @param {{ preventDefault: () => void; }} e
+     */
     async function handleSubmit(e) {
         e.preventDefault();
         message = "";
@@ -93,6 +97,9 @@
         }
     }
 
+    /**
+     * @type {HTMLInputElement}
+     */
     let emailInput;
     onMount(() => emailInput?.focus());
 </script>

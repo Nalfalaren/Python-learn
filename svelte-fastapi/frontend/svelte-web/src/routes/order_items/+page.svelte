@@ -113,6 +113,7 @@
 
 <div class={styles.tableSearch}>
     <TextField
+        name="product_name"
         title="Product"
         placeholder="Search Product Name"
         value={searchProduct}
@@ -120,6 +121,7 @@
     />
 
     <TextField
+        name="order_id"
         title="Order ID"
         placeholder="Search Order ID"
         value={searchOrderId}

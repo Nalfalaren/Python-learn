@@ -12,6 +12,8 @@ from .schema import CustomerSignUpSchema
 from .models import CustomerBase
 from role import StatusCode
 from apis.login.schema import AccountSchema
+from sqlalchemy.orm import load_only
+
 router = APIRouter(tags=["Customers"])
 
 def get_db():
@@ -88,7 +90,12 @@ def get_customers(
     db: Session = Depends(get_db)
 ):
 
-    query = db.query(CustomerBase)
+    query = db.query(CustomerBase).options(load_only(
+        CustomerBase.id,
+        CustomerBase.customer_name,
+        CustomerBase.email,
+        CustomerBase.role
+    ))
 
     # Search Filters
     if search_id:
@@ -119,7 +126,15 @@ def get_customers(
 
 @router.get("/customers/{id}")
 def get_customer_detail(id: str, db: Session = Depends(get_db)):
-    customer = db.query(CustomerBase).filter(CustomerBase.id == id).first()
+    customer = db.query(CustomerBase).options(load_only(
+        CustomerBase.id,
+        CustomerBase.customer_name,
+        CustomerBase.phone,
+        CustomerBase.address,
+        CustomerBase.email,
+        CustomerBase.is_active,
+        CustomerBase.role
+    )).filter(CustomerBase.id == id).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return customer

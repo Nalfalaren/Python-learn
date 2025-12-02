@@ -6,7 +6,7 @@
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode";
-  import { authStore } from "../../lib/stores/AuthStore";
+  import { authStore } from "$lib/stores/AuthStore";
   interface Product {
     id: string;
     product_name: string;

@@ -5,7 +5,8 @@
   import styles from "$lib/styles/header/customers.module.css";
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
-  import { authStore } from "../../lib/stores/AuthStore";
+  import { authStore } from "$lib/stores/AuthStore";
+  
 
   interface Customer {
     id: string;

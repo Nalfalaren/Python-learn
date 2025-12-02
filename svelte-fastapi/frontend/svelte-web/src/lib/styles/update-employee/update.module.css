@@ -1,0 +1,135 @@
+/* Layout */
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  padding: 20px;
+}
+
+/* Card */
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+/* Header */
+h2 {
+  text-align: center;
+  color: #1d4ed8;
+  margin-bottom: 10px;
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 30px;
+}
+
+/* Form Group */
+.formGroup {
+  margin-bottom: 22px;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+/* Input Styling */
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  background-color: #f9fafb;
+  color: #1e293b;
+  transition: all 0.25s ease;
+  font-family: "Inter", sans-serif;
+}
+
+.input:hover {
+  border-color: #93c5fd;
+  background-color: #ffffff;
+}
+
+.input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  outline: none;
+  background-color: #ffffff;
+}
+
+/* Placeholder styling */
+.input::placeholder {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+/* Checkbox Group */
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: #2563eb;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Button */
+.button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.25s ease-in-out;
+}
+
+.button:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.25);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

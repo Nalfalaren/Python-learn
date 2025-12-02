@@ -4,7 +4,6 @@ venv/
 pyvenv.cfg
 env/
 .python/
-Lib/
 Scripts/
 Include/
 
@@ -36,7 +35,6 @@ venv/
 .venv/
 env/
 .python/
-Lib/
 Scripts/
 Include/
 

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sveltejs/adapter-node": "^5.4.0",
     "jwt-decode": "^4.0.0"
   }
 }

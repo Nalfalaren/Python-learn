@@ -2,7 +2,7 @@
     import { env } from "$env/dynamic/public";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import styles from "$lib/styles/header/Orders.module.css";
+    import styles from "$lib/styles/header/orders.module.css";
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
     import { authStore } from "$lib/stores/AuthStore";

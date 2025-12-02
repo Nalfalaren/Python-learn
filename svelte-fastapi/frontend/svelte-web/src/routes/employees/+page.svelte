@@ -2,7 +2,7 @@
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import styles from "$lib/styles/header/Employees.module.css";
+  import styles from "$lib/styles/header/employees.module.css";
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode"; /** Product type */

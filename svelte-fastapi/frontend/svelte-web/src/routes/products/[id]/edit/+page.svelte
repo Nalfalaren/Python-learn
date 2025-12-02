@@ -1,5 +1,5 @@
 <script lang="ts">
-  import styles from "$lib/styles/register/Register.module.css";
+  import styles from "$lib/styles/register/register.module.css";
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";

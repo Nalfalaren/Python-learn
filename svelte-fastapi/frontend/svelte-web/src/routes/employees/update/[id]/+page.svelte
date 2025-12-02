@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import styles from "$lib/styles/update-employee/Update.module.css";
+  import styles from "$lib/styles/update-employee/update.module.css";
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/AuthStore";

@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: your-app-name
+    name: svelte-kit
     env: static
-    buildCommand: npm run build
-    staticPublishPath: ./build  # SvelteKit default
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
     routes:
       - type: rewrite
         source: /*

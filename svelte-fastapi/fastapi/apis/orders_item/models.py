@@ -1,7 +1,7 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from database import Base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from apis.orders.models import OrderBase
 
 class OrderItem(Base):
@@ -12,4 +12,5 @@ class OrderItem(Base):
     product_name = Column(String)
     qty = Column(Integer)
     price = Column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     order = relationship(OrderBase, back_populates="items")

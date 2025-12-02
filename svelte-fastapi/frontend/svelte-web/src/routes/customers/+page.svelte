@@ -136,9 +136,6 @@
   });
 </script>
 
-<!-- ================================
-     UI
-================================ -->
 <div>
   <div class={styles.headerContainer}>
     <div class={styles.headerContent}>

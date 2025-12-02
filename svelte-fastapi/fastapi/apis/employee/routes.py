@@ -39,7 +39,6 @@ def search_employee(
     search_id: str | None = Query(None, description="Search by ID"),
     search_employee: str | None = Query(None, description="Search by Employee Name"),
     role: str | None = Query(None, description="Search by role"),
-    page: int = Query(1, ge=1, description="Page number (starts at 1)"),
     limit: int = Query(10, ge=1, le=100, description="Items per page"),
     next_cursor: str | None = Query(None, description="Pagination cursor"),
     db: Session = Depends(get_db),
@@ -59,7 +58,8 @@ def search_employee(
         AccountBase.id,
         AccountBase.employee_name,
         AccountBase.email,
-        AccountBase.role
+        AccountBase.role,
+        AccountBase.is_active
     )
 )
     if role:

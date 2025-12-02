@@ -4,7 +4,7 @@
     import styles from "./tab-navigation.module.css";
 
     export let is_admin: boolean = false;
-
+    
     let tabList = is_admin
         ? ["Employees", "Customers", "Products", "Orders", "Order Items"]
         : ["Employees", "Employee Orders"];

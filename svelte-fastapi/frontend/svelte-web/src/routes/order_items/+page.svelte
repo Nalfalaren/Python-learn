@@ -62,18 +62,6 @@
         }
     }
 
-    async function handleDelete(id: string) {
-        const token = localStorage.getItem("accessToken");
-
-        const res = await fetch(`${env.PUBLIC_API_URL}/order-items/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) message = "Item deleted";
-        else message = "Failed to delete";
-    }
-
     function handleLogout() {
         localStorage.removeItem("accessToken");
         goto("/employees/login");
@@ -150,30 +138,24 @@
                     <th>Product</th>
                     <th>Qty</th>
                     <th>Price</th>
+                    <th>Created At</th>
                 </tr>
             </thead>
             <tbody>
                 {#each items as item}
-                    <tr onclick={() => goto(`/order-items/${item.id}`)}>
+                    <tr onclick={() => goto(`/order_items/${item.id}`)}>
                         <td>{item.id}</td>
                         <td>{item.order_id}</td>
                         <td>{item.product_name}</td>
                         <td>{item.qty}</td>
-                        <td>{item.price}đ</td>
+                        <td>{item.price}$</td>
                         <td>
-                            <button
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    goto(`/order-items/${item.id}/edit`);
-                                }}>Edit</button
-                            >
-
-                            <button
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(item.id);
-                                }}>Delete</button
-                            >
+                            {new Date(item?.created_at).toLocaleString(
+                                "vi-VN",
+                                {
+                                    timeZone: "Asia/Ho_Chi_Minh",
+                                },
+                            )}
                         </td>
                     </tr>
                 {/each}

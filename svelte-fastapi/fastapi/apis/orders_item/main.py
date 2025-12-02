@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title='Demo products', version='1.0')
 app.include_router(order_items_router)
-origins = ['http://localhost:5173']
+origins = ['http://localhost:5173', 'https://python-learn-d3pj.vercel.app']
 
 app.add_middleware(AuthMiddleware)
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*'])

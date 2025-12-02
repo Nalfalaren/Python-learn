@@ -3,6 +3,7 @@
   import styles from "$lib/styles/detail/employee-detail.module.css";
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
+  import { authStore } from "$lib/stores/AuthStore";
 
   let employeeId: string;
   export let params;
@@ -19,6 +20,7 @@
   employeeId = params.id;
 
   onMount(async () => {
+    if(!authStore.isAuthenticated) goto("/employees/login")
     const token = localStorage.getItem("accessToken");
     const res = await fetch(`${env.PUBLIC_API_URL}/employee/${employeeId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -28,12 +30,12 @@
       employee = await res.json();
     } else {
       alert("❌ Failed to load employee details");
-      goto("/employee");
+      goto("/employees");
     }
   });
 
   function goBack() {
-    goto("/employee");
+    goto("/employees");
   }
 </script>
 

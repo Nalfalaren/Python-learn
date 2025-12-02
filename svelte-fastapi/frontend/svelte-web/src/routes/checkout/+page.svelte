@@ -68,14 +68,14 @@
                 <span class="qty">x{item.quantity}</span>
               </div>
 
-              <strong class="price">{item.price * item.quantity}₫</strong>
+              <strong class="price">{(item.price * item.quantity).toFixed(2)}$</strong>
             </li>
           {/each}
         </ul>
 
         <div class="total-box">
           <span>Tổng tiền</span>
-          <strong class="total">{total}₫</strong>
+          <strong class="total">{total.toFixed(2)}$</strong>
         </div>
       {/if}
     </section>

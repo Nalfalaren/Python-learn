@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class OrderStatusEnum(str, enum.Enum):
     pending = "PENDING"
+    assigned = 'ASSIGNED'
     processing = "PROCESSING"
     shipped = "SHIPPED"
     completed = "COMPLETED"
@@ -28,3 +29,7 @@ class OrderUpdateSchema(BaseModel):
     status: OrderStatusEnum
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+class AssignOrderRequest(BaseModel):
+    employee_id: str
+    order_id: str

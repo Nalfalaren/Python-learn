@@ -6,7 +6,7 @@
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
     import { authStore } from "../../lib/stores/AuthStore";
-    
+
     interface Order {
         id: string;
         customer_name: string;
@@ -33,21 +33,22 @@
     let searchId = $state("");
     let searchName = $state("");
 
+    let showAssignModal = $state(false);
+    let selectedOrder: Order | null = null;
+    let employees = $state([]);
+    let selectedEmployee: string | null = null;
+
     // === Helper: Build URL ===
     function buildUrl() {
         const url = new URL(`${env.PUBLIC_API_URL}/orders`);
         url.searchParams.set("limit", String(pageSize));
         if (searchId) url.searchParams.set("search_id", searchId);
-        if (searchName) url.searchParams.set("order_name", searchName);
+        if (searchName) url.searchParams.set("customer_name", searchName);
 
         return url;
     }
 
-    console.log("A: component loaded");
-
     onMount(() => {
-        console.log("B: onMount triggered");
-        console.log("C: API URL = ", `${env.PUBLIC_API_URL}/orders`);
         fetchOrders();
     });
 
@@ -77,6 +78,71 @@
         }
     }
 
+    function openAssignModal(order: Order) {
+        selectedOrder = order;
+        showAssignModal = true;
+        fetchEmployees();
+    }
+
+    async function fetchEmployees() {
+        const token = localStorage.getItem("accessToken");
+
+        const res = await fetch(
+            `${env.PUBLIC_API_URL}/employees?role=EMPLOYEE`,
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            },
+        );
+
+        const data = await res.json();
+        employees = data?.search_result || [];
+    }
+
+    async function handleAssignOrder() {
+        if (!selectedEmployee || !selectedOrder) {
+            message = "Vui lòng chọn nhân viên!";
+            return;
+        }
+
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+            message = "Bạn chưa đăng nhập!";
+            return;
+        }
+
+        try {
+            const res = await fetch(
+                `${env.PUBLIC_API_URL}/orders/${selectedOrder.id}/assign`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        order_id: selectedOrder?.id,
+                        employee_id: selectedEmployee,
+                    }),
+                },
+            );
+
+            if (!res.ok) throw new Error("Assign failed");
+
+            message = "Assigned successfully!";
+
+            orders = orders.map((o) =>
+                o.id === selectedOrder?.id
+                    ? { ...o, assigned_employee_id: selectedEmployee }
+                    : o,
+            );
+            fetchOrders();
+            showAssignModal = false;
+        } catch (err) {
+            console.error(err);
+            message = "Có lỗi xảy ra khi gán nhân viên";
+        }
+    }
+
     // === Delete ===
     async function handleDelete(id: string) {
         const token = localStorage.getItem("accessToken");
@@ -88,6 +154,7 @@
 
         if (res.ok) {
             message = "Order deleted";
+            fetchOrders()
         } else {
             message = "Delete failed";
         }
@@ -95,7 +162,7 @@
 
     function handleLogout() {
         localStorage.removeItem("accessToken");
-        goto("/login");
+        goto("/employees/login");
     }
 
     function handleSearch() {
@@ -129,7 +196,7 @@
             <button onclick={handleLogout}>Logout</button>
         </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "admin"} />
+    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
 </div>
 
 <!-- SEARCH -->
@@ -157,7 +224,7 @@
 <div class={styles.tableContainer}>
     {#if loading}
         <p>Loading...</p>
-    {:else if $authStore.role !== "admin"}
+    {:else if $authStore.role !== "ADMIN"}
         <div class={styles.forbiddenBox}>
             <h2>403 – Forbidden</h2>
             <p>You do not have permission to access this page.</p>
@@ -189,6 +256,9 @@
                                     e.stopPropagation();
                                     goto(`/orders/${order.id}/edit`);
                                 }}
+                                disabled={order.status === "COMPLETED" ||
+                                    order.status === "CANCELLED"}
+                                class={styles.disabledButton}
                             >
                                 Edit
                             </button>
@@ -196,16 +266,62 @@
                             <button
                                 onclick={(e) => {
                                     e.stopPropagation();
-                                    handleDelete(order.id);
+                                    openAssignModal(order);
                                 }}
+                                disabled={order.status !== "PENDING"}
+                                class={order.status !== "PENDING"
+                                    ? styles.disabledButton
+                                    : ""}
                             >
-                                Delete
+                                {order.status !== "PENDING"
+                                    ? "Assigned"
+                                    : "Assign"}
                             </button>
+                                <button
+                                    onclick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(order.id);
+                                    }}
+                                    disabled={order.status !== "COMPLETED" &&
+                                        order.status !== "CANCELLED"}
+                                    class={styles.disabledButton}
+                                >
+                                    Delete
+                                </button>
                         </td>
                     </tr>
                 {/each}
             </tbody>
         </table>
+
+        {#if showAssignModal && selectedOrder}
+            <!-- Modal Backdrop -->
+            <div class={styles.modalBackdrop}></div>
+
+            <!-- Modal -->
+            <div class={styles.modal}>
+                <h2>Assign Order: {selectedOrder.id}</h2>
+                <p>Customer: {selectedOrder.customer_name}</p>
+
+                <label>Chọn nhân viên:</label>
+                <select bind:value={selectedEmployee}>
+                    <option value="" disabled selected>Chọn nhân viên</option>
+                    {#each employees as emp}
+                        <option value={emp.id}>{emp.employee_name}</option>
+                    {/each}
+                </select>
+
+                <div class={styles.modalButtons}>
+                    <button onclick={handleAssignOrder}> Assign </button>
+
+                    <button
+                        onclick={() => {
+                            showAssignModal = false;
+                        }}>Cancel</button
+                    >
+                </div>
+            </div>
+        {/if}
 
         <div class={styles.paginationControls}>
             <button disabled={page === 1} onclick={handlePrevPage}

@@ -133,11 +133,15 @@
     } finally {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      goto("/employee/login");
+      goto("/employees/login");
     }
   }
 
   onMount(() => {
+    if(!authStore.isAuthenticated) {
+      goto("/employees/login")
+    } 
+    console.log(authStore.isAuthenticated);
     fetchEmployees(null);
   });
 </script>
@@ -148,15 +152,15 @@
     <div class={styles.headerContent}>
       <div><h1 style="font-family: system-ui, sans-serif;">Employees</h1></div>
       <div>
-        {#if $authStore.role === "admin"}
-          <button onclick={() => goto("/employee/sign-up")}
+        {#if $authStore.role === "ADMIN"}
+          <button onclick={() => goto("/employees/signup")}
             >+ Add Employee</button
           >
         {/if}
         <button onclick={handleLogout}>Logout</button>
       </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "admin"} />
+    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
   </div>
 
   <!-- Search -->
@@ -186,7 +190,7 @@
   <div class={styles.tableContainer}>
     {#if loading}
       <p>Loading...</p>
-    {:else if $authStore.role !== "admin"}
+    {:else if $authStore.role !== "ADMIN" && $authStore.role !== "EMPLOYEE" }
       <div class={styles.forbiddenBox}>
         <h2>403 – Forbidden</h2>
         <p>You do not have permission to access this page.</p>
@@ -202,22 +206,23 @@
             <th>Role</th>
             <th>Email</th>
             <th>Status</th>
-            <th>Action</th>
+            {#if $authStore.role === "ADMIN"}<th>Action</th>{/if}
           </tr>
         </thead>
         <tbody>
           {#each employees as emp}
-            <tr onclick={() => goto(`/employee/${emp.id}`)}>
+            <tr onclick={() => goto(`/employees/${emp.id}`)}>
               <td>{emp.id}</td>
               <td>{emp.employee_name}</td>
               <td>{emp.role}</td>
               <td>{emp.email}</td>
               <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
+              {#if $authStore.role === "ADMIN"}
               <td>
                 <button
                   onclick={(e) => {
                     e.stopPropagation();
-                    goto(`/employee/update/${emp.id}`);
+                    goto(`/employees/update/${emp.id}`);
                   }}>Edit</button
                 >
                 <button
@@ -227,6 +232,7 @@
                   }}>Delete</button
                 >
               </td>
+              {/if}
             </tr>
           {/each}
         </tbody>

@@ -4,6 +4,7 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
+  import { authStore } from "$lib/stores/AuthStore";
 
   // --- Reactive states ---
   let order_id = "";
@@ -71,7 +72,11 @@
       if (!res.ok) throw new Error("Failed to update order");
 
       message = "✅ Order updated successfully!";
-      goto("/orders"); // navigate back to order list
+      if ($authStore.role === "ADMIN") {
+        goto("/orders");
+      } else if ($authStore.role === "EMPLOYEE") {
+        goto("/employee_orders");
+      }
     } catch (err) {
       console.error("Order update failed:", err);
       message = "❌ Failed to update order — check backend logs.";
@@ -85,17 +90,35 @@
   <form class={styles.form} on:submit|preventDefault={handleSubmit}>
     <label class={styles.field}>
       <span class={styles.label}>Customer Name</span>
-      <input class={styles.input} disabled type="text" bind:value={customer_name} required />
+      <input
+        class={styles.input}
+        disabled
+        type="text"
+        bind:value={customer_name}
+        required
+      />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Email</span>
-      <input class={styles.input} disabled type="email" bind:value={email} required />
+      <input
+        class={styles.input}
+        disabled
+        type="email"
+        bind:value={email}
+        required
+      />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Phone</span>
-      <input class={styles.input} disabled type="text" bind:value={phone} required />
+      <input
+        class={styles.input}
+        disabled
+        type="text"
+        bind:value={phone}
+        required
+      />
     </label>
 
     <label class={styles.field}>
@@ -106,7 +129,8 @@
     <label class={styles.field}>
       <span class={styles.label}>Status</span>
       <select bind:value={status} class={styles.input}>
-        <option value="PENDING">Pending</option>
+        <option value="PENDING" disabled>Pending</option>
+        <option value="ASSIGNED" disabled>Assigned</option>
         <option value="PROCESSING">Processing</option>
         <option value="COMPLETED">Completed</option>
         <option value="CANCELLED">Cancelled</option>
@@ -115,7 +139,17 @@
 
     <div class={styles.actions}>
       <button type="submit" class={styles.button}>Update</button>
-      <button type="button" class={styles.secondary} on:click={() => goto("/orders")}>
+      <button
+        type="button"
+        class={styles.secondary}
+        on:click={() => {
+          if ($authStore.role === "ADMIN") {
+            goto("/orders");
+          } else if ($authStore.role === "EMPLOYEE") {
+            goto("/employee_orders");
+          }
+        }}
+      >
         Cancel
       </button>
     </div>

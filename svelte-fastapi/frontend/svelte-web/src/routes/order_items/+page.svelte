@@ -76,7 +76,7 @@
 
     function handleLogout() {
         localStorage.removeItem("accessToken");
-        goto("/login");
+        goto("/employees/login");
     }
 
     function handleSearch() {
@@ -108,7 +108,7 @@
             <button onclick={handleLogout}>Logout</button>
         </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "admin"} />
+    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
 </div>
 
 <div class={styles.tableSearch}>
@@ -132,7 +132,7 @@
 <div class={styles.tableContainer}>
     {#if loading}
         <p>Loading...</p>
-    {:else if $authStore.role !== "admin"}
+    {:else if $authStore.role !== "ADMIN"}
         <div class={styles.forbiddenBox}>
             <h2>403 – Forbidden</h2>
             <p>You do not have permission to access this page.</p>

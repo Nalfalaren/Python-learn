@@ -1,12 +1,14 @@
 from datetime import datetime
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from database import SessionLocal
+from apis.login.models import AccountBase
 from .models import OrderBase
 from role import StatusCode
-from auth import get_current_user, require_admin
+from auth import get_current_user, require_admin, require_employee
 from sqlalchemy.orm import Session
-from .schema import OrderUpdateSchema
+from .schema import AssignOrderRequest, OrderUpdateSchema
 order_router = APIRouter(tags=["Order Route"])
 # Cấu hình logger
 logging.basicConfig(level=logging.INFO)
@@ -25,18 +27,24 @@ def get_account(current_user: dict = Depends(get_current_user)):
 
 @order_router.get('/orders')
 def get_list_orders(
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_employee),
     db: Session = Depends(get_db),
     search_id: str = '',
-    order_name: str = '',
+    customer_name: str = '',
+    employee_id: str = '',
     page: int = 1,
     limit: int = 10,
 ):
     order_list = db.query(OrderBase).order_by(OrderBase.created_at.desc())
-    if search_id:
+    
+    # SỬA LẠI - PHẢI GÁN LẠI KẾT QUẢ
+    if employee_id: 
+        order_list = order_list.filter(OrderBase.employee_id == employee_id)
+    elif search_id:
         order_list = order_list.filter(OrderBase.id == search_id)
-    elif order_name:
-        order_list = order_list.filter(OrderBase.customer_name == order_name)
+    elif customer_name:
+        order_list = order_list.filter(func.lower(OrderBase.customer_name).like(f"%{customer_name.lower()}%"))
+    
     total_orders = order_list.count() 
     offset = (page - 1) * limit
     paginated_orders = order_list.offset(offset).limit(limit).all()
@@ -51,18 +59,20 @@ def get_list_orders(
             "address": order.address,
             "status": order.status,
             "created_at": order.created_at,
+            "assign_to": order.assigned_to,
             "total": sum(i.qty * i.price for i in order.items)
         })
+    
     return {
         "search_result": result,
         "orders_count": total_orders,
         "page": page,
         "limit": limit,
-        "total_pages": (total_orders + limit - 1)
-    } 
+        "total_pages": (total_orders + limit - 1) // limit
+    }
 
 @order_router.get('/orders/{order_id}')
-def get_order_detail(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
+def get_order_detail(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_employee)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order_info:
         return HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail="Order not found")
@@ -73,7 +83,7 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db), _: dict = Dep
     return {"order": order_info, "items": items}
 
 @order_router.put("/orders/{order_id}")
-def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
+def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Depends(get_db), _: dict = Depends(require_employee)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -87,7 +97,7 @@ def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Dep
     }
 
 @order_router.delete("/orders/{order_id}")
-def delete_product(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
+def delete_product(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_employee)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order_info:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -95,12 +105,26 @@ def delete_product(order_id: str, db: Session = Depends(get_db), _: dict = Depen
     db.commit()
     return {"message": "Delete order successfully"}
 
-
-@order_router.patch("/orders/{order_id}/status")
-def update_order_status(order_id: int, status: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
+@order_router.post("/orders/{order_id}/assign")
+def assign_order(request: AssignOrderRequest, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
+    order_id = request.order_id
+    employee_id = request.employee_id
     order = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    order.status = status
+        raise HTTPException(404, "Order not found")
+
+    employee = db.query(AccountBase).filter(AccountBase.id == employee_id).first()
+    employee_name = db.query(AccountBase).with_entities(AccountBase.employee_name).filter(AccountBase.id == employee_id).scalar()   
+
+    if not employee:
+        raise HTTPException(404, "Employee not found")
+
+    if employee.role != "EMPLOYEE":
+        raise HTTPException(400, "Only employees can be assigned orders")
+
+    order.employee_id = employee_id
+    order.status = 'ASSIGNED'
+    order.assigned_to = employee_name
     db.commit()
-    return {"message": f"Order status updated to {status}"}
+    db.refresh(order)
+    return order

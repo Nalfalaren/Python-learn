@@ -18,13 +18,12 @@
 
     // cursor-based pagination
     let nextCursor: string | null = null;
+    let prevCursor: string | null = null;
     let currentCursor: string | null = null;
-    let cursorStack: (string | null)[] = [];
-    let totalRecords = 0;
-
-    // local pagination
+    let cursorHistory: (string | null)[] = []; // Stack to track cursor history
     let currentPage = 1;
-    const pageSize = 5;
+    let totalRecords = 0;
+    let limit = 5
 
     /** Add to cart modal */
     let addToCartProduct: Product | null = null;
@@ -32,7 +31,7 @@
     let showAddToCardListModal = false;
     let addToCartQuantity = 1;
     let isLoggedIn = false;
-
+    
     // Subscribe to cart store
     let cartItems: CartItem[] = [];
     cart.subscribe(value => {
@@ -42,6 +41,7 @@
     /** Fetch products from API */
     const fetchProducts = async (
         cursor: string | null = null,
+        direction: 'next' | 'prev' | 'initial' = 'initial'
     ): Promise<void> => {
         isLoading = true;
         error = "";
@@ -54,7 +54,8 @@
             if (category && category !== "All")
                 params.append("category", category);
             if (sortBy) params.append("sort", sortBy);
-            if (cursor) params.append("cursor", cursor);
+            if (limit) params.append("limit", String(limit));
+            if (cursor) params.append("next_cursor", cursor);
 
             const url = `${env.PUBLIC_API_URL}/products?${params.toString()}`;
 
@@ -78,9 +79,18 @@
                 }),
             );
 
-            totalRecords = data.total_records || products.length;
+            totalRecords = data.total_product || products.length;
             nextCursor = data.next_cursor || null;
             currentCursor = cursor;
+
+            // Update page number based on direction
+            if (direction === 'next') {
+                currentPage++;
+            } else if (direction === 'prev') {
+                currentPage--;
+            } else {
+                currentPage = 1;
+            }
 
             mounted = true;
         } catch (e) {
@@ -106,40 +116,18 @@
         fetchProducts();
     });
 
-    // Derived: filtered products
-    $: filtered = products
-        .filter((p) => (category === "All" ? true : p.category === category))
-        .filter((p) =>
-            p.product_name.toLowerCase().includes(query.toLowerCase()),
-        );
-
-    // Derived: sorted
-    $: sorted = [...filtered].sort((a, b) => {
-        if (sortBy === "price-asc") return a.price - b.price;
-        if (sortBy === "price-desc") return b.price - a.price;
-        if (sortBy === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
-        if (a.id && b.id) return a.id.localeCompare(b.id);
-        return 0;
-    });
-
-    // reset page when filters/search/sort changes
-    $: currentPage = 1;
-
-    // local pagination
-    $: totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-    $: paginated = sorted.slice(
-        (currentPage - 1) * pageSize,
-        currentPage * pageSize,
-    );
-
     // top 5 section
-    $: topFive = sorted.slice(0, 5);
+    $: topFive = products.slice(0, 5);
 
     // categories
     $: categories = ["All", ...new Set(products.map((p) => p.category))];
 
     // Cart total count
     $: cartCount = cart.getTotalCount();
+
+    // Has more pages
+    $: hasPrevPage = currentPage > 1;
+    $: hasNextPage = nextCursor !== null;
 
     // actions
     function openQuickView(product: Product) {
@@ -188,32 +176,45 @@
         );
     }
 
-    function goToPage(page: number) {
-        if (page < 1 || page > totalPages) return;
-        currentPage = page;
-
-        const listEl = document.getElementById("product-list");
-        if (listEl)
-            listEl.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
     function handleNext() {
-        if (!nextCursor) return;
-        cursorStack.push(currentCursor);
-        fetchProducts(nextCursor);
+        if (!hasNextPage) return;
+        
+        // Save current cursor to history before moving forward
+        cursorHistory.push(currentCursor);
+        
+        // Fetch next page
+        fetchProducts(nextCursor, 'next');
+
+        // Scroll to product list
+        const listEl = document.getElementById("product-list");
+        if (listEl) {
+            listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
     }
 
     function handlePrev() {
-        if (cursorStack.length === 0) return;
-        const prevCursor = cursorStack.pop() ?? null;
-        fetchProducts(prevCursor);
+        if (!hasPrevPage) return;
+        
+        // Get previous cursor from history
+        const previousCursor = cursorHistory.pop() ?? null;
+        
+        // Fetch previous page
+        fetchProducts(previousCursor, 'prev');
+
+        // Scroll to product list
+        const listEl = document.getElementById("product-list");
+        if (listEl) {
+            listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
     }
 
     const debouncedFetch = debounce(() => {
-        cursorStack = [];
+        // Reset pagination state when filters change
+        cursorHistory = [];
         currentCursor = null;
         nextCursor = null;
-        fetchProducts(null);
+        currentPage = 1;
+        fetchProducts(null, 'initial');
     }, 400);
 
     async function logout() {
@@ -306,6 +307,7 @@
 
             <select
                 bind:value={category}
+                on:change={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
                 {#each categories as c}
@@ -315,6 +317,7 @@
 
             <select
                 bind:value={sortBy}
+                on:change={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
                 <option value="featured">Featured</option>
@@ -325,7 +328,7 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-top:6px">
-            <button class="btn-primary">Mua ngay</button>
+            <button class="btn-primary" on:click={() => goto("/products/list")}>Mua ngay</button>
             <button class="btn-ghost">Bán drone</button>
         </div>
     </div>
@@ -346,7 +349,7 @@
             <div class="top-list-header">
                 <span class="top-list-title">Top 5 Drone nổi bật</span>
                 <span class="top-list-sub">
-                    Dựa trên kết quả hiện tại (filter, search, sort)
+                    Dựa trên kết quả trang hiện tại
                 </span>
             </div>
             <div class="top-list-scroll">
@@ -382,13 +385,13 @@
         {:else if error}
             {error}
         {:else}
-            {sorted.length} products found • Page {currentPage} / {totalPages}
+            {products.length} sản phẩm trên trang này • Trang {currentPage} • Tổng: {totalRecords} sản phẩm
         {/if}
     </div>
 
     <div class="grid">
         {#if !isLoading && !error}
-            {#each paginated as p, i}
+            {#each products as p, i}
                 <article
                     class="card anim-in"
                     style={`animation-delay: ${80 + i * 40}ms`}
@@ -438,32 +441,29 @@
         {/if}
     </div>
 
-    {#if !isLoading && !error && totalPages > 1}
+    {#if !isLoading && !error && (hasPrevPage || hasNextPage)}
         <div class="pagination">
             <button
                 class="pagination-btn"
                 on:click={handlePrev}
-                disabled={currentPage === 1}>‹ Prev</button
+                disabled={!hasPrevPage || isLoading}
             >
+                ‹ Prev
+            </button>
+            
             <div class="pagination-pages">
-                {#each Array(totalPages) as _, i}
-                    {#if i + 1 === currentPage}
-                        <button class="page-dot active">{i + 1}</button>
-                    {:else if i + 1 === 1 || i + 1 === totalPages || Math.abs(i + 1 - currentPage) <= 1}
-                        <button
-                            class="page-dot"
-                            on:click={() => goToPage(i + 1)}>{i + 1}</button
-                        >
-                    {:else if i + 1 === currentPage - 2 || i + 1 === currentPage + 2}
-                        <span class="page-ellipsis">…</span>
-                    {/if}
-                {/each}
+                <span style="color:#64748b; font-size:14px">
+                    Trang {currentPage}
+                </span>
             </div>
+            
             <button
                 class="pagination-btn"
                 on:click={handleNext}
-                disabled={currentPage === totalPages}>Next ›</button
+                disabled={!hasNextPage || isLoading}
             >
+                Next ›
+            </button>
         </div>
     {/if}
 </section>
@@ -660,11 +660,6 @@
         </div>
     </div>
 {/if}
-
-<!-- FOOTER -->
-<footer class="footer">
-    © {new Date().getFullYear()} DroneRack — Built with ❤️ for drone enthusiasts
-</footer>
 
 <style>
     /* Basic responsive layout, modern clean look */

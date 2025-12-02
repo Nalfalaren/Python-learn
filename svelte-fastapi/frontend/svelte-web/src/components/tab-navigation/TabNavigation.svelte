@@ -6,8 +6,8 @@
     export let is_admin: boolean = false;
 
     let tabList = is_admin
-        ? ["Employee", "Products", "Orders", "Order Items"]
-        : ["Employee Orders"];
+        ? ["Employees", "Customers", "Products", "Orders", "Order Items"]
+        : ["Employees", "Employee Orders"];
 
     $: currentPath = $page.url.pathname;
     

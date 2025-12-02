@@ -8,6 +8,7 @@ class AccountSchema(BaseModel):
 
 class EmployeeSignUpSchema(BaseModel):
     id: Optional[str] = None
+    employee_name: str
     email: str
     password: str
     confirmPassword: str

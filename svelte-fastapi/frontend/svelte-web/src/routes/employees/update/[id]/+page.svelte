@@ -3,7 +3,7 @@
   import styles from "$lib/styles/update-employee/Update.module.css";
   import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
-
+  import { authStore } from "$lib/stores/AuthStore";
   let employeeId: string;
   let employee = {
     employee_name: "",
@@ -14,7 +14,7 @@
 
   export let params;
   employeeId = params.id;
-  let active_status = false
+  let active_status = false;
   // Fetch employee
   onMount(async () => {
     const token = localStorage.getItem("accessToken");
@@ -24,7 +24,7 @@
 
     if (res.ok) {
       employee = await res.json();
-      active_status = employee.is_active === 'Active'
+      active_status = employee.is_active === "Active";
     } else {
       alert("❌ Failed to load employee data");
     }
@@ -44,12 +44,16 @@
 
     if (res.ok) {
       alert("✅ Employee updated successfully!");
-      goto("/employee");
+      goto("/employees");
     } else {
       const err = await res.json().catch(() => ({}));
       alert(`❌ Error: ${err.detail || "Update failed"}`);
     }
   }
+
+  onMount(() => {
+    if (!authStore.isAuthenticated) goto("/employees/login");
+  });
 </script>
 
 <div class={styles.wrapper}>
@@ -69,7 +73,7 @@
 
     <div class={styles.formGroup}>
       <label class={styles.label}>Role</label>
-       <select bind:value={employee.role} class={styles.input}>
+      <select bind:value={employee.role} class={styles.input}>
         <option value="admin">Admin</option>
         <option value="leader">Leader</option>
         <option value="EMPLOYEE">Employee</option>

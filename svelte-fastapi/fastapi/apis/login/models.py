@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, DateTime, String, Enum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
 class AccountBase(Base):
@@ -12,6 +12,7 @@ class AccountBase(Base):
     password = Column(String, index=True, nullable=False)
     role = Column(String, index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    orders = relationship("OrderBase", back_populates="employee")
     is_active = Column(
         Enum("Active", "Inactive", name="product_status"),
         default="Active",

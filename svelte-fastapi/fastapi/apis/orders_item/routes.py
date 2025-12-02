@@ -1,12 +1,12 @@
+import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from .models import OrderItem
 from apis.orders.models import OrderBase
 from .schema import CheckoutPayload
-from .repository import get_order_items_query, get_account_role
+from .repository import get_order_items_query
 from auth import get_current_user, require_admin
-from role import StatusCode
 order_items_router = APIRouter(tags=['Order Item'])
 
 def get_db():
@@ -21,18 +21,17 @@ def get_account(current_user: dict = Depends(get_current_user)):
     return current_user
 
 @order_items_router.post("/checkout")
-def checkout(
-    payload: CheckoutPayload, 
-    db: Session = Depends(get_db)
-):
+def checkout(payload: CheckoutPayload, db: Session = Depends(get_db)):
     customer_info = payload.customer
     cart_info = payload.cart
-    # Lưu order
+
     order = OrderBase(
+        id=str(uuid.uuid4()), 
         customer_name=customer_info["name"],
         email=customer_info["email"],
         phone=customer_info["phone"],
         address=customer_info["address"],
+        employee_id=None, 
         status="PENDING"
     )
     db.add(order)
@@ -42,15 +41,17 @@ def checkout(
     # Lưu chi tiết sản phẩm
     for item in cart_info:
         order_item = OrderItem(
-            order_id=order.id,
+            id=str(uuid.uuid4()),
+            order_id=order.id, 
             product_id=item["product_id"],
             product_name=item["product_name"],
             qty=item["qty"],
             price=item["price"]
         )
         db.add(order_item)
+
     db.commit()
-    return {"message": "Order placed successfully", "order_id": order.id}
+    return {"message": "Order placed successfully", "order_id": str(order.id)}
 
 @order_items_router.get("/order_items")
 def get_order_items(page: int = 1, limit: int = 10, order_id: str = "", id: str = "", db: Session = Depends(get_db), _: dict = Depends(require_admin)):

@@ -13,9 +13,10 @@ from dotenv import load_dotenv
 
 from role import StatusCode
 from .models import AccountBase
+from apis.customer.models import CustomerBase
 from .schema import EmployeeSignUpSchema, AccountSchema
 from database import SessionLocal
-from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_token, handle_login_role
+from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_token, get_current_user, handle_login_role
 
 router = APIRouter(prefix='/auth', tags=["Authentication"])
 load_dotenv()
@@ -46,6 +47,7 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
     account = AccountBase(
         id=str(uuid.uuid4()),
         email=account_info.email,
+        employee_name=account_info.employee_name,
         password=argon2.hash(account_info.password),  # ✅ use passlib
         role=account_info.role,
         created_at=datetime.utcnow(),
@@ -117,15 +119,20 @@ class LogoutRequest(BaseModel):
 @router.post("/logout")
 def inactive_user_login(
     request: LogoutRequest, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    account_info = Depends(get_current_user)
 ):
-    employee = db.query(AccountBase).filter(AccountBase.id == request.id).first()
-    if not employee:
-        raise HTTPException(status_code=404, detail="Employee not existed!")
+    account = None
+    if account_info['role'] == 'ADMIN' or account_info['role'] == 'EMPLOYEE':
+        account = db.query(AccountBase).filter(AccountBase.id == request.id).first()
+    elif account_info['role'] == 'CUSTOMER':
+        account = db.query(CustomerBase).filter(CustomerBase.id == request.id).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not existed!")
     
-    employee.is_active = 'Inactive'
+    account.is_active = 'Inactive'
     db.commit() 
-    db.refresh(employee)
+    db.refresh(account)
     
     return {"message": "Log out successfully", "user_id": request.id}
         

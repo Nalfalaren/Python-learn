@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Header, Query, Depends
 from sqlalchemy.orm import Session
 import uuid
-from auth import get_current_user, require_admin
+from auth import get_current_user, require_admin, require_employee
 from role import StatusCode
 from datetime import datetime
 from apis.login.models import AccountBase
@@ -38,11 +38,12 @@ def get_account(current_user: dict = Depends(get_current_user)):
 def search_employee(
     search_id: str | None = Query(None, description="Search by ID"),
     search_employee: str | None = Query(None, description="Search by Employee Name"),
+    role: str | None = Query(None, description="Search by role"),
     page: int = Query(1, ge=1, description="Page number (starts at 1)"),
     limit: int = Query(10, ge=1, le=100, description="Items per page"),
     next_cursor: str | None = Query(None, description="Pagination cursor"),
     db: Session = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: dict = Depends(require_employee),
 ):
     # --- Decode next_cursor if provided ---
     decoded_cursor = None
@@ -55,12 +56,14 @@ def search_employee(
 
     # --- Query employees ---
     query = db.query(AccountBase)
-
-    if search_id:
+    if role:
+        query = query.filter(AccountBase.role.contains(role))
+    elif search_id:
         query = query.filter(AccountBase.id.contains(search_id))
-    if search_employee:
+    elif search_employee:
         query = query.filter(AccountBase.employee_name.contains(search_employee))
 
+    
     # Cursor-based pagination logic
     if decoded_cursor:
         last_date = decoded_cursor.get("date")

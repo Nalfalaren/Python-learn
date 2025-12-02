@@ -15,6 +15,7 @@
             address: string;
             status: string;
             created_at: string;
+            assigned_to: string | null
             total: number;
         };
         items: {
@@ -33,6 +34,7 @@
             address: "",
             status: "",
             created_at: "",
+            assigned_to: "",
             total: 0,
         },
         items: [],
@@ -105,9 +107,22 @@
                     </span>
                 </div>
             {/if}
+
+            <div class={styles.row}>
+                <span class={styles.label}>Assigned To:</span>
+                <span class={styles.value}>
+                    {#if orderInformation?.order.assigned_to}
+                        {orderInformation?.order.assigned_to}
+                    {:else}
+                        <p>N/A</p>
+                    {/if}
+                </span>
+            </div>
         </div>
         <h2>Order Items</h2>
-        <p class={styles.subtitle}>View full information about customer order items.</p>
+        <p class={styles.subtitle}>
+            View full information about customer order items.
+        </p>
         <div class={styles.orderItemsContainer}>
             {#if orderInformation?.items?.length > 0}
                 <table class={styles.itemsTable}>
@@ -124,8 +139,8 @@
                             <tr>
                                 <td>{item.product_name}</td>
                                 <td>{item.qty}</td>
-                                <td>{item.price}đ</td>
-                                <td>{item.qty * item.price}đ</td>
+                                <td>{item.price}$</td>
+                                <td>{item.qty * item.price}$</td>
                             </tr>
                         {/each}
                     </tbody>

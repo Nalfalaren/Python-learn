@@ -120,7 +120,7 @@
     } finally {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      goto("/employee/login");
+      goto("/employees/login");
     }
   }
 
@@ -135,13 +135,13 @@
   <div class={styles.headerContent}>
     <h1 style="font-family: system-ui, sans-serif;">Products</h1>
     <div>
-      {#if $authStore.role === "admin"}
+      {#if $authStore.role === "ADMIN"}
         <button onclick={() => goto("/products/add")}>+ Add Product</button>
       {/if}
       <button onclick={handleLogout}>Logout</button>
     </div>
   </div>
-  <TabNavigation is_admin={$authStore.role === "admin"} />
+  <TabNavigation is_admin={$authStore.role === "ADMIN"} />
 </div>
 
 <!-- SEARCH -->
@@ -171,7 +171,7 @@
 <div class={styles.tableContainer}>
   {#if loading}
     <p>Loading products...</p>
-  {:else if $authStore.role !== "admin"}
+  {:else if $authStore.role !== "ADMIN"}
     <div class={styles.forbiddenBox}>
       <h2>403 – Forbidden</h2>
       <p>You do not have permission to access this page.</p>

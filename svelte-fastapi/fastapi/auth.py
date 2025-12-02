@@ -73,6 +73,11 @@ def handle_login_role(employee_info: any):
     return {"access_token": access_token, "refresh_token": refresh_token}
 
 def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
-    if current_user.get("role") != "admin":
+    if current_user.get("role") != "ADMIN":
         raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+def require_employee(current_user: dict = Depends(get_current_user)) -> dict:
+    if current_user.get("role") != "ADMIN" and current_user.get("role") != 'EMPLOYEE':
+        raise HTTPException(status_code=403, detail="Employee access required")
     return current_user

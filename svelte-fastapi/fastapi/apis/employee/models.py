@@ -1,7 +1,8 @@
 from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, String, Enum
 from database import Base
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from apis.orders.models import OrderBase
 
 class EmployeeBase(Base):
     __tablename__ = "employees"
@@ -15,4 +16,5 @@ class EmployeeBase(Base):
         default="Inactive",
         nullable=False
     )
+    orders = relationship(OrderBase, back_populates="employee")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

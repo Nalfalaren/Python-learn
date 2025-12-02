@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import { jwtDecode } from 'jwt-decode';
-import { env } from '$env/dynamic/public';
 import { goto } from '$app/navigation';
 
 function createAuthStore() {
@@ -54,7 +53,7 @@ function createAuthStore() {
 
         try {
           if (token && decoded?.id) {
-            await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
+            await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

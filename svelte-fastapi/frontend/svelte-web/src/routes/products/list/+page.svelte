@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import ProductDetailModal from "../../../components/modal/ProductDetailModal.svelte";
-    import { env } from "$env/dynamic/public";
 
     type Product = {
         id?: string;
@@ -41,7 +40,7 @@
     $: hasNext = nextCursor !== null && currentPage < totalPages;
 
     const buildUrl = (cursor: string | null = null) => {
-        const url = new URL(`${env.PUBLIC_API_URL}/products`);
+        const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/products`);
         url.searchParams.set("limit", String(limit));
         if (search) url.searchParams.set("search", search);
         if (cursor) url.searchParams.set("next_cursor", cursor);

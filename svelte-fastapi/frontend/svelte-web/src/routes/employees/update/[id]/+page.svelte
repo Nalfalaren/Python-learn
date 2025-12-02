@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import styles from "$lib/styles/update-employee/update.module.css";
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/AuthStore";
   let employeeId: string;
@@ -18,7 +17,7 @@
   // Fetch employee
   onMount(async () => {
     const token = localStorage.getItem("accessToken");
-    const res = await fetch(`${env.PUBLIC_API_URL}/employee/${employeeId}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -33,7 +32,7 @@
   // Update employee
   async function handleUpdate() {
     const token = localStorage.getItem("accessToken");
-    const res = await fetch(`${env.PUBLIC_API_URL}/employee/${employeeId}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",

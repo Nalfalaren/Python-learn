@@ -1,5 +1,4 @@
 <script>
-    import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
 
     let email = "";
@@ -29,7 +28,7 @@
         if (!validate()) return;
         loading = true;
         try {
-            const url = new URL(`${env.PUBLIC_API_URL}/login`);
+            const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/login`);
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

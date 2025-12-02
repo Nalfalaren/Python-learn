@@ -1,6 +1,5 @@
 <script>
     import { goto } from "$app/navigation";
-    import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
     import { authStore } from "$lib/stores/AuthStore";
     let employeeName = "";
@@ -52,7 +51,7 @@
         loading = true;
 
         try {
-            const res = await fetch(`${env.PUBLIC_API_URL}/auth/signup`, {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

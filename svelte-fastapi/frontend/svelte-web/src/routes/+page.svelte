@@ -1,6 +1,5 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
-    import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
     import { jwtDecode } from "jwt-decode";
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
@@ -57,7 +56,7 @@
             if (limit) params.append("limit", String(limit));
             if (cursor) params.append("next_cursor", cursor);
 
-            const url = `${env.PUBLIC_API_URL}/products?${params.toString()}`;
+            const url = `${import.meta.env.VITE_API_BASE_URL}/products?${params.toString()}`;
 
             const res = await fetch(url, {
                 headers: {
@@ -223,7 +222,7 @@
             const decoded = token ? jwtDecode<{ id: string }>(token) : null;
             const currentUserId = decoded?.id;
             
-            const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { env } from "$env/dynamic/public";
   import { CartStore } from "$lib/stores/CartStore";
   import { get } from "svelte/store";
 
@@ -30,7 +29,7 @@
         })),
       };
       const token = localStorage.getItem('accessToken')
-      const res = await fetch(`${env.PUBLIC_API_URL}/checkout`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),

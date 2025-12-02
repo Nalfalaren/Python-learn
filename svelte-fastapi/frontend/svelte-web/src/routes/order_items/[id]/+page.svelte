@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import styles from "$lib/styles/detail/employee-detail.module.css"; 
   // dùng lại style EXACT để giống hoàn toàn
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/AuthStore";
 
@@ -26,7 +25,7 @@
     if (!authStore.isAuthenticated) goto("/employees/login");
 
     const token = localStorage.getItem("accessToken");
-    const res = await fetch(`${env.PUBLIC_API_URL}/order_items/${itemId}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/order_items/${itemId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

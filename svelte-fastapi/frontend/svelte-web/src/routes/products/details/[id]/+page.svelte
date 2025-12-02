@@ -2,7 +2,6 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { env } from '$env/dynamic/public';
   import { cart, type Product } from '$lib/stores/CartStore';
 
   let product: Product | null = null;
@@ -26,7 +25,7 @@
   async function fetchProduct() {
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${env.PUBLIC_API_URL}/products/${productId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products/${productId}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

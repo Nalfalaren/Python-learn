@@ -1,6 +1,5 @@
 <script lang="ts">
   import styles from "$lib/styles/register/register.module.css";
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   // Form state
   let product_id = "";
@@ -25,7 +24,7 @@
       price
     }
     try {
-      const res = await fetch(`${env.PUBLIC_API_URL}/admin/products`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json", 

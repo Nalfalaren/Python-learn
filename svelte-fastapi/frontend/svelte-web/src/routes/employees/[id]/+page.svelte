@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import styles from "$lib/styles/detail/employee-detail.module.css";
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/AuthStore";
 
@@ -22,7 +21,7 @@
   onMount(async () => {
     if(!authStore.isAuthenticated) goto("/employees/login")
     const token = localStorage.getItem("accessToken");
-    const res = await fetch(`${env.PUBLIC_API_URL}/employee/${employeeId}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

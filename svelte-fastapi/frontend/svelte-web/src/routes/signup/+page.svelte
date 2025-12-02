@@ -1,5 +1,4 @@
 <script>
-    import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
 
     let name = "";
@@ -68,7 +67,7 @@
         loading = true;
 
         try {
-            const res = await fetch(`${env.PUBLIC_API_URL}/signup`, {
+            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { env } from "$env/dynamic/public";
     import { onMount } from "svelte";
     import styles from "$lib/styles/header/orders.module.css";
     import { authStore } from "$lib/stores/AuthStore";
@@ -35,7 +34,7 @@
 
     // Build URL
     function buildUrl() {
-        const url = new URL(`${env.PUBLIC_API_URL}/orders`);
+        const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/orders`);
         url.searchParams.set("limit", String(pageSize));
         url.searchParams.set("page", String(page));
         url.searchParams.set("employee_id", String($authStore.id));
@@ -79,7 +78,7 @@
     async function handleDelete(id: string) {
         const token = localStorage.getItem("accessToken");
 
-        const res = await fetch(`${env.PUBLIC_API_URL}/orders/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });

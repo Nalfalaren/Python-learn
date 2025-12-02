@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import styles from "$lib/styles/product/product.module.css";
   import TextField from "../../components/input/TextField.svelte";
@@ -33,7 +32,7 @@
 
   // === Helper ===
   function buildUrl(cursor: string | null) {
-    const url = new URL(`${env.PUBLIC_API_URL}/admin/products`);
+    const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/admin/products`);
     if (searchId) url.searchParams.set("search_id", searchId);
     if (searchName) url.searchParams.set("search_product", searchName);
     if (cursor) url.searchParams.set("next_cursor", cursor);
@@ -86,7 +85,7 @@
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this product?")) return;
     const token = localStorage.getItem("accessToken");
-    const res = await fetch(`${env.PUBLIC_API_URL}/admin/products/${id}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -103,7 +102,7 @@
       const token = localStorage.getItem("accessToken");
       const decoded = token ? jwtDecode<{ id: string }>(token) : null;
       const currentUserId = decoded?.id;
-      const res = await fetch(`${env.PUBLIC_API_URL}/auth/logout`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import styles from "$lib/styles/detail/order-detail.module.css";
-    import { env } from "$env/dynamic/public";
     import { goto } from "$app/navigation";
 
     let orderId: string;
@@ -44,7 +43,7 @@
 
     onMount(async () => {
         const token = localStorage.getItem("accessToken");
-        const res = await fetch(`${env.PUBLIC_API_URL}/orders/${orderId}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 

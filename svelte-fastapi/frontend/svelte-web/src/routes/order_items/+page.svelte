@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { env } from "$env/dynamic/public";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import styles from "$lib/styles/header/orders.module.css";
@@ -29,7 +28,7 @@
     let searchOrderId = $state("");
 
     function buildUrl() {
-        const url = new URL(`${env.PUBLIC_API_URL}/order_items`);
+        const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/order_items`);
         url.searchParams.set("limit", String(pageSize));
         url.searchParams.set("page", String(page));
         if (searchProduct) url.searchParams.set("product", searchProduct);

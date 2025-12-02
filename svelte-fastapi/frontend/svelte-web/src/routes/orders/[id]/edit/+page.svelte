@@ -1,6 +1,5 @@
 <script lang="ts">
   import styles from "$lib/styles/register/register.module.css";
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -22,7 +21,7 @@
 
     const token = localStorage.getItem("accessToken");
     try {
-      const res = await fetch(`${env.PUBLIC_API_URL}/orders/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch order");
@@ -60,7 +59,7 @@
     };
 
     try {
-      const res = await fetch(`${env.PUBLIC_API_URL}/orders/${order_id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${order_id}`, {
         method: "PUT", // or PATCH if backend supports partial update
         headers: {
           "Content-Type": "application/json",

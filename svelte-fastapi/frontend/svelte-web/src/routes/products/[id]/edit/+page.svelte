@@ -1,6 +1,5 @@
 <script lang="ts">
   import styles from "$lib/styles/register/register.module.css";
-  import { env } from "$env/dynamic/public";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
@@ -28,7 +27,7 @@
     loading = true;
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${env.PUBLIC_API_URL}/admin/products/${productId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +77,7 @@
       };
 
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${env.PUBLIC_API_URL}/admin/products/${productId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`, {
         method: "PUT", // or PATCH depending on your backend
         headers: {
           "Content-Type": "application/json",

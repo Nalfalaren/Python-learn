@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { env } from "$env/dynamic/public";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import styles from "$lib/styles/header/orders.module.css";
@@ -40,7 +39,7 @@
 
     // === Helper: Build URL ===
     function buildUrl() {
-        const url = new URL(`${env.PUBLIC_API_URL}/orders`);
+        const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/orders`);
         url.searchParams.set("limit", String(pageSize));
         if (searchId) url.searchParams.set("search_id", searchId);
         if (searchName) url.searchParams.set("customer_name", searchName);
@@ -88,7 +87,7 @@
         const token = localStorage.getItem("accessToken");
 
         const res = await fetch(
-            `${env.PUBLIC_API_URL}/employees?role=EMPLOYEE`,
+            `${import.meta.env.VITE_API_BASE_URL}/employees?role=EMPLOYEE`,
             {
                 headers: { Authorization: `Bearer ${token}` },
             },
@@ -112,7 +111,7 @@
 
         try {
             const res = await fetch(
-                `${env.PUBLIC_API_URL}/orders/${selectedOrder.id}/assign`,
+                `${import.meta.env.VITE_API_BASE_URL}/orders/${selectedOrder.id}/assign`,
                 {
                     method: "POST",
                     headers: {
@@ -147,7 +146,7 @@
     async function handleDelete(id: string) {
         const token = localStorage.getItem("accessToken");
 
-        const res = await fetch(`${env.PUBLIC_API_URL}/orders/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
         });

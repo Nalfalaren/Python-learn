@@ -40,6 +40,10 @@ h2 {
   margin-bottom: 22px;
 }
 
+.roleSelectDisable{
+  cursor: not-allowed;
+}
+
 .label {
   display: block;
   font-weight: 600;

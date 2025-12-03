@@ -1,11 +1,15 @@
 <script lang="ts">
   import styles from "$lib/styles/register/register.module.css";
   import { goto } from "$app/navigation";
+  
   // Form state
   let product_id = "";
   let product_name = "";
   let category = "";
   let price: number | string = "";
+  let description = "";
+  let rating: number | string = "";
+  let stock: number = 0
   let message = "";
 
   async function handleSubmit(e?: Event) {
@@ -21,8 +25,12 @@
     const payload = {
       product_name: product_name?.trim(),
       category: category?.trim(),
-      price
-    }
+      price,
+      description: description?.trim(),
+      rating: rating ? Number(rating) : undefined,
+      stock: stock || 0
+    };
+
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products`, {
         method: "POST",
@@ -45,6 +53,9 @@
       product_name = "";
       category = "";
       price = "";
+      description = "";
+      rating = "";
+      stock = 0
       goto("/products");
     } catch (err) {
       console.error("Product creation failed:", err);
@@ -59,17 +70,36 @@
   <form class={styles.form} on:submit|preventDefault={handleSubmit}>
     <label class={styles.field}>
       <span class={styles.label}>Product Name</span>
-      <input class={styles.input} type="text" bind:value={product_name} required />
+      <input class={styles.input} type="text" bind:value={product_name} required placeholder="Enter product name" />
     </label>
 
-    <label class={styles.field}>
-      <span class={styles.label}>Category</span>
-      <input class={styles.input} type="text" bind:value={category} required />
-    </label>
+     <label class={styles.field}>
+        <span class={styles.label}>Category</span>
+        <select class={styles.input} bind:value={category} required>
+          <option value="" disabled selected>Choose category</option>
+          <option value="Multirotor">Multirotor</option>
+          <option value="Fixed-wing">Fixed-wing</option>
+        </select>
+      </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Price</span>
-      <input class={styles.input} type="number" bind:value={price} step="0.01" required />
+      <input class={styles.input} type="number" bind:value={price} step="0.01" required placeholder="Enter price" />
+    </label>
+
+    <label class={styles.field}>
+      <span class={styles.label}>Description</span>
+      <textarea class={styles.input} bind:value={description} placeholder="Enter product description"></textarea>
+    </label>
+
+    <label class={styles.field}>
+      <span class={styles.label}>Rating</span>
+      <input class={styles.input} type="number" min="0" max="5" step="0.1" bind:value={rating} placeholder="0 - 5" />
+    </label>
+
+    <label class={styles.field}>
+      <span class={styles.label}>Stock</span>
+      <input class={styles.input} type="number" min="0" step="1" bind:value={stock} placeholder="Stock" />
     </label>
 
     <div class={styles.actions}>
@@ -80,6 +110,8 @@
         product_name = "";
         category = "";
         price = "";
+        description = "";
+        rating = "";
       }}>
         Reset
       </button>

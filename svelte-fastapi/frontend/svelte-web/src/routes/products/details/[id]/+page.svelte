@@ -37,7 +37,8 @@
         ...data,
         img: data.img || `https://picsum.photos/seed/drone${data.id}/600/400`,
         rating: data.rating || 4 + Math.random() * 1,
-        stock: data.stock || Math.floor(3 + Math.random() * 15),
+        stock: data.stock ?? 0,
+        description: data.description ?? "No description",
       };
     } catch (e) {
       console.error(e);
@@ -54,11 +55,11 @@
       return;
     }
 
-    if (!product) return;
+    if (!product || product.stock === 0) return;
 
     cart.addItem(product, quantity);
     alert(`Added ${quantity} × ${product.product_name} to cart! 🛒`);
-    quantity = 1; // reset
+    quantity = 1;
   }
 
   function renderStars(rating = 0) {
@@ -81,8 +82,7 @@
   }
 
   function viewCart() {
-    goto("/");
-    // Or if you have a dedicated cart page: goto("/cart");
+    goto("/cart");
   }
 </script>
 
@@ -106,7 +106,6 @@
     <div class="detail-container">
       <div class="image-section">
         <img src={product.img} alt={product.product_name} class="main-img" />
-        <!-- demo carousel -->
         <div class="carousel">
           {#each [1, 2, 3] as i}
             <img
@@ -121,22 +120,16 @@
         <h1 class="title">{product.product_name}</h1>
         <div class="meta">
           <span class="category">{product.category}</span>
-          <span class="rating"
-            >{renderStars(product.rating)} ({product.rating?.toFixed(1) ??
-              "—"})</span
-          >
-          <span class="stock"
-            >{product.stock ?? "—"} in stock
+          <span class="rating">{renderStars(product.rating)} ({product.rating?.toFixed(1) ?? "—"})</span>
+          <span class="stock">
+            {product.stock ?? "—"} in stock
             {#if product.stock && product.stock < 10}
               <span class="low-stock">⚠️ Low stock</span>
             {/if}
           </span>
         </div>
 
-        <p class="description">
-          {product.description ??
-            "Drone cao cấp, pin lâu, camera chất lượng, phù hợp nhiều mục đích. Thiết kế nhỏ gọn, dễ mang theo, phù hợp cho cả người mới và chuyên nghiệp."}
-        </p>
+        <p class="description">{product.description}</p>
 
         <div class="specs">
           <h3>Specifications</h3>
@@ -148,7 +141,11 @@
           </ul>
         </div>
 
-        <div class="buy-section">
+        <div class="buy-section" class:disabled={product.stock === 0}>
+          {#if product.stock === 0}
+            <div class="sold-out">❌ Sold Out</div>
+          {/if}
+
           <div class="price-container">
             <div class="price">${product.price}</div>
             <div class="price-note">Free shipping on orders over $100</div>
@@ -157,20 +154,25 @@
           <div class="quantity-selector">
             <label>Quantity:</label>
             <div class="quantity-controls">
-              <button on:click={decreaseQuantity} class="qty-btn">−</button>
+              <button on:click={decreaseQuantity} class="qty-btn" disabled={product.stock === 0}>−</button>
               <input
                 type="number"
                 bind:value={quantity}
                 min="1"
                 max={product.stock ?? 99}
                 class="qty-input"
+                disabled={product.stock === 0}
               />
-              <button on:click={increaseQuantity} class="qty-btn">+</button>
+              <button on:click={increaseQuantity} class="qty-btn" disabled={product.stock === 0}>+</button>
             </div>
           </div>
 
           <div class="action-buttons">
-            <button on:click={addToCart} class="btn-primary">
+            <button
+              on:click={addToCart}
+              class="btn-primary"
+              disabled={product.stock === 0}
+            >
               Add to cart
             </button>
             <button class="btn-secondary" on:click={() => goto("/")}>
@@ -181,7 +183,6 @@
       </div>
     </div>
 
-    <!-- Additional Info Section -->
     <div class="additional-info">
       <div class="info-card">
         <h3>🚚 Free Shipping</h3>
@@ -598,5 +599,16 @@
     .price {
       font-size: 24px;
     }
+  }
+
+  .sold-out {
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .buy-section.disabled {
+    opacity: 0.6;
+    pointer-events: none;
   }
 </style>

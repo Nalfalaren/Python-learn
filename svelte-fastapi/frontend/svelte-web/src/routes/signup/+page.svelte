@@ -5,7 +5,7 @@
     let email = "";
     let phone = "";
     let address = "";
-    let is_active = 'Inactive'
+    let is_active = 'Inactive';
     let password = "";
     let confirmPassword = "";
     let showPassword = false;
@@ -23,41 +23,38 @@
 
     // Validate
     function validate() {
-        // @ts-ignore
-        errors = { name: "", email: "", password: "", confirmPassword: "" };
-
+        errors = { name: "", email: "", phone: "", address: "", password: "", confirmPassword: "" };
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!phone.trim()) errors.phone = "Vui lòng nhập số điện thoại.";
+        if (!phone.trim()) errors.phone = "Please enter phone number.";
         else if (!/^[0-9]{9,11}$/.test(phone))
-            errors.phone = "Số điện thoại không hợp lệ.";
+            errors.phone = "Invalid phone number.";
 
-        if (!address.trim()) errors.address = "Vui lòng nhập địa chỉ.";
+        if (!address.trim()) errors.address = "Please enter address.";
 
-        if (!name.trim()) errors.name = "Vui lòng nhập họ tên";
+        if (!name.trim()) errors.name = "Please enter full name.";
 
-        if (!email.trim()) errors.email = "Vui lòng nhập email.";
-        else if (!emailRegex.test(email)) errors.email = "Email không hợp lệ.";
+        if (!email.trim()) errors.email = "Please enter email.";
+        else if (!emailRegex.test(email)) errors.email = "Invalid email address.";
 
-        if (!password.trim()) errors.password = "Vui lòng nhập mật khẩu.";
+        if (!password.trim()) errors.password = "Please enter password.";
         else if (password.length < 6)
-            errors.password = "Mật khẩu phải tối thiểu 6 kí tự.";
+            errors.password = "Password must be at least 6 characters.";
 
         if (confirmPassword !== password)
-            errors.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
+            errors.confirmPassword = "Passwords do not match.";
 
         return (
             !errors.name &&
             !errors.email &&
+            !errors.phone &&
+            !errors.address &&
             !errors.password &&
             !errors.confirmPassword
         );
     }
 
     // Submit
-    /**
-     * @param {{ preventDefault: () => void; }} e
-     */
     async function handleSubmit(e) {
         e.preventDefault();
         message = "";
@@ -84,32 +81,29 @@
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                message = data.detail || "Đăng ký thất bại.";
+                message = data.detail || "Registration failed.";
             } else {
-                message = data.message || "Đăng ký thành công!";
+                message = data.message || "Registration successful!";
                 window.location.href = "/login";
             }
         } catch (err) {
-            message = "Không thể kết nối server.";
+            message = "Unable to connect to the server.";
         } finally {
             loading = false;
         }
     }
 
-    /**
-     * @type {HTMLInputElement}
-     */
     let emailInput;
     onMount(() => emailInput?.focus());
 </script>
 
 <section class="container">
     <form class="card" on:submit|preventDefault={handleSubmit}>
-        <h1>Đăng ký tài khoản khách hàng</h1>
+        <h1>Customer Registration</h1>
 
         <label class="field">
-            <span>Họ tên</span>
-            <input type="text" bind:value={name} placeholder="Nguyễn Văn A" />
+            <span>Full Name</span>
+            <input type="text" bind:value={name} placeholder="John Doe" />
             {#if errors.name}<div class="error">{errors.name}</div>{/if}
         </label>
 
@@ -125,58 +119,54 @@
         </label>
 
         <label class="field">
-            <span>Số điện thoại</span>
+            <span>Phone Number</span>
             <input type="text" bind:value={phone} placeholder="0123456789" />
             {#if errors.phone}<div class="error">{errors.phone}</div>{/if}
         </label>
 
         <label class="field">
-            <span>Địa chỉ</span>
+            <span>Address</span>
             <input
                 type="text"
                 bind:value={address}
-                placeholder="Số nhà, đường, quận/huyện..."
+                placeholder="Street, City, District..."
             />
             {#if errors.address}<div class="error">{errors.address}</div>{/if}
         </label>
 
         <label class="field">
-            <span>Mật khẩu</span>
+            <span>Password</span>
             <div class="password-row">
                 <input
                     type={showPassword ? "text" : "password"}
                     bind:value={password}
-                    placeholder="Nhập mật khẩu"
+                    placeholder="Enter password"
                 />
                 <button
                     type="button"
                     class="toggle"
                     on:click={() => (showPassword = !showPassword)}
-                    >{showPassword ? "Ẩn" : "Hiện"}</button
-                >
+                >{showPassword ? "Hide" : "Show"}</button>
             </div>
             {#if errors.password}<div class="error">{errors.password}</div>{/if}
         </label>
 
         <label class="field">
-            <span>Xác nhận mật khẩu</span>
+            <span>Confirm Password</span>
             <input
                 type="password"
                 bind:value={confirmPassword}
-                placeholder="Nhập lại mật khẩu"
+                placeholder="Confirm password"
             />
-            {#if errors.confirmPassword}<div class="error">
-                    {errors.confirmPassword}
-                </div>{/if}
+            {#if errors.confirmPassword}<div class="error">{errors.confirmPassword}</div>{/if}
         </label>
 
         <button class="submit" type="submit" disabled={loading}>
-            {#if loading}<span class="spinner"></span> Đang xử lý...{:else}Đăng
-                ký{/if}
+            {#if loading}<span class="spinner"></span> Processing...{:else}Register{/if}
         </button>
 
         <div class="links">
-            <a href="/customer/login">Đã có tài khoản? Đăng nhập</a>
+            <a href="/customer/login">Already have an account? Login</a>
         </div>
 
         {#if message}<div class="status">{message}</div>{/if}

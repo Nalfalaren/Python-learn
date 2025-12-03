@@ -49,7 +49,10 @@ def create_product(
         id=str(uuid.uuid4()),
         product_name=product_info.product_name,
         category=product_info.category,
+        description=product_info.description,
+        rating=product_info.rating,
         price=product_info.price,
+        stock=product_info.stock,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )

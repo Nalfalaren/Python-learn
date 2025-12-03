@@ -18,7 +18,7 @@
         role: "",
     };
 
-    // ✅ Kiểm tra dữ liệu form
+    // ✅ Validate form data
     function validate() {
         errors = {
             employeeName: "",
@@ -28,21 +28,21 @@
             role: "",
         };
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if(!employeeName.trim()) errors.employeeName = "Vui lòng nhập tên nhân viên"
-        if (!email.trim()) errors.email = "Vui lòng nhập email.";
-        else if (!emailRegex.test(email)) errors.email = "Email không hợp lệ.";
+        if(!employeeName.trim()) errors.employeeName = "Please enter employee name."
+        if (!email.trim()) errors.email = "Please enter email.";
+        else if (!emailRegex.test(email)) errors.email = "Invalid email address.";
 
-        if (!password.trim()) errors.password = "Vui lòng nhập mật khẩu.";
+        if (!password.trim()) errors.password = "Please enter password.";
         else if (password.length < 6)
-            errors.password = "Mật khẩu ít nhất 6 ký tự.";
+            errors.password = "Password must be at least 6 characters.";
 
         if (confirmPassword !== password)
-            errors.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
+            errors.confirmPassword = "Password confirmation does not match.";
 
         return !errors.employeeName && !errors.email && !errors.password && !errors.confirmPassword;
     }
 
-    // ✅ Gửi dữ liệu đăng ký tới API FastAPI
+    // ✅ Submit registration to API
     async function handleSubmit(e) {
         e.preventDefault();
         message = "";
@@ -66,15 +66,15 @@
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                message = data.detail || "Đăng ký thất bại. Vui lòng thử lại.";
+                message = data.detail || "Registration failed. Please try again.";
             } else {
-                message = data.message || "Đăng ký thành công!";
-                // 👉 Có thể redirect sang trang đăng nhập
+                message = data.message || "Registration successful!";
+                // 👉 Optionally redirect to employee list or login page
                 window.location.href = `/employees?role=${data?.role?.toLowerCase()}`;
             }
         } catch (err) {
             console.error(err);
-            message = "Không thể kết nối tới server.";
+            message = "Unable to connect to the server.";
         } finally {
             loading = false;
         }
@@ -84,13 +84,13 @@
     onMount(() => emailInput?.focus());
 
     onMount(() => {
-    if(!$authStore.isAuthenticated) goto("/employees/login")
+        if(!$authStore.isAuthenticated) goto("/employees/login")
     })
 </script>
 
 <section class="container">
     <form class="card" on:submit|preventDefault={handleSubmit}>
-        <h1>Tạo tài khoản</h1>
+        <h1>Create Account</h1>
 
         <label class="field">
             <span>Employee Name</span>
@@ -114,11 +114,11 @@
         </label>
 
         <label class="field">
-            <span>Mật khẩu</span>
+            <span>Password</span>
             <div class="password-row">
                 <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Nhập mật khẩu"
+                    placeholder="Enter password"
                     bind:value={password}
                 />
                 <button
@@ -126,17 +126,17 @@
                     class="toggle"
                     on:click={() => (showPassword = !showPassword)}
                 >
-                    {showPassword ? "Ẩn" : "Hiện"}
+                    {showPassword ? "Hide" : "Show"}
                 </button>
             </div>
             {#if errors.password}<div class="error">{errors.password}</div>{/if}
         </label>
 
         <label class="field">
-            <span>Xác nhận mật khẩu</span>
+            <span>Confirm Password</span>
             <input
                 type="password"
-                placeholder="Nhập lại mật khẩu"
+                placeholder="Re-enter password"
                 bind:value={confirmPassword}
             />
             {#if errors.confirmPassword}
@@ -154,15 +154,11 @@
 
         <button class="submit" type="submit" disabled={loading}>
             {#if loading}
-                <span class="spinner"></span> Đang xử lý...
+                <span class="spinner"></span> Processing...
             {:else}
-                Đăng ký
+                Register
             {/if}
         </button>
-
-        <div class="links">
-            <a href="/login">Đã có tài khoản? Đăng nhập</a>
-        </div>
 
         {#if message}<div class="status">{message}</div>{/if}
     </form>

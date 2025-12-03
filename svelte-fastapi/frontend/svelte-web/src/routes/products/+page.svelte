@@ -12,6 +12,9 @@
     category: string;
     price: number;
     created_at: string;
+    rating?: string
+    description?: string
+    stock: number;
     image_url?: string;
   }
 
@@ -185,6 +188,8 @@
           <th>Product Name</th>
           <th>Category</th>
           <th>Price ($)</th>
+          <th>Rating</th>
+          <th>Stock</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -195,6 +200,8 @@
             <td>{p.product_name}</td>
             <td>{p.category}</td>
             <td>{p.price.toFixed(2)}</td>
+            <td>{p.rating}</td>
+            <td>{p.stock || 0}</td>
             <td>
               <button
                 onclick={(event) => {

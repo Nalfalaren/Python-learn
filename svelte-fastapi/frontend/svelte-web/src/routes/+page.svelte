@@ -22,7 +22,7 @@
     let cursorHistory: (string | null)[] = []; // Stack to track cursor history
     let currentPage = 1;
     let totalRecords = 0;
-    let limit = 5
+    let limit = 5;
 
     /** Add to cart modal */
     let addToCartProduct: Product | null = null;
@@ -30,17 +30,17 @@
     let showAddToCardListModal = false;
     let addToCartQuantity = 1;
     let isLoggedIn = false;
-    
+
     // Subscribe to cart store
     let cartItems: CartItem[] = [];
-    cart.subscribe(value => {
+    cart.subscribe((value) => {
         cartItems = value;
     });
 
     /** Fetch products from API */
     const fetchProducts = async (
         cursor: string | null = null,
-        direction: 'next' | 'prev' | 'initial' = 'initial'
+        direction: "next" | "prev" | "initial" = "initial",
     ): Promise<void> => {
         isLoading = true;
         error = "";
@@ -73,8 +73,8 @@
                 (p: Product, index: number) => ({
                     ...p,
                     img: `https://picsum.photos/seed/drone${index + 1}/600/400`,
-                    rating: 4 + Math.random() * 1,
-                    stock: Math.floor(3 + Math.random() * 15),
+                    rating: p.rating || 0,
+                    stock: p.stock || 0,
                 }),
             );
 
@@ -83,9 +83,9 @@
             currentCursor = cursor;
 
             // Update page number based on direction
-            if (direction === 'next') {
+            if (direction === "next") {
                 currentPage++;
-            } else if (direction === 'prev') {
+            } else if (direction === "prev") {
                 currentPage--;
             } else {
                 currentPage = 1;
@@ -167,7 +167,7 @@
 
     function confirmAddToCart() {
         if (!addToCartProduct) return;
-        
+
         cart.addItem(addToCartProduct, addToCartQuantity);
         closeAddToCartModal();
         alert(
@@ -177,14 +177,11 @@
 
     function handleNext() {
         if (!hasNextPage) return;
-        
-        // Save current cursor to history before moving forward
-        cursorHistory.push(currentCursor);
-        
-        // Fetch next page
-        fetchProducts(nextCursor, 'next');
 
-        // Scroll to product list
+        cursorHistory.push(currentCursor);
+
+        fetchProducts(nextCursor, "next");
+
         const listEl = document.getElementById("product-list");
         if (listEl) {
             listEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -193,14 +190,9 @@
 
     function handlePrev() {
         if (!hasPrevPage) return;
-        
-        // Get previous cursor from history
-        const previousCursor = cursorHistory.pop() ?? null;
-        
-        // Fetch previous page
-        fetchProducts(previousCursor, 'prev');
 
-        // Scroll to product list
+        const previousCursor = cursorHistory.pop() ?? null;
+        fetchProducts(previousCursor, "prev");
         const listEl = document.getElementById("product-list");
         if (listEl) {
             listEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -208,12 +200,11 @@
     }
 
     const debouncedFetch = debounce(() => {
-        // Reset pagination state when filters change
         cursorHistory = [];
         currentCursor = null;
         nextCursor = null;
         currentPage = 1;
-        fetchProducts(null, 'initial');
+        fetchProducts(null, "initial");
     }, 400);
 
     async function logout() {
@@ -221,15 +212,18 @@
             const token = localStorage.getItem("accessToken");
             const decoded = token ? jwtDecode<{ id: string }>(token) : null;
             const currentUserId = decoded?.id;
-            
-            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+
+            const res = await fetch(
+                `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ id: currentUserId }),
                 },
-                body: JSON.stringify({ id: currentUserId }),
-            });
+            );
 
             if (!res.ok) {
                 console.error("Logout API failed:", res.status);
@@ -285,35 +279,29 @@
     </nav>
 </header>
 
-<!-- HERO -->
 <section class="hero" class:anim-in={mounted}>
     <div class="hero-left">
         <h1 style="font-size:32px; margin:0">
-            Marketplace cho Drone — mua bán, so sánh, và review
+            Drone Marketplace — Buy, Sell, Compare, and Review
         </h1>
         <p style="color:#334155; margin-top:10px">
-            Tìm drone phù hợp cho nhiếp ảnh, quay phim, hoặc phiêu lưu. So sánh
-            cấu hình, giá, và đánh giá từ cộng đồng.
+            Find the perfect drone for photography, filmmaking, or adventure.
+            Compare specs, prices, and community reviews.
         </p>
-
         <div class="controls">
             <input
-                placeholder="Tìm kiếm drone..."
+                placeholder="Search drones..."
                 bind:value={query}
                 on:input={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0; min-width:260px"
             />
-
             <select
                 bind:value={category}
                 on:change={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
-                {#each categories as c}
-                    <option value={c}>{c}</option>
-                {/each}
+                {#each categories as c}<option value={c}>{c}</option>{/each}
             </select>
-
             <select
                 bind:value={sortBy}
                 on:change={debouncedFetch}
@@ -325,17 +313,17 @@
                 <option value="rating">Top Rated</option>
             </select>
         </div>
-
         <div style="display:flex; gap:10px; margin-top:6px">
-            <button class="btn-primary" on:click={() => goto("/products/list")}>Mua ngay</button>
-            <button class="btn-ghost">Bán drone</button>
+            <button class="btn-primary" on:click={() => goto("/products/list")}
+                >Buy Now</button
+            >
+            <button class="btn-ghost">Sell Drone</button>
         </div>
     </div>
-
     <div class="hero-right">
         <img
-            alt="hero drone"
             src="https://picsum.photos/seed/hero/720/440"
+            alt="hero drone"
             style="max-width:100%; border-radius:12px; box-shadow:0 18px 40px rgba(2,6,23,0.08)"
         />
     </div>
@@ -346,9 +334,9 @@
     <section class="top-list-section">
         <div class="top-list-card">
             <div class="top-list-header">
-                <span class="top-list-title">Top 5 Drone nổi bật</span>
+                <span class="top-list-title">Top 5 Featured Drones</span>
                 <span class="top-list-sub">
-                    Dựa trên kết quả trang hiện tại
+                    Based on current page results
                 </span>
             </div>
             <div class="top-list-scroll">
@@ -367,7 +355,7 @@
                         </div>
                         <button
                             class="top-list-btn"
-                            on:click={() => openQuickView(p)}>Xem</button
+                            on:click={() => openQuickView(p)} disabled={p.stock === 0}>View</button
                         >
                     </div>
                 {/each}
@@ -380,11 +368,12 @@
 <section id="product-list">
     <div style="padding:6px 24px; color:#475569; font-size:13px">
         {#if isLoading}
-            Đang tải sản phẩm...
+            Loading products...
         {:else if error}
             {error}
         {:else}
-            {products.length} sản phẩm trên trang này • Trang {currentPage} • Tổng: {totalRecords} sản phẩm
+            {products.length} products on this page • Page {currentPage} • Total:
+            {totalRecords} products
         {/if}
     </div>
 
@@ -418,20 +407,35 @@
                             <div
                                 style="display:flex; flex-direction:column; gap:8px"
                             >
+                                <!-- Add button -->
                                 <button
                                     on:click={(e) => {
                                         e.stopPropagation();
                                         openAddToCartModal(p);
                                     }}
-                                    class="btn-small-primary">Add</button
+                                    class="btn-small-primary"
+                                    disabled={p.stock === 0}
+                                    title={p.stock === 0
+                                        ? "Out of stock"
+                                        : "Add to cart"}
                                 >
+                                    Add
+                                </button>
+
+                                <!-- Quick View button -->
                                 <button
                                     on:click={(e) => {
                                         e.stopPropagation();
                                         openQuickView(p);
                                     }}
-                                    class="btn-small-ghost">Quick View</button
+                                    class="btn-small-ghost"
+                                    disabled={p.stock === 0}
+                                    title={p.stock === 0
+                                        ? "Out of stock"
+                                        : "Quick View"}
                                 >
+                                    Quick View
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -449,13 +453,13 @@
             >
                 ‹ Prev
             </button>
-            
+
             <div class="pagination-pages">
                 <span style="color:#64748b; font-size:14px">
-                    Trang {currentPage}
+                    Page {currentPage}
                 </span>
             </div>
-            
+
             <button
                 class="pagination-btn"
                 on:click={handleNext}
@@ -485,7 +489,7 @@
                         ) ?? "—"}
                     </div>
                     <p style="margin-top:12px; color:#334155">
-                        Mô tả ngắn: demo content
+                        Short description: demo content
                     </p>
                     <div
                         style="display:flex; gap:12px; margin-top:18px; align-items:center"
@@ -495,7 +499,7 @@
                         </div>
                         <button
                             on:click={() => openAddToCartModal(quickView)}
-                            class="btn-primary">Add to cart</button
+                            class="btn-primary">Add to Cart</button
                         >
                         <button on:click={closeQuickView} class="btn-secondary"
                             >Close</button
@@ -529,7 +533,7 @@
                             ) ?? "—"}
                         </div>
                         <p style="margin-top:12px; color:#334155">
-                            Mô tả ngắn: demo content
+                            Short description: demo content
                         </p>
                         <div
                             style="margin-top:16px; display:flex; align-items:center; gap:12px"
@@ -569,10 +573,10 @@
                 on:click|stopPropagation
                 style="max-width:600px;"
             >
-                <h2 style="margin-bottom:12px">Giỏ hàng của bạn</h2>
+                <h2 style="margin-bottom:12px">Your Cart</h2>
 
                 {#if cartItems.length === 0}
-                    <p>Chưa có sản phẩm nào trong giỏ hàng.</p>
+                    <p>No products in your cart.</p>
                 {:else}
                     <div
                         style="display:flex; flex-direction:column; gap:12px; max-height:340px; overflow-y:auto"
@@ -608,9 +612,13 @@
                             </div>
                         {/each}
                     </div>
-                    
-                    <div style="margin-top:16px; padding-top:12px; border-top:2px solid #e2e8f0">
-                        <div style="display:flex; justify-content:space-between; font-size:18px; font-weight:700">
+
+                    <div
+                        style="margin-top:16px; padding-top:12px; border-top:2px solid #e2e8f0"
+                    >
+                        <div
+                            style="display:flex; justify-content:space-between; font-size:18px; font-weight:700"
+                        >
                             <span>Total:</span>
                             <span>${cart.getTotalPrice().toFixed(2)}</span>
                         </div>

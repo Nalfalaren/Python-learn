@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import styles from "$lib/styles/detail/customer-detail.module.css"; 
-  // vẫn dùng lại CSS cũ cho đồng nhất giao diện
+  import styles from "$lib/styles/detail/customer-detail.module.css";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/AuthStore";
 
@@ -14,6 +13,9 @@
     price: 0,
     created_at: "",
     updated_at: "",
+    description: "",
+    rating: 0,
+    stock: 0,
   };
 
   productId = params.id;
@@ -27,7 +29,7 @@
       `${import.meta.env.VITE_API_BASE_URL}/products/${productId}`,
       {
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
 
     if (res.ok) {
@@ -62,6 +64,21 @@
       <div class={styles.row}>
         <span class={styles.label}>Price:</span>
         <span class={styles.value}>${product.price}</span>
+      </div>
+
+      <div class={styles.row}>
+        <span class={styles.label}>Description:</span>
+        <span class={styles.value}>{product.description || "N/A"}</span>
+      </div>
+
+      <div class={styles.row}>
+        <span class={styles.label}>Rating:</span>
+        <span class={styles.value}>{product.rating || 0}</span>
+      </div>
+
+      <div class={styles.row}>
+        <span class={styles.label}>Stock:</span>
+        <span class={styles.value}>{product.stock || 0}</span>
       </div>
 
       {#if product.created_at}

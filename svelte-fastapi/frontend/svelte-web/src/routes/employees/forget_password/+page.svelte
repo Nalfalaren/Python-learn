@@ -43,7 +43,7 @@
   <div class="card">
     <h1>Forgot Password</h1>
     <form on:submit={handleSubmit}>
-      <label>Nhập email:</label>
+      <label>Email:</label>
       <input
         type="email"
         bind:value={email}

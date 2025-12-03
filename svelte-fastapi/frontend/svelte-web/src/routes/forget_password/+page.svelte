@@ -29,7 +29,7 @@
         return;
       }
 
-      message = data.message;
+      message = data.message || "Check your email for the reset link";
       token = data.token; 
       email = "";
     } catch (err) {
@@ -42,29 +42,29 @@
 
 <div class="container">
   <div class="card">
-    <h1>Quên mật khẩu</h1>
+    <h1>Forgot Password</h1>
 
     <form on:submit={handleSubmit}>
-      <label>Email của bạn</label>
+      <label>Your Email</label>
       <input
         type="email"
         bind:value={email}
-        placeholder="Nhập email..."
+        placeholder="Enter your email..."
         required
         disabled={loading}
       />
 
       <button type="submit" disabled={loading}>
-        {#if loading}⏳ Đang gửi...{/if}
-        {#if !loading}Gửi liên kết đặt lại mật khẩu{/if}
+        {#if loading}⏳ Sending...{/if}
+        {#if !loading}Send Password Reset Link{/if}
       </button>
     </form>
 
-     {#if message}
+    {#if message}
       <div class="message success">
         <p>{message}</p>
         <!-- svelte-ignore a11y_consider_explicit_label -->
-        <a href={`/reset_password?token=${token}`}>Link</a>
+        <a href={`/reset_password?token=${token}`}>Reset Link</a>
       </div>
     {/if}
 

@@ -10,6 +10,9 @@
   let product_name: string = "";
   let category: string = "";
   let price: number | string = "";
+  let description: string = "";
+  let rating: number | string = "";
+  let stock: number = 0;
   let message: string = "";
   let loading = false;
   let saving = false;
@@ -48,6 +51,9 @@
       product_name = data.product_name ?? "";
       category = data.category ?? "";
       price = data.price ?? "";
+      description = data.description ?? "";
+      rating = data.rating ?? "";
+      stock = data.stock ?? 0
 
       message = "";
     } catch (err) {
@@ -61,13 +67,7 @@
   async function handleSubmit(e?: Event) {
     e?.preventDefault();
 
-    // basic validation
-    if (
-      !product_name.trim() ||
-      !category.trim() ||
-      price === "" ||
-      price === null
-    ) {
+    if (!product_name.trim() || !category.trim() || price === "" || price === null) {
       alert("Please fill required fields");
       return;
     }
@@ -78,6 +78,9 @@
         product_name: product_name.trim(),
         category: category.trim(),
         price: Number(price),
+        description: description.trim(),
+        rating: rating ? Number(rating).toFixed(2) : 0,
+        stock: stock || 0
       };
 
       const token = localStorage.getItem("accessToken");
@@ -102,7 +105,6 @@
       message = "✅ Product updated successfully!";
       console.log("Updated:", data);
 
-      // redirect back to list (optional)
       goto("/products");
     } catch (err) {
       console.error("Error updating product:", err);
@@ -110,10 +112,6 @@
     } finally {
       saving = false;
     }
-  }
-
-  function handleReset() {
-    onMount;
   }
 </script>
 
@@ -167,6 +165,40 @@
         />
       </label>
 
+      <label class={styles.field}>
+        <span class={styles.label}>Description</span>
+        <textarea
+          class={styles.input}
+          bind:value={description}
+          placeholder="Enter product description"
+        ></textarea>
+      </label>
+
+      <label class={styles.field}>
+        <span class={styles.label}>Rating</span>
+        <input
+          class={styles.input}
+          type="number"
+          min="0"
+          max="5"
+          step="0.1"
+          bind:value={rating}
+          placeholder="0 - 5"
+        />
+      </label>
+
+       <label class={styles.field}>
+        <span class={styles.label}>Stock</span>
+        <input
+          class={styles.input}
+          type="number"
+          step="1"
+          bind:value={stock}
+          placeholder="Enter stock"
+          required
+        />
+      </label>
+
       <div class={styles.actions}>
         <button class={styles.button} type="submit" disabled={saving}>
           {#if saving}Saving...{:else}Save{/if}
@@ -176,7 +208,6 @@
           type="button"
           class={styles.secondary}
           on:click={() => {
-            // simple reset to initial values by reloading the page or refetching
             goto(`/products/${productId}/edit`, { replaceState: true });
           }}
         >

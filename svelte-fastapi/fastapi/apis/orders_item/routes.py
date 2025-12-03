@@ -7,7 +7,7 @@ from apis.orders.models import OrderBase
 from .schema import CheckoutPayload
 from .repository import get_order_items_query
 from auth import get_current_user, require_admin
-
+from apis.product.models import ProductBase
 order_items_router = APIRouter(tags=['Order Item'])
 
 def get_db():
@@ -51,8 +51,21 @@ def checkout(payload: CheckoutPayload, db: Session = Depends(get_db)):
             price=item["price"]
         )
         db.add(order_item)
+        product = db.query(ProductBase).filter(ProductBase.id == item['product_id']).first()
+        if not product:
+            db.rollback()
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Product '{item['product_name']}' not found"
+            )
+        elif product.stock >= item["qty"]:
+            product.stock -= item["qty"]
+        else:
+            db.rollback()
+            raise HTTPException(status_code=400, detail=f"Product '{product.product_name}' chỉ còn {product.stock} items")
 
     db.commit()
+
     return {
         "message": "Order placed successfully", 
         "order_id": str(order.id)

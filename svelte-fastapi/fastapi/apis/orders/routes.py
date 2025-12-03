@@ -9,6 +9,8 @@ from role import StatusCode
 from auth import get_current_user, require_admin, require_employee
 from sqlalchemy.orm import Session
 from .schema import AssignOrderRequest, OrderUpdateSchema
+from apis.product.models import ProductBase
+from apis.orders_item.models import OrderItem
 order_router = APIRouter(tags=["Order Route"])
 # Cấu hình logger
 logging.basicConfig(level=logging.INFO)
@@ -83,18 +85,39 @@ def get_order_detail(order_id: str, db: Session = Depends(get_db), _: dict = Dep
     return {"order": order_info, "items": items}
 
 @order_router.put("/orders/{order_id}")
-def update_order_info(order_id: str, order: OrderUpdateSchema, db: Session = Depends(get_db), _: dict = Depends(require_employee)):
+def update_order_info(
+    order_id: str, 
+    order: OrderUpdateSchema, 
+    db: Session = Depends(get_db), 
+    _: dict = Depends(require_employee)
+):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
-    if not order:
+    if not order_info:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    # Cập nhật các field được gửi
     for k, v in order.dict(exclude_unset=True).items():
         setattr(order_info, k, v)
     order_info.updated_at = datetime.utcnow()
     db.commit()
-    db.refresh(order_info) 
-    return {
-        "message": f"Order updated"
-    }
+    db.refresh(order_info)
+
+    if order_info.status == "CANCELLED":
+        order_items = db.query(OrderItem).filter(OrderItem.order_id == order_id).all()
+        for item in order_items:
+            product = db.query(ProductBase).filter(ProductBase.id == item.product_id).first()
+            if product:
+                product.stock += item.qty
+            else:
+                db.rollback()
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Product '{item.product_name}' not found"
+                )
+        db.commit() 
+
+    return {"message": "Order updated"}
+
 
 @order_router.delete("/orders/{order_id}")
 def delete_product(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_employee)):

@@ -24,10 +24,6 @@ class CheckoutPayload(BaseModel):
     customer: dict
     cart: list[Any]
 
-class CheckoutPayload(BaseModel):
-    customer: dict
-    cart: list
-
 class OrderItemCreate(BaseModel):
     """Schema để tạo order item mới"""
     order_id: str = Field(..., description="ID của order")

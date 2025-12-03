@@ -13,12 +13,12 @@
         errors = { email: "", password: "", confirmPassword: "" };
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email.trim()) errors.email = "Vui lòng nhập email.";
-        else if (!emailRegex.test(email)) errors.email = "Email không hợp lệ.";
+        if (!email.trim()) errors.email = "Please enter your email.";
+        else if (!emailRegex.test(email)) errors.email = "Invalid email address.";
 
-        if (!password) errors.password = "Vui lòng nhập mật khẩu.";
+        if (!password) errors.password = "Please enter your password.";
         else if (password.length < 6)
-            errors.password = "Mật khẩu ít nhất 6 ký tự.";
+            errors.password = "Password must be at least 6 characters.";
 
         return !errors.email && !errors.password && !errors.confirmPassword;
     }
@@ -36,17 +36,17 @@
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                message = errorData.detail;
-                return
+                message = errorData.detail || "Login failed";
+                return;
             }
             const data = await res.json().catch(() => ({}));
-            message = data.message;
+            message = data.message || "Login successful";
             localStorage.setItem("accessToken", data.access_token);
             window.location.href = `/employees?role=${data?.role?.toLowerCase()}`;
          
         } catch (err) {
             console.error(err);
-            message = "Không thể kết nối tới server.";
+            message = "Unable to connect to the server.";
         } finally {
             loading = false;
         }
@@ -64,7 +64,7 @@
         on:submit|preventDefault={handleSubmit}
         aria-describedby={message ? "status" : undefined}
     >
-        <h1>Đăng nhập</h1>
+        <h1>Login</h1>
 
         <label class="field">
             <span>Email</span>
@@ -82,11 +82,11 @@
         </label>
 
         <label class="field">
-            <span>Mật khẩu</span>
+            <span>Password</span>
             <div class="password-row">
                 <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mật khẩu"
+                    placeholder="Password"
                     bind:value={password}
                     aria-invalid={errors.password ? "true" : "false"}
                     aria-describedby={errors.password
@@ -98,8 +98,8 @@
                     class="toggle"
                     on:click={() => (showPassword = !showPassword)}
                     aria-pressed={showPassword}
-                    aria-label="Hiện/ẩn mật khẩu"
-                    >{showPassword ? "Ẩn" : "Hiện"}</button
+                    aria-label="Show/Hide password"
+                    >{showPassword ? "Hide" : "Show"}</button
                 >
             </div>
             {#if errors.password}
@@ -109,7 +109,7 @@
 
         <label class="inline">
             <input type="checkbox" bind:checked={remember} />
-            <span>Ghi nhớ đăng nhập</span>
+            <span>Remember me</span>
         </label>
 
         <button
@@ -119,14 +119,14 @@
             aria-busy={loading}
         >
             {#if loading}
-                <span class="spinner" aria-hidden="true"></span> Đang xử lý...
+                <span class="spinner" aria-hidden="true"></span> Processing...
             {:else}
-                Đăng nhập
+                Login
             {/if}
         </button>
 
         <div class="links">
-            <a href="/employees/forget_password">Quên mật khẩu?</a>
+            <a href="/employees/forget_password">Forgot password?</a>
         </div>
 
         {#if message}

@@ -58,13 +58,13 @@
                 },
             });
             let data = await res.json();
-            
+
             drones = (data.search_result || []).map(
                 (p: Product, index: number) => ({
                     ...p,
                     img: `https://picsum.photos/seed/drone${index + 1}/600/400`,
-                    rating: 4 + Math.random() * 1,
-                    stock: Math.floor(3 + Math.random() * 15),
+                    rating: p.rating || "N/A",
+                    stock: p.stock || 0,
                 }),
             );
             total = data.total_product || data.total || 0;
@@ -82,7 +82,7 @@
         cursorStack = [...cursorStack, currentCursor];
         currentPage++;
         fetchProducts(nextCursor);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const handlePrev = () => {
@@ -91,7 +91,7 @@
         const prevCursor = cursorStack[cursorStack.length - 1];
         cursorStack = cursorStack.slice(0, -1);
         fetchProducts(prevCursor);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const handleSearch = () => {
@@ -120,35 +120,49 @@
         <div class="header-content">
             <h1>
                 <span class="icon">🚁</span>
-                Khám Phá Drone
+                Explore Drones
             </h1>
-            <p class="subtitle">Tìm kiếm và chọn lựa drone phù hợp với nhu cầu của bạn</p>
+            <p class="subtitle">
+                Search and choose the right drone for your needs
+            </p>
         </div>
     </div>
 
     <div class="search-section">
         <div class="search-wrapper">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
+            <svg
+                class="search-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+            >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
             </svg>
             <input
                 bind:value={search}
-                placeholder="Tìm kiếm drone theo tên, model..."
+                placeholder="Search drones by name or model..."
                 on:input={() => {
                     if (page !== 1) page = 1;
                     fetchProducts();
                 }}
             />
             {#if search}
-                <button class="clear-btn" on:click={() => { search = ""; page = 1; fetchProducts(); }}>
+                <button
+                    class="clear-btn"
+                    on:click={() => {
+                        search = "";
+                        page = 1;
+                        fetchProducts();
+                    }}
+                >
                     ✕
                 </button>
             {/if}
         </div>
         <div class="results-info">
             {#if !loading && !error}
-                <p>Tìm thấy <strong>{total}</strong> sản phẩm</p>
+                <p>Found <strong>{total}</strong> products</p>
             {/if}
         </div>
     </div>
@@ -156,80 +170,107 @@
     {#if loading}
         <div class="loading-state">
             <div class="spinner"></div>
-            <p>Đang tải sản phẩm...</p>
+            <p>Loading products...</p>
         </div>
     {:else if error}
         <div class="error-state">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <p>{error}</p>
             <button class="retry-btn" on:click={() => handleSearch()}
-                >Thử lại</button
+                >Retry</button
             >
         </div>
     {:else if drones.length === 0}
         <div class="empty-state">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
             </svg>
-            <p>Không tìm thấy sản phẩm nào</p>
+            <p>No products found</p>
         </div>
     {:else}
         <div class="grid">
             {#each drones as item, i}
                 <div class="card" style="animation-delay: {i * 0.05}s">
-                    <div class="card-image-wrapper" on:click={() => openDetail(item)}>
+                    <div
+                        class="card-image-wrapper"
+                        on:click={() => openDetail(item)}
+                    >
                         <img
                             src={item.img || "/placeholder.png"}
                             alt={item.product_name}
                         />
                         <div class="card-badge">
-                            {#if item.stock && item.stock < 5}
-                                <span class="badge low-stock">Sắp hết</span>
+                            {#if item.stock === 0}
+                                <span class="badge sold-out">Sold Out</span>
+                            {:else if item.stock && item.stock < 5}
+                                <span class="badge low-stock">Low Stock</span>
                             {:else if item.stock && item.stock > 10}
-                                <span class="badge in-stock">Còn hàng</span>
+                                <span class="badge in-stock">In Stock</span>
                             {/if}
                         </div>
                     </div>
                     <div class="card-body">
                         <div class="card-category">{item.category}</div>
                         <h2>{item.product_name}</h2>
-                        
+
                         <div class="card-meta">
                             <div class="rating">
                                 <span class="stars">
                                     {#each Array(5) as _, i}
-                                        <svg viewBox="0 0 24 24" class:filled={i < Math.floor(item.rating || 0)}>
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            class:filled={i <
+                                                Math.floor(item.rating || 0)}
+                                        >
+                                            <path
+                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                                            />
                                         </svg>
                                     {/each}
                                 </span>
-                                <span class="rating-text">{(item.rating || 0).toFixed(1)}</span>
+                                <span class="rating-text"
+                                    >{item.rating || 0}</span
+                                >
                             </div>
                             <div class="stock-info">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <rect x="1" y="3" width="15" height="13"/>
-                                    <path d="M16 8h5l3 3v5h-8V8z"/>
-                                    <circle cx="5.5" cy="18.5" r="2.5"/>
-                                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                >
+                                    <rect x="1" y="3" width="15" height="13" />
+                                    <path d="M16 8h5l3 3v5h-8V8z" />
+                                    <circle cx="5.5" cy="18.5" r="2.5" />
+                                    <circle cx="18.5" cy="18.5" r="2.5" />
                                 </svg>
-                                <span>{item.stock || 0} sản phẩm</span>
+                                <span>{item.stock || 0} units</span>
                             </div>
                         </div>
 
                         <div class="card-footer">
                             <div class="price">
-                                <span class="price-label">Giá</span>
-                                <span class="price-value">{item.price.toLocaleString()}$</span>
+                                <span class="price-label">Price</span>
+                                <span class="price-value"
+                                    >{item.price.toLocaleString()}$</span
+                                >
                             </div>
-                            <button class="btn-buy" on:click={() => buyNow(item)}>
-                                Mua ngay
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                            <button
+                                class="btn-buy"
+                                on:click={() => buyNow(item)}
+                                disabled={item.stock === 0}
+                            >
+                                Buy Now
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                >
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
@@ -239,31 +280,23 @@
         </div>
 
         <div class="pagination">
-            <button
-                class="page-btn"
-                on:click={handlePrev}
-                disabled={!hasPrev}
-            >
+            <button class="page-btn" on:click={handlePrev} disabled={!hasPrev}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M15 18l-6-6 6-6"/>
+                    <path d="M15 18l-6-6 6-6" />
                 </svg>
-                Trang trước
+                Previous
             </button>
 
             <div class="page-info">
-                <span class="page-current">Trang {currentPage}</span>
+                <span class="page-current">Page {currentPage}</span>
                 <span class="page-separator">/</span>
                 <span class="page-total">{totalPages}</span>
             </div>
 
-            <button
-                class="page-btn"
-                on:click={handleNext}
-                disabled={!hasNext}
-            >
-                Trang sau
+            <button class="page-btn" on:click={handleNext} disabled={!hasNext}>
+                Next
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M9 18l6-6-6-6"/>
+                    <path d="M9 18l6-6-6-6" />
                 </svg>
             </button>
         </div>
@@ -295,13 +328,17 @@
     }
 
     .header::before {
-        content: '';
+        content: "";
         position: absolute;
         top: -50%;
         right: -10%;
         width: 500px;
         height: 500px;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 70%
+        );
         border-radius: 50%;
     }
 
@@ -328,8 +365,13 @@
     }
 
     @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
     }
 
     .subtitle {
@@ -411,7 +453,9 @@
         font-weight: 600;
     }
 
-    .loading-state, .error-state, .empty-state {
+    .loading-state,
+    .error-state,
+    .empty-state {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -431,16 +475,21 @@
     }
 
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
-    .loading-state p, .error-state p, .empty-state p {
+    .loading-state p,
+    .error-state p,
+    .empty-state p {
         color: #64748b;
         font-size: 16px;
         margin: 8px 0 0 0;
     }
 
-    .error-state svg, .empty-state svg {
+    .error-state svg,
+    .empty-state svg {
         width: 64px;
         height: 64px;
         color: #94a3b8;
@@ -820,5 +869,16 @@
             width: 100%;
             justify-content: center;
         }
+    }
+
+    .badge.sold-out {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+    }
+
+    .btn-buy:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 </style>

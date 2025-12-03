@@ -5,7 +5,7 @@
 
   let cart = get(CartStore);
 
-  // Form khách hàng
+  // Customer form
   let name = "";
   let email = "";
   let phone = "";
@@ -49,15 +49,15 @@
 </script>
 
 <div class="checkout-wrapper">
-  <h1 class="title">Thanh toán</h1>
+  <h1 class="title">Checkout</h1>
 
   <div class="grid">
     <!-- LEFT: CART ITEMS -->
     <section class="card cart">
-      <h2>Giỏ hàng</h2>
+      <h2>Shopping Cart</h2>
 
       {#if cart.length === 0}
-        <p class="empty">Giỏ hàng của bạn đang trống.</p>
+        <p class="empty">Your cart is currently empty.</p>
       {:else}
         <ul class="cart-list">
           {#each cart as item}
@@ -73,19 +73,19 @@
         </ul>
 
         <div class="total-box">
-          <span>Tổng tiền</span>
-          <strong class="total">{Number(total).toFixed(2).replace(/\.00$/, "") + "$"}$</strong>
+          <span>Total</span>
+          <strong class="total">{Number(total).toFixed(2).replace(/\.00$/, "") + "$"}</strong>
         </div>
       {/if}
     </section>
 
     <!-- RIGHT: CUSTOMER FORM -->
     <section class="card form">
-      <h2>Thông tin giao hàng</h2>
+      <h2>Shipping Information</h2>
 
       <div class="field">
-        <label>Họ tên</label>
-        <input bind:value={name} placeholder="VD: Nguyễn Văn A" />
+        <label>Full Name</label>
+        <input bind:value={name} placeholder="Ex: John Doe" />
       </div>
 
       <div class="field">
@@ -94,19 +94,19 @@
       </div>
 
       <div class="field">
-        <label>Số điện thoại</label>
+        <label>Phone Number</label>
         <input bind:value={phone} placeholder="0123 456 789" />
       </div>
 
       <div class="field">
-        <label>Địa chỉ giao hàng</label>
+        <label>Shipping Address</label>
         <textarea
           bind:value={address}
-          placeholder="Số nhà, đường, phường/xã, quận/huyện"
+          placeholder="House number, street, ward, district, city"
         ></textarea>
       </div>
 
-      <button class="btn" on:click={handleCheckout}>Đặt hàng</button>
+      <button class="btn" on:click={handleCheckout}>Place Order</button>
     </section>
   </div>
 </div>

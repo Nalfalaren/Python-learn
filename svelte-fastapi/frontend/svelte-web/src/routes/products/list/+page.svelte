@@ -42,7 +42,7 @@
     const buildUrl = (cursor: string | null = null) => {
         const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/products`);
         url.searchParams.set("limit", String(limit));
-        if (search) url.searchParams.set("search", search);
+        if (search) url.searchParams.set("search_product", search);
         if (cursor) url.searchParams.set("next_cursor", cursor);
         return url.toString();
     };
@@ -142,18 +142,24 @@
             <input
                 bind:value={search}
                 placeholder="Search drones by name or model..."
-                on:input={() => {
-                    if (page !== 1) page = 1;
-                    fetchProducts();
+                oninput={() => {
+                    cursorStack = [];
+                    currentPage = 1;
+                    currentCursor = null;
+                    nextCursor = null;
+                    fetchProducts(null);
                 }}
             />
             {#if search}
                 <button
                     class="clear-btn"
-                    on:click={() => {
+                    onclick={() => {
                         search = "";
-                        page = 1;
-                        fetchProducts();
+                        cursorStack = [];
+                        currentPage = 1;
+                        currentCursor = null;
+                        nextCursor = null;
+                        fetchProducts(null);
                     }}
                 >
                     ✕
@@ -180,7 +186,7 @@
                 <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <p>{error}</p>
-            <button class="retry-btn" on:click={() => handleSearch()}
+            <button class="retry-btn" onclick={() => handleSearch()}
                 >Retry</button
             >
         </div>
@@ -198,7 +204,7 @@
                 <div class="card" style="animation-delay: {i * 0.05}s">
                     <div
                         class="card-image-wrapper"
-                        on:click={() => openDetail(item)}
+                        onclick={() => openDetail(item)}
                     >
                         <img
                             src={item.img || "/placeholder.png"}
@@ -261,7 +267,7 @@
                             </div>
                             <button
                                 class="btn-buy"
-                                on:click={() => buyNow(item)}
+                                onclick={() => buyNow(item)}
                                 disabled={item.stock === 0}
                             >
                                 Buy Now
@@ -280,7 +286,7 @@
         </div>
 
         <div class="pagination">
-            <button class="page-btn" on:click={handlePrev} disabled={!hasPrev}>
+            <button class="page-btn" onclick={handlePrev} disabled={!hasPrev}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M15 18l-6-6 6-6" />
                 </svg>
@@ -293,7 +299,7 @@
                 <span class="page-total">{totalPages}</span>
             </div>
 
-            <button class="page-btn" on:click={handleNext} disabled={!hasNext}>
+            <button class="page-btn" onclick={handleNext} disabled={!hasNext}>
                 Next
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M9 18l6-6-6-6" />

@@ -3,6 +3,7 @@
     import { onMount } from "svelte";
     import { jwtDecode } from "jwt-decode";
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
+    import { derived } from "svelte/store";
 
     /** Products list */
     let products: Product[] = [];
@@ -122,7 +123,9 @@
     $: categories = ["All", ...new Set(products.map((p) => p.category))];
 
     // Cart total count
-    $: cartCount = cart.getTotalCount();
+    const cartCount = derived(cart, ($cart) =>
+    $cart.reduce((total, item) => total + item.quantity, 0)
+);
 
     // Has more pages
     $: hasPrevPage = currentPage > 1;
@@ -254,24 +257,24 @@
         <a href="#">Sell</a>
         <button
             style="background-color: transparent; border-color: transparent; position:relative"
-            on:click={() => openCartList()}
+            onclick={() => openCartList()}
         >
             My Orders
-            {#if cartCount > 0}
-                <span class="cart-badge">{cartCount}</span>
+            {#if $cartCount > 0}
+                <span class="cart-badge">{$cartCount}</span>
             {/if}
         </button>
         {#if isLoggedIn}
             <button
                 style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
-                on:click={logout}
+                onclick={logout}
             >
                 Log out
             </button>
         {:else}
             <button
                 style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
-                on:click={() => goto("/login")}
+                onclick={() => goto("/login")}
             >
                 Sign in
             </button>
@@ -292,19 +295,19 @@
             <input
                 placeholder="Search drones..."
                 bind:value={query}
-                on:input={debouncedFetch}
+                oninput={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0; min-width:260px"
             />
             <select
                 bind:value={category}
-                on:change={debouncedFetch}
+                onchange={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
                 {#each categories as c}<option value={c}>{c}</option>{/each}
             </select>
             <select
                 bind:value={sortBy}
-                on:change={debouncedFetch}
+                onchange={debouncedFetch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
                 <option value="featured">Featured</option>
@@ -314,7 +317,7 @@
             </select>
         </div>
         <div style="display:flex; gap:10px; margin-top:6px">
-            <button class="btn-primary" on:click={() => goto("/products/list")}
+            <button class="btn-primary" onclick={() => goto("/products/list")}
                 >Buy Now</button
             >
             <button class="btn-ghost">Sell Drone</button>
@@ -355,7 +358,7 @@
                         </div>
                         <button
                             class="top-list-btn"
-                            on:click={() => openQuickView(p)} disabled={p.stock === 0}>View</button
+                            onclick={() => openQuickView(p)} disabled={p.stock === 0}>View</button
                         >
                     </div>
                 {/each}
@@ -383,7 +386,7 @@
                 <article
                     class="card anim-in"
                     style={`animation-delay: ${80 + i * 40}ms`}
-                    on:click={() => goto(`/products/details/${p.id}`)}
+                    onclick={() => goto(`/products/details/${p.id}`)}
                 >
                     <img alt={p.product_name} src={p.img} />
                     <div class="card-body">
@@ -409,11 +412,11 @@
                             >
                                 <!-- Add button -->
                                 <button
-                                    on:click={(e) => {
+                                    onclick={(e) => {
                                         e.stopPropagation();
                                         openAddToCartModal(p);
                                     }}
-                                    class="btn-small-primary"
+                                    class="btn-primary"
                                     disabled={p.stock === 0}
                                     title={p.stock === 0
                                         ? "Out of stock"
@@ -424,7 +427,7 @@
 
                                 <!-- Quick View button -->
                                 <button
-                                    on:click={(e) => {
+                                    onclick={(e) => {
                                         e.stopPropagation();
                                         openQuickView(p);
                                     }}
@@ -448,7 +451,7 @@
         <div class="pagination">
             <button
                 class="pagination-btn"
-                on:click={handlePrev}
+                onclick={handlePrev}
                 disabled={!hasPrevPage || isLoading}
             >
                 ‹ Prev
@@ -462,7 +465,7 @@
 
             <button
                 class="pagination-btn"
-                on:click={handleNext}
+                onclick={handleNext}
                 disabled={!hasNextPage || isLoading}
             >
                 Next ›
@@ -473,8 +476,8 @@
 
 <!-- QUICK VIEW MODAL -->
 {#if quickView}
-    <div class="modal-backdrop" on:click={closeQuickView}>
-        <div class="modal" on:click|stopPropagation>
+    <div class="modal-backdrop" onclick={closeQuickView}>
+        <div class="modal" onclick={(e) => e.stopPropagation}>
             <div style="display:flex; gap:16px; align-items:flex-start">
                 <img
                     src={quickView.img}
@@ -489,7 +492,7 @@
                         ) ?? "—"}
                     </div>
                     <p style="margin-top:12px; color:#334155">
-                        Short description: demo content
+                        Short description: {quickView.description || 'No description'}
                     </p>
                     <div
                         style="display:flex; gap:12px; margin-top:18px; align-items:center"
@@ -498,10 +501,10 @@
                             ${quickView.price}
                         </div>
                         <button
-                            on:click={() => openAddToCartModal(quickView)}
+                            onclick={() => openAddToCartModal(quickView)}
                             class="btn-primary">Add to Cart</button
                         >
-                        <button on:click={closeQuickView} class="btn-secondary"
+                        <button onclick={closeQuickView} class="btn-secondary"
                             >Close</button
                         >
                     </div>
@@ -515,8 +518,8 @@
 {#if isLoggedIn}
     {#if showAddToCartModal && addToCartProduct}
         <!-- Add to Cart Modal -->
-        <div class="modal-backdrop" on:click={closeAddToCartModal}>
-            <div class="modal" on:click|stopPropagation>
+        <div class="modal-backdrop" onclick={closeAddToCartModal}>
+            <div class="modal" onclick={(e) => e.stopPropagation}>
                 <div
                     style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap"
                 >
@@ -533,7 +536,7 @@
                             ) ?? "—"}
                         </div>
                         <p style="margin-top:12px; color:#334155">
-                            Short description: demo content
+                            Short description: {addToCartProduct.description || 'No descrption'}
                         </p>
                         <div
                             style="margin-top:16px; display:flex; align-items:center; gap:12px"
@@ -554,11 +557,11 @@
                         </div>
                         <div style="display:flex; gap:12px; margin-top:18px">
                             <button
-                                on:click={confirmAddToCart}
+                                onclick={confirmAddToCart}
                                 class="btn-primary">Add to Cart</button
                             >
                             <button
-                                on:click={closeAddToCartModal}
+                                onclick={closeAddToCartModal}
                                 class="btn-secondary">Cancel</button
                             >
                         </div>
@@ -567,10 +570,10 @@
             </div>
         </div>
     {:else if showAddToCardListModal}
-        <div class="modal-backdrop" on:click={closeCartList}>
+        <div class="modal-backdrop" onclick={closeCartList}>
             <div
                 class="modal"
-                on:click|stopPropagation
+                onclick={(e) => e.stopPropagation}
                 style="max-width:600px;"
             >
                 <h2 style="margin-bottom:12px">Your Cart</h2>
@@ -605,7 +608,7 @@
 
                                 <button
                                     class="btn-small-ghost"
-                                    on:click={() => deleteCart(item.id!)}
+                                    onclick={() => deleteCart(item.id!)}
                                 >
                                     Remove
                                 </button>
@@ -628,14 +631,14 @@
                 <div
                     style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px"
                 >
-                    <button on:click={closeCartList} class="btn-secondary"
+                    <button onclick={closeCartList} class="btn-secondary"
                         >Close</button
                     >
                     <button
                         class={cartItems.length === 0
                             ? "btn-disabled"
                             : "btn-primary"}
-                        on:click={() => goto("/checkout")}
+                        onclick={() => goto("/checkout")}
                         disabled={cartItems.length === 0}
                     >
                         Checkout
@@ -646,10 +649,10 @@
     {/if}
 {:else if !isLoggedIn && showAddToCardListModal}
     <!-- Login Required Modal -->
-    <div class="modal-backdrop" on:click={closeCartList}>
+    <div class="modal-backdrop" onclick={closeCartList}>
         <div
             class="modal"
-            on:click|stopPropagation
+            onclick={(e) => e.stopPropagation}
             style="padding:24px; text-align:center"
         >
             <h2>Please Login</h2>
@@ -657,10 +660,10 @@
             <div
                 style="margin-top:16px; display:flex; justify-content:center; gap:12px"
             >
-                <button on:click={redirectToLogin} class="btn-primary"
+                <button onclick={redirectToLogin} class="btn-primary"
                     >Login</button
                 >
-                <button on:click={closeCartList} class="btn-secondary"
+                <button onclick={closeCartList} class="btn-secondary"
                     >Cancel</button
                 >
             </div>
@@ -753,15 +756,14 @@
         width: 44px;
         height: 44px;
         border-radius: 12px;
-        background: radial-gradient(circle at 20% 0, #22c55e, #0f766e);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        box-shadow:
-            0 0 0 1px rgba(34, 197, 94, 0.5),
-            0 16px 30px rgba(15, 118, 110, 0.4);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+
     }
 
     nav {
@@ -1046,10 +1048,10 @@
         padding: 12px 16px;
         border-radius: 10px;
         border: 0;
-        background: linear-gradient(135deg, #0ea5a4, #22c55e);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         font-weight: 600;
-        box-shadow: 0 14px 30px rgba(14, 165, 164, 0.4);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         transition:
             transform 140ms ease,
             box-shadow 140ms ease,
@@ -1058,7 +1060,7 @@
 
     .btn-primary:hover {
         transform: translateY(-1px) scale(1.02);
-        box-shadow: 0 18px 40px rgba(22, 163, 74, 0.45);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         filter: brightness(1.02);
     }
 

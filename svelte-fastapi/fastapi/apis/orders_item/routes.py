@@ -4,8 +4,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from .models import OrderItem
 from apis.orders.models import OrderBase
-from apis.product.models import ProductBase
-from .schema import CheckoutPayload, OrderItemCreate, OrderItemUpdate
+from .schema import CheckoutPayload
 from .repository import get_order_items_query
 from auth import get_current_user, require_admin
 

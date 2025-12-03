@@ -10,7 +10,6 @@
   let product_name: string = "";
   let category: string = "";
   let price: number | string = "";
-  let is_active: boolean = true;
   let message: string = "";
   let loading = false;
   let saving = false;
@@ -27,13 +26,16 @@
     loading = true;
     try {
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/products/${productId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (!res.ok) {
         const t = await res.text();
@@ -42,12 +44,10 @@
 
       const data = await res.json();
 
-      // Fill form fields (adapt to your backend response shape)
       product_id = data.id ?? data.product_id ?? "";
       product_name = data.product_name ?? "";
       category = data.category ?? "";
       price = data.price ?? "";
-      is_active = typeof data.is_active === "number" ? Boolean(data.is_active) : !!data.is_active;
 
       message = "";
     } catch (err) {
@@ -62,7 +62,12 @@
     e?.preventDefault();
 
     // basic validation
-    if (!product_name.trim() || !category.trim() || price === "" || price === null) {
+    if (
+      !product_name.trim() ||
+      !category.trim() ||
+      price === "" ||
+      price === null
+    ) {
       alert("Please fill required fields");
       return;
     }
@@ -73,18 +78,20 @@
         product_name: product_name.trim(),
         category: category.trim(),
         price: Number(price),
-        is_active: is_active ? 1 : 0,
       };
 
       const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`, {
-        method: "PUT", // or PATCH depending on your backend
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`,
+        {
+          method: "PUT", // or PATCH depending on your backend
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!res.ok) {
         const errText = await res.text();
@@ -106,10 +113,7 @@
   }
 
   function handleReset() {
-    // optionally re-fetch or clear — here we re-fetch by calling onMount logic
-    onMount; // no-op to satisfy linter; to re-load you can call the fetch block logic instead
-    // simple reset to blank if you prefer:
-    // product_name = ""; category = ""; price = ""; is_active = true;
+    onMount;
   }
 </script>
 
@@ -144,13 +148,11 @@
 
       <label class={styles.field}>
         <span class={styles.label}>Category</span>
-        <input
-          class={styles.input}
-          type="text"
-          bind:value={category}
-          placeholder="Enter category"
-          required
-        />
+        <select class={styles.input} bind:value={category} required>
+          <option value="" disabled selected>Choose category</option>
+          <option value="Multirotor">Multirotor</option>
+          <option value="Fixed-wing">Fixed-wing</option>
+        </select>
       </label>
 
       <label class={styles.field}>
@@ -162,15 +164,6 @@
           bind:value={price}
           placeholder="Enter price"
           required
-        />
-      </label>
-
-      <label class={styles.field}>
-        <span class={styles.label}>Active</span>
-        <input
-          type="checkbox"
-          bind:checked={is_active}
-          class={styles.checkbox}
         />
       </label>
 

@@ -20,7 +20,7 @@
   customerId = params.id;
 
   onMount(async () => {
-    if (!authStore.isAuthenticated) goto("/customers/login");
+    if (!authStore.isAuthenticated) goto("/employees/login");
 
     const token = localStorage.getItem("accessToken");
 

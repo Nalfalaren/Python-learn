@@ -113,7 +113,7 @@ def search_employee(
 
 #Get detail employee
 @router.get('/employee/{employeeId}', response_model=EmployeeSchema)
-def get_employee_detail(employeeId: str, db: Session = Depends(get_db), _: dict = Depends(require_admin),):
+def get_employee_detail(employeeId: str, db: Session = Depends(get_db), _: dict = Depends(require_employee),):
     employee = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
     if not employee:
         raise HTTPException(status_code=404, detail='Employee not existed!')

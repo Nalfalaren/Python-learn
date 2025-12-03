@@ -249,7 +249,7 @@
                         <td>{order.email}</td>
                         <td>{order.phone}</td>
                         <td>{order.address}</td>
-                        <td>{order.total}đ</td>
+                        <td>{order.total}$</td>
                         <td>{order.status.toUpperCase()}</td>
                         <td>
                             <button

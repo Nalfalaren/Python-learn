@@ -74,7 +74,7 @@
 
         <div class="total-box">
           <span>Tổng tiền</span>
-          <strong class="total">{total.toFixed(2)}$</strong>
+          <strong class="total">{Number(total).toFixed(2).replace(/\.00$/, "") + "$"}$</strong>
         </div>
       {/if}
     </section>

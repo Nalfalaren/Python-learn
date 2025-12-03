@@ -64,10 +64,10 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
 def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
     employee = db.query(AccountBase).filter(AccountBase.email == employee_info.email).first()
     if not employee:
-        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Employee not existed!")
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Incorrect email or password!")
     
     if not argon2.verify(employee_info.password, employee.password):
-        raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect password")
+        raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect email or password!")
 
     employee.is_active = "Active"
     db.commit()

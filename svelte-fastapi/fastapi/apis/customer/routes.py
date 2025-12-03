@@ -41,7 +41,6 @@ def sign_up(account_info: CustomerSignUpSchema, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Customer already exists!")
     if account_info.password != account_info.confirmPassword:
         raise HTTPException(status_code=400, detail="Passwords do not match")
-
     account = CustomerBase(
         id=str(uuid.uuid4()),
         email=account_info.email,
@@ -64,10 +63,10 @@ def sign_up(account_info: CustomerSignUpSchema, db: Session = Depends(get_db)):
 def login(customer_info: AccountSchema, db: Session = Depends(get_db)):
     customer = db.query(CustomerBase).filter(CustomerBase.email == customer_info.email).first()
     if not customer:
-        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Customer not existed!")
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Incorrect email or password!")
     
     if not argon2.verify(customer_info.password, customer.password):
-        raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect password")
+        raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Incorrect email or password!")
 
     customer.is_active = "Active"
     db.commit()

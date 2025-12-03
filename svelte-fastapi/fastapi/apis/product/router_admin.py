@@ -24,7 +24,7 @@ def list_products(
     search_id: str | None = Query(None),
     search_product: str | None = Query(None),
     next_cursor: str | None = Query(None),
-    limit: int = Query(20),
+    limit: int = Query(10),
     category: str | None = Query("All"),
     sort_by: str | None = Query("featured"),
     _: dict = Depends(require_admin)

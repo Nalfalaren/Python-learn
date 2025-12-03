@@ -6,3 +6,5 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 psycopg2-binary
+argon2-cffi>=21.3.0
+argon2-cffi-bindings>=21.2.0

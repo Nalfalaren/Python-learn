@@ -126,7 +126,7 @@
         </button>
 
         <div class="links">
-            <a href="/employees/forgot">Quên mật khẩu?</a>
+            <a href="/employees/forget_password">Quên mật khẩu?</a>
         </div>
 
         {#if message}

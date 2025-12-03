@@ -18,3 +18,7 @@ class AccountBase(Base):
         default="Active",
         nullable=False
     )
+
+    reset_tokens_employee = relationship("PasswordResetTokenEmployeeBase", back_populates="employee")
+
+

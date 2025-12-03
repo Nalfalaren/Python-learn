@@ -125,7 +125,7 @@
         </button>
 
         <div class="links">
-            <a href="/forgot">Quên mật khẩu?</a>
+            <a href="/forget_password">Quên mật khẩu?</a>
             <a href="/signup">Tạo tài khoản mới</a>
         </div>
 

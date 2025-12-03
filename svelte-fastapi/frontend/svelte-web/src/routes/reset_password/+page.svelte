@@ -1,36 +1,52 @@
 <script>
-  let email = "";
-  let message = "";
-  let error = "";
-  let loading = false;
+    import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { onMount } from "svelte";
+
+  let password = "";
+  let confirmPassword = "";
   let token = "";
+
+  let loading = false;
+  let error = "";
+  let message = "";
+
+  onMount(() => {
+    token = $page.url.searchParams.get("token");
+  });
 
   async function handleSubmit(e) {
     e.preventDefault();
     error = "";
     message = "";
+
+    if (password !== confirmPassword) {
+      error = "Mật khẩu không trùng khớp!";
+      return;
+    }
+
     loading = true;
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/employee/forget_password`,
+        `${import.meta.env.VITE_API_BASE_URL}/customer/reset_password`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        },
+          body: JSON.stringify({ token, new_password: password, confirm_password: confirmPassword}),
+        }
       );
 
       const data = await res.json();
-
       if (!res.ok) {
-        error = data.detail || "Something went wrong";
+        error = data.detail || "Có lỗi xảy ra!";
         return;
       }
 
-      message = data.message;
-      token = data.token;
-      email = ""; // reset input
+      message = data.message || "Đặt lại mật khẩu thành công!";
+      password = "";
+      confirmPassword = "";
+      goto('/login')
     } catch (err) {
       error = err.message;
     } finally {
@@ -41,28 +57,37 @@
 
 <div class="container">
   <div class="card">
-    <h1>Forgot Password</h1>
-    <form on:submit={handleSubmit}>
-      <label>Nhập email:</label>
-      <input
-        type="email"
-        bind:value={email}
-        placeholder="Enter your email"
-        required
-        style="margin-top: 10px"
-      />
-      <button type="submit" disabled={loading}>
-        {#if loading}Sending...{/if}
-        {#if !loading}Send Reset Link{/if}
-      </button>
-    </form>
+    <h1>Đặt lại mật khẩu</h1>
+
+    {#if !token}
+      <p class="message error">Token không hợp lệ hoặc đã hết hạn.</p>
+    {:else}
+      <form on:submit={handleSubmit}>
+        <label>Mật khẩu mới:</label>
+        <input
+          type="password"
+          bind:value={password}
+          placeholder="Nhập mật khẩu mới"
+          required
+        />
+
+        <label>Nhập lại mật khẩu:</label>
+        <input
+          type="password"
+          bind:value={confirmPassword}
+          placeholder="Nhập lại mật khẩu"
+          required
+        />
+
+        <button type="submit" disabled={loading}>
+          {#if loading}Đang xử lý...{/if}
+          {#if !loading}Đặt lại mật khẩu{/if}
+        </button>
+      </form>
+    {/if}
 
     {#if message}
-      <div class="message success">
-        <p>{message}</p>
-        <!-- svelte-ignore a11y_consider_explicit_label -->
-        <a href={`/employees/reset_password/?token=${token}`}>Link</a>
-      </div>
+      <div class="message success">{message}</div>
     {/if}
 
     {#if error}
@@ -72,11 +97,9 @@
 </div>
 
 <style>
-  body,
-  html {
+  body, html {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
     background-color: #f5f5f5;
   }
 
@@ -86,6 +109,7 @@
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    font-family: system-ui, sans-serif;
   }
 
   .card {
@@ -103,7 +127,7 @@
     color: #333;
   }
 
-  input[type="email"] {
+  input {
     width: 100%;
     padding: 12px 15px;
     margin-bottom: 15px;

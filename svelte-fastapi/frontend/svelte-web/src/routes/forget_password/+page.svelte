@@ -3,19 +3,24 @@
   let message = "";
   let error = "";
   let loading = false;
+  let token = "";
 
   async function handleSubmit(e) {
     e.preventDefault();
     error = "";
     message = "";
+    token = "";
     loading = true;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/customer/forget_password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/customer/forget_password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }
+      );
 
       const data = await res.json();
 
@@ -25,7 +30,8 @@
       }
 
       message = data.message;
-      email = ""; // reset input
+      token = data.token; 
+      email = "";
     } catch (err) {
       error = err.message;
     } finally {
@@ -34,100 +40,32 @@
   }
 </script>
 
-<style>
-  body, html {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
-  }
-
-  .container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
-
-  .card {
-    background: #fff;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    max-width: 400px;
-    width: 100%;
-  }
-
-  h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #333;
-  }
-
-  input[type="email"] {
-    width: 100%;
-    padding: 12px 15px;
-    margin-bottom: 15px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    box-sizing: border-box;
-  }
-
-  button {
-    width: 100%;
-    padding: 12px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    font-size: 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-
-  button:hover {
-    background-color: #45a049;
-  }
-
-  .message {
-    text-align: center;
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: bold;
-  }
-
-  .success {
-    background-color: #d4edda;
-    color: #155724;
-  }
-
-  .error {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
-</style>
-
 <div class="container">
   <div class="card">
-    <h1>Forgot Password</h1>
+    <h1>Quên mật khẩu</h1>
+
     <form on:submit={handleSubmit}>
+      <label>Email của bạn</label>
       <input
         type="email"
         bind:value={email}
-        placeholder="Enter your email"
+        placeholder="Nhập email..."
         required
+        disabled={loading}
       />
+
       <button type="submit" disabled={loading}>
-        {#if loading}Sending...{/if}
-        {#if !loading}Send Reset Link{/if}
+        {#if loading}⏳ Đang gửi...{/if}
+        {#if !loading}Gửi liên kết đặt lại mật khẩu{/if}
       </button>
     </form>
 
-    {#if message}
-      <div class="message success">{message}</div>
+     {#if message}
+      <div class="message success">
+        <p>{message}</p>
+        <!-- svelte-ignore a11y_consider_explicit_label -->
+        <a href={`/reset_password?token=${token}`}>Link</a>
+      </div>
     {/if}
 
     {#if error}
@@ -135,3 +73,113 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #f5f6fa;
+    padding: 20px;
+  }
+
+  .card {
+    background: #fff;
+    padding: 35px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 26px;
+    color: #333;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border 0.2s;
+  }
+
+  input:focus {
+    border-color: #4caf50;
+    outline: none;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border: none;
+    background: #4caf50;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.25s;
+  }
+
+  button:hover:not([disabled]) {
+    background: #43a047;
+  }
+
+  button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .message {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .success {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .error {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .reset-link-box {
+    margin-top: 10px;
+    word-break: break-all;
+  }
+
+  .copy-btn {
+    margin-top: 10px;
+    width: auto;
+    padding: 6px 12px;
+    background: #2196f3;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .copy-btn:hover {
+    background: #1976d2;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+</style>

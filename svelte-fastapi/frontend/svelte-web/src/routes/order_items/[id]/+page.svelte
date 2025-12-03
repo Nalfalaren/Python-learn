@@ -22,7 +22,7 @@
   itemId = params.id;
 
   onMount(async () => {
-    if (!authStore.isAuthenticated) goto("/employees/login");
+    if (!$authStore.isAuthenticated) goto("/employees/login");
 
     const token = localStorage.getItem("accessToken");
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/order_items/${itemId}`, {

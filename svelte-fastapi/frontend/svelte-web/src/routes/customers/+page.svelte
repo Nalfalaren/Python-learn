@@ -131,7 +131,6 @@
       goto("/employees/login");
       return;
     }
-
     fetchCustomers(null);
   });
 </script>

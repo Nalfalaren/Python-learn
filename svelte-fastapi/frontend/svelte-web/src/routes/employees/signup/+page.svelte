@@ -84,7 +84,7 @@
     onMount(() => emailInput?.focus());
 
     onMount(() => {
-    if(!authStore.isAuthenticated) goto("/employees/login")
+    if(!$authStore.isAuthenticated) goto("/employees/login")
     })
 </script>
 

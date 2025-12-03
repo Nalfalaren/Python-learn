@@ -137,10 +137,9 @@
   }
 
   onMount(() => {
-    if(!authStore.isAuthenticated) {
+    if(!$authStore.isAuthenticated) {
       goto("/employees/login")
     } 
-    console.log(authStore.isAuthenticated);
     fetchEmployees(null);
   });
 </script>

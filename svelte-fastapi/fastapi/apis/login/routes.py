@@ -21,7 +21,7 @@ from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_
 router = APIRouter(prefix='/auth', tags=["Authentication"])
 load_dotenv()
 
-# === Database Dependency ===
+# Database Dependency 
 def get_db():
     db = SessionLocal()
     try:
@@ -31,11 +31,11 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-# === Logger ===
+# Logger 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# === Sign Up ===
+# Sign Up 
 @router.post("/signup")
 def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
     existing = db.query(AccountBase).filter(AccountBase.email == account_info.email).first()
@@ -48,7 +48,7 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
         id=str(uuid.uuid4()),
         email=account_info.email,
         employee_name=account_info.employee_name,
-        password=argon2.hash(account_info.password),  # ✅ use passlib
+        password=argon2.hash(account_info.password), 
         role=account_info.role,
         created_at=datetime.utcnow(),
         is_active = 'Inactive'
@@ -59,7 +59,7 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
 
     return {"message": "✅ Sign up successfully"}
 
-# === Login ===
+# Login
 @router.post("/login")
 def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
     employee = db.query(AccountBase).filter(AccountBase.email == employee_info.email).first()
@@ -83,7 +83,7 @@ def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
     }
 
 
-# === Refresh Token ===
+# Refresh token
 @router.post("/refresh")
 def refresh_token(authorization: str = Header(None)):
     if not authorization:

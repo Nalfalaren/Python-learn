@@ -24,7 +24,7 @@ def db_session():
 sample_customer = {
   "id": "string",
   "customer_name": "string",
-  "email": "customer1@gmail.com",
+  "email": "customer1@yopmail.com",
   "password": "password123",
   "confirmPassword": "password123",
   "phone": "string",
@@ -34,7 +34,7 @@ sample_customer = {
 }
 
 login_data = {
-    "email": "customer1@gmail.com",
+    "email": "customer1@yopmail.com",
     "password": "password123"
 }
 

@@ -24,7 +24,7 @@ def db_session():
 sample_customer = {
   "id": "string",
   "customer_name": "string",
-  "email": "customer@gmail.com",
+  "email": "customer1@gmail.com",
   "password": "password123",
   "confirmPassword": "password123",
   "phone": "string",
@@ -34,7 +34,7 @@ sample_customer = {
 }
 
 login_data = {
-    "email": "customer@gmail.com",
+    "email": "customer1@gmail.com",
     "password": "password123"
 }
 
@@ -46,7 +46,6 @@ def test_signup_success(test_client):
     assert response.json()["message"] == "✅ Sign up successfully"
 
 def test_signup_duplicate(test_client):
-    # Signup lần 2 sẽ bị lỗi
     response = test_client.post("/signup", json=sample_customer)
     assert response.status_code == 400
     assert response.json()["detail"] == "Customer already exists!"
@@ -61,7 +60,7 @@ def test_login_success(test_client):
 
 def test_login_wrong_password(test_client):
     response = test_client.post("/login", json={"email": login_data["email"], "password": "wrongpass"})
-    assert response.status_code == 401 or response.status_code == 404  # tùy StatusCode bạn set
+    assert response.status_code == 401 or response.status_code == 404
     assert "Incorrect email or password" in response.json()["detail"]
 
 def test_get_customers(test_client):

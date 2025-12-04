@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timedelta
 from main import app
 from database import Base, engine, SessionLocal
-from apis.login.models import AccountBase
+from apis.login.models import AdminBase
 from apis.forget_password.models import PasswordResetTokenEmployeeBase
 from apis.forget_password.utils import hash_password
 from passlib.context import CryptContext
@@ -30,7 +30,7 @@ def db_session():
 
 # --- Seed helpers ---
 def seed_employee(session: Session, email="employee@example.com"):
-    employee = AccountBase(
+    employee = AdminBase(
         id=str(uuid.uuid4()),
         email=email,
         employee_name="Test Employee",
@@ -48,7 +48,7 @@ def seed_reset_token(session: Session, account_id: str, token="token123", expire
     expires_at = datetime.utcnow() - timedelta(hours=1) if expired else datetime.utcnow() + timedelta(hours=1)
     reset = PasswordResetTokenEmployeeBase(
         id=str(uuid.uuid4()),
-        account_id=str(account_id),
+        employee_id=str(account_id),
         token=token,
         expires_at=expires_at
     )
@@ -85,7 +85,7 @@ def test_reset_password_success(client, db_session):
     assert response.json()["message"] == "Password reset successfully"
 
     db = SessionLocal()
-    updated_customer = db.query(AccountBase).filter(AccountBase.id == employee.id).first()
+    updated_customer = db.query(AdminBase).filter(AdminBase.id == employee.id).first()
 
     assert pwd_context.verify("newpass123", updated_customer.password)
     assert not pwd_context.verify("oldpass123", updated_customer.password)
@@ -94,7 +94,7 @@ def test_reset_password_success(client, db_session):
 
     # Confirm password updated
     db = SessionLocal()
-    updated_employee = db.query(AccountBase).filter(AccountBase.id == employee.id).first()
+    updated_employee = db.query(AdminBase).filter(AdminBase.id == employee.id).first()
     assert updated_employee.password != employee.password
     db.close()
 

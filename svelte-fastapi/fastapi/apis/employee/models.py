@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from apis.orders.models import OrderBase
 
 class EmployeeBase(Base):
-    __tablename__ = "employees"
+    __tablename__ = "employee"
 
     id = Column(String, primary_key=True, index=True)
     employee_name = Column(String, nullable=False, index=True)

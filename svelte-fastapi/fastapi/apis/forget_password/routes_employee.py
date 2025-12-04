@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from database import SessionLocal
-from apis.login.models import AccountBase
+from apis.login.models import AdminBase
 from .utils import generate_token, hash_password
 from .models import PasswordResetTokenEmployeeBase
 from .schema import RequestEmail, ResetPasswordRequestPayload
@@ -31,13 +31,13 @@ logger = logging.getLogger(__name__)
 @employee_router.post("/forget_password")
 def forget_password(request: RequestEmail, db: Session = Depends(get_db)):
     email = request.email
-    account = db.query(AccountBase).filter(AccountBase.email == email).first()
+    account = db.query(AdminBase).filter(AdminBase.email == email).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found!")
     
     token = generate_token()
     expires_at = datetime.utcnow() + timedelta(hours=1)
-    reset_token = PasswordResetTokenEmployeeBase(id=str(uuid.uuid4()), account_id=account.id, token=token, expires_at=expires_at)
+    reset_token = PasswordResetTokenEmployeeBase(id=str(uuid.uuid4()), employee_id=account.id, token=token, expires_at=expires_at)
     db.add(reset_token)
     db.commit()
 
@@ -64,8 +64,8 @@ def reset_password(request: ResetPasswordRequestPayload, db: Session = Depends(g
     if reset.expires_at < datetime.utcnow():
         raise HTTPException(status_code=400, detail="Token expired")
 
-    user = db.query(AccountBase).filter(
-        AccountBase.id == reset.account_id
+    user = db.query(AdminBase).filter(
+        AdminBase.id == reset.employee_id
     ).first()
 
     if not user:

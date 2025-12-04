@@ -3,8 +3,8 @@ from sqlalchemy import Column, DateTime, String, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database import Base
 
-class AccountBase(Base):
-    __tablename__ = "employee_register_information"
+class AdminBase(Base):
+    __tablename__ = "employees"
 
     id = Column(String, primary_key=True, nullable=False, index=True)
     employee_name = Column(String, nullable=False, index=True)

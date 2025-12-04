@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from database import SessionLocal
-from apis.login.models import AccountBase
+from apis.login.models import AdminBase
 from .models import OrderBase
 from role import StatusCode
 from auth import get_current_user, require_admin, require_employee
@@ -136,8 +136,8 @@ def assign_order(request: AssignOrderRequest, db: Session = Depends(get_db), _: 
     if not order:
         raise HTTPException(404, "Order not found")
 
-    employee = db.query(AccountBase).filter(AccountBase.id == employee_id).first()
-    employee_name = db.query(AccountBase).with_entities(AccountBase.employee_name).filter(AccountBase.id == employee_id).scalar()   
+    employee = db.query(AdminBase).filter(AdminBase.id == employee_id).first()
+    employee_name = db.query(AdminBase).with_entities(AdminBase.employee_name).filter(AdminBase.id == employee_id).scalar()   
 
     if not employee:
         raise HTTPException(404, "Employee not found")

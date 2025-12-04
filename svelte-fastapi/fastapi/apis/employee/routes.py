@@ -7,7 +7,7 @@ import uuid
 from auth import get_current_user, require_admin, require_employee
 from role import StatusCode
 from datetime import datetime
-from apis.login.models import AccountBase
+from apis.login.models import AdminBase
 import logging
 from .schema import EmployeeSchema, SuccessMessageSchema, EmployeeInputSchema, SavingEmployeeUpdateSchema
 from sqlalchemy.orm import Session
@@ -53,21 +53,21 @@ def search_employee(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid cursor: {str(e)}")
 
-    query = db.query(AccountBase).options(
+    query = db.query(AdminBase).options(
     load_only(
-        AccountBase.id,
-        AccountBase.employee_name,
-        AccountBase.email,
-        AccountBase.role,
-        AccountBase.is_active
+        AdminBase.id,
+        AdminBase.employee_name,
+        AdminBase.email,
+        AdminBase.role,
+        AdminBase.is_active
     )
 )
     if role:
-        query = query.filter(AccountBase.role.contains(role))
+        query = query.filter(AdminBase.role.contains(role))
     elif search_id:
-        query = query.filter(AccountBase.id.contains(search_id))
+        query = query.filter(AdminBase.id.contains(search_id))
     elif search_employee:
-        query = query.filter(AccountBase.employee_name.contains(search_employee))
+        query = query.filter(AdminBase.employee_name.contains(search_employee))
 
     
     # Cursor-based pagination logic
@@ -78,16 +78,16 @@ def search_employee(
         # Only add this if both exist
         if last_date and last_id:
             query = query.filter(
-                (AccountBase.created_at < last_date)
-                | ((AccountBase.created_at == last_date) & (AccountBase.id < last_id))
+                (AdminBase.created_at < last_date)
+                | ((AdminBase.created_at == last_date) & (AdminBase.id < last_id))
             )
 
     # Sort newest first
-    query = query.order_by(AccountBase.created_at.desc(), AccountBase.id.desc())
+    query = query.order_by(AdminBase.created_at.desc(), AdminBase.id.desc())
     
     # Get paginated results
     employees = query.limit(limit).all()
-    total_employee = db.query(AccountBase).count()
+    total_employee = db.query(AdminBase).count()
 
     # --- Compute next_cursor ---
     next_cursor_value = None
@@ -114,14 +114,14 @@ def search_employee(
 #Get detail employee
 @router.get('/employee/{employeeId}', response_model=EmployeeSchema)
 def get_employee_detail(employeeId: str, db: Session = Depends(get_db), _: dict = Depends(require_employee),):
-    employee = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
+    employee = db.query(AdminBase).filter(AdminBase.id == employeeId).first()
     if not employee:
         raise HTTPException(status_code=404, detail='Employee not existed!')
     return employee
     
 @router.post('/employees', response_model=SuccessMessageSchema)
 def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
-    new_employee = AccountBase(
+    new_employee = AdminBase(
         id=str(uuid.uuid4()),
         employee_name = employee.employee_name,
         role = employee.role,
@@ -136,7 +136,7 @@ def create_employee(employee: EmployeeInputSchema, db: Session = Depends(get_db)
 
 @router.delete('/employee/{employeeId}', response_model=SuccessMessageSchema)
 def delete_employee(employeeId: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
-    delete_user = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
+    delete_user = db.query(AdminBase).filter(AdminBase.id == employeeId).first()
     if delete_user:
         db.delete(delete_user)
         db.commit()
@@ -150,7 +150,7 @@ def update_employee(
     db: Session = Depends(get_db),
     _: dict = Depends(require_admin),
 ):
-    update_user = db.query(AccountBase).filter(AccountBase.id == employeeId).first()
+    update_user = db.query(AdminBase).filter(AdminBase.id == employeeId).first()
     if not update_user:
         raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail='Employee not existed!')
     

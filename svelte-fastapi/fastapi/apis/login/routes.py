@@ -12,7 +12,7 @@ from passlib.hash import argon2
 from dotenv import load_dotenv
 
 from role import StatusCode
-from .models import AccountBase
+from .models import AdminBase
 from apis.customer.models import CustomerBase
 from .schema import EmployeeSignUpSchema, AccountSchema
 from database import SessionLocal
@@ -38,13 +38,13 @@ logger = logging.getLogger(__name__)
 # Sign Up 
 @router.post("/signup")
 def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
-    existing = db.query(AccountBase).filter(AccountBase.email == account_info.email).first()
+    existing = db.query(AdminBase).filter(AdminBase.email == account_info.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Incorrect email or password!")
     if account_info.password != account_info.confirmPassword:
         raise HTTPException(status_code=400, detail="Incorrect email or password!")
 
-    account = AccountBase(
+    account = AdminBase(
         id=str(uuid.uuid4()),
         email=account_info.email,
         employee_name=account_info.employee_name,
@@ -62,7 +62,7 @@ def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
 # Login
 @router.post("/login")
 def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
-    employee = db.query(AccountBase).filter(AccountBase.email == employee_info.email).first()
+    employee = db.query(AdminBase).filter(AdminBase.email == employee_info.email).first()
     if not employee:
         raise HTTPException(status_code=StatusCode.HTTP_ERROR_404.value, detail="Incorrect email or password!")
     
@@ -124,7 +124,7 @@ def inactive_user_login(
 ):
     account = None
     if account_info['role'] == 'ADMIN' or account_info['role'] == 'EMPLOYEE':
-        account = db.query(AccountBase).filter(AccountBase.id == request.id).first()
+        account = db.query(AdminBase).filter(AdminBase.id == request.id).first()
     elif account_info['role'] == 'CUSTOMER':
         account = db.query(CustomerBase).filter(CustomerBase.id == request.id).first()
     if not account:

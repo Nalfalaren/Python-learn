@@ -6,7 +6,7 @@ from database import Base
 from apis.orders.models import OrderBase
 from apis.orders_item.models import OrderItem
 from apis.product.models import ProductBase
-from apis.login.models import AccountBase
+from apis.login.models import AdminBase
 from auth import get_current_user, require_admin, require_employee
 from datetime import datetime
 
@@ -169,7 +169,7 @@ def test_assign_order_success():
         status="PENDING"
     )
     db.add(order)
-    employee = AccountBase(
+    employee = AdminBase(
         id="emp2",
         employee_name="Bob",
         email="bob@example.com",
@@ -191,7 +191,7 @@ def test_assign_order_success():
 def test_assign_order_fail_non_employee():
     db = TestingSessionLocal()
     # Seed admin account
-    admin = AccountBase(
+    admin = AdminBase(
         id="admin1",
         employee_name="Admin",
         email="admin@example.com",

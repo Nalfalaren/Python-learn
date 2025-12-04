@@ -24,7 +24,6 @@ def get_account(current_user: dict = Depends(get_current_user)):
 
 @order_items_router.post("/checkout")
 def checkout(payload: CheckoutPayload, db: Session = Depends(get_db)):
-    """Tạo order mới với nhiều items (Checkout)"""
     customer_info = payload.customer
     cart_info = payload.cart
 
@@ -34,7 +33,8 @@ def checkout(payload: CheckoutPayload, db: Session = Depends(get_db)):
         email=customer_info["email"],
         phone=customer_info["phone"],
         address=customer_info["address"],
-        employee_id=None, 
+        employee_id=None,
+        customer_id=customer_info["customer_id"], 
         status="PENDING"
     )
     db.add(order)

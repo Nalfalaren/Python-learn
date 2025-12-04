@@ -39,7 +39,6 @@ def get_list_orders(
 ):
     order_list = db.query(OrderBase).order_by(OrderBase.created_at.desc())
     
-    # SỬA LẠI - PHẢI GÁN LẠI KẾT QUẢ
     if employee_id: 
         order_list = order_list.filter(OrderBase.employee_id == employee_id)
     elif search_id:
@@ -95,7 +94,6 @@ def update_order_info(
     if not order_info:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    # Cập nhật các field được gửi
     for k, v in order.dict(exclude_unset=True).items():
         setattr(order_info, k, v)
     order_info.updated_at = datetime.utcnow()

@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import { CartStore } from "$lib/stores/CartStore";
   import { get } from "svelte/store";
+  import { authStore } from "$lib/stores/AuthStore";
 
   let cart = get(CartStore);
 
@@ -12,15 +13,15 @@
   let address = "";
 
   $: total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
   async function handleCheckout() {
     if (!name || !email || !phone || !address) {
       alert("Please fill in all fields");
       return;
     }
+    let customer_id = $authStore.id
     try {
       const payload = {
-        customer: { name, email, phone, address },
+        customer: { customer_id, name, email, phone, address },
         cart: cart.map((i) => ({
           product_id: i.id,
           product_name: i.product_name,

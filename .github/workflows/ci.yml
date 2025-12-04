@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["master"]
+    branches: ["master"]    # nếu repo bạn dùng "main", đổi lại thành main
   pull_request:
 
 jobs:
@@ -21,18 +21,18 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          run: pip install -r svelte-fastapi/fastapi/requirements.txt
+          pip install -r svelte-fastapi/fastapi/requirements.txt
 
       - name: Run tests (using SQLite)
         env:
-          TESTING: "TESTING_ENVIRONMENT"    
+          TESTING: "TESTING_ENVIRONMENT"
         run: |
           pytest
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master' 
 
     steps:
       - name: Deploy to Render

@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-TESTING = os.getenv("TESTING") == "1"
+TESTING = os.getenv("TESTING") == "TESTING_ENVIRONMENT"
 
 if TESTING:
     DATABASE_URL = "sqlite:///./test.db"

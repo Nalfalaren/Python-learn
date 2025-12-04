@@ -58,7 +58,7 @@ def seed_order(session: Session):
 def test_checkout_success(client, db_session):
     product = seed_product(db_session)
     payload = {
-        "customer": {"name": "John Doe", "email": "john@example.com", "phone": "123", "address": "Address"},
+        "customer": {"customer_id": "1234", "name": "John Doe", "email": "john@example.com", "phone": "123", "address": "Address"},
         "cart": [{"product_id": product.id, "product_name": product.product_name, "qty": 2, "price": product.price}]
     }
     res = client.post("/checkout", json=payload)
@@ -75,7 +75,7 @@ def test_checkout_success(client, db_session):
 def test_checkout_fail_insufficient_stock(client, db_session):
     product = seed_product(db_session)
     payload = {
-        "customer": {"name": "Jane", "email": "jane@example.com", "phone": "456", "address": "Address"},
+        "customer": {"customer_id": "1234", "name": "Jane", "email": "jane@example.com", "phone": "456", "address": "Address"},
         "cart": [{"product_id": product.id, "product_name": product.product_name, "qty": 20, "price": product.price}]
     }
     res = client.post("/checkout", json=payload)

@@ -9,9 +9,12 @@ from sqlalchemy.orm import Session
 
 @pytest.fixture(scope="module")
 def test_client():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine) 
+    
     client = TestClient(app)
     yield client
+    
     Base.metadata.drop_all(bind=engine) 
 
 @pytest.fixture(scope="function")

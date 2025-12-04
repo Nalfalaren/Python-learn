@@ -25,7 +25,11 @@ jobs:
 
       - name: Run tests (using SQLite)
         env:
-          TESTING: "TESTING_ENVIRONMENT"
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          ALGORITHM: ${{ secrets.ALGORITHM }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          TESTING: ${{ secrets.TESTING }}
         run: |
           cd svelte-fastapi/fastapi
           pytest test/ -v
@@ -33,12 +37,12 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' 
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Deploy to Render
         run: |
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"

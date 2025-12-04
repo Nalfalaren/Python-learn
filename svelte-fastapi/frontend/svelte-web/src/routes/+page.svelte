@@ -518,7 +518,7 @@
 {#if isLoggedIn}
     {#if showAddToCartModal && addToCartProduct}
         <!-- Add to Cart Modal -->
-        <div class="modal-backdrop" onclick={closeAddToCartModal}>
+        <div class="modal-backdrop">
             <div class="modal" onclick={(e) => e.stopPropagation}>
                 <div
                     style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap"

@@ -31,12 +31,11 @@ logger = logging.getLogger(__name__)
 
 @customer_router.post("/forget_password")
 def forget_password(request: RequestEmail, db: Session = Depends(get_db)):
-    url = os.getenv("VITE_API_BASE_URL")
     email = request.email
     account = db.query(CustomerBase).filter(CustomerBase.email == email).first()
     
     if not account:
-        return HTTPException(status_code=404, detail="Account not found!")
+        raise HTTPException(status_code=404, detail="Account not found!")
     
     token = generate_token()
     expires_at = datetime.utcnow() + timedelta(hours=1)

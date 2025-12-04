@@ -77,7 +77,7 @@ def get_list_orders(
 def get_order_detail(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_employee)):
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order_info:
-        return HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail="Order not found")
+        raise HTTPException(status_code=StatusCode.HTTP_ERROR_404, detail="Order not found")
     items = [
         {"product_id": i.product_id, "product_name": i.product_name, "qty": i.qty, "price": i.price}
         for i in order_info.items

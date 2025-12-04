@@ -71,7 +71,7 @@ def update_product(product_id: str, product: ProductUpdatePropsSchema, db: Sessi
     product_obj.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(product_obj)
-    return SuccessMessageSchema(message="Product updated successfully")
+    return {"message" :  "Product updated successfully"}
 
 @router_admin.delete("/products/{product_id}", response_model=SuccessMessageSchema)
 def delete_product(product_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
@@ -80,4 +80,5 @@ def delete_product(product_id: str, db: Session = Depends(get_db), _: dict = Dep
         raise HTTPException(status_code=404, detail="Product not found")
     db.delete(product_obj)
     db.commit()
-    return SuccessMessageSchema(message="Product deleted successfully")
+    return {"message" :  "Product deleted successfully"}
+

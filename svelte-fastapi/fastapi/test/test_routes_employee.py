@@ -41,8 +41,8 @@ def seed_employee(session: Session, email="employee@example.com"):
     )
     session.add(employee)
     session.commit()
+    session.refresh(employee) 
     return employee
-
 
 def seed_reset_token(session: Session, account_id: str, token="token123", expired=False):
     expires_at = datetime.utcnow() - timedelta(hours=1) if expired else datetime.utcnow() + timedelta(hours=1)
@@ -55,7 +55,6 @@ def seed_reset_token(session: Session, account_id: str, token="token123", expire
     session.add(reset)
     session.commit()
     return reset
-
 
 # --- Tests ---
 def test_forget_password_success(client, db_session):

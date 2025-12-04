@@ -43,10 +43,6 @@ def setup_test_db():
 def client():
     return TestClient(app)
 
-import uuid
-from datetime import datetime
-
-# Sample product
 sample_product = {
     "product_name": "Test Drone",
     "category": "Drone",

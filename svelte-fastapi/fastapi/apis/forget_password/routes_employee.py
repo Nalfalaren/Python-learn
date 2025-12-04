@@ -37,7 +37,7 @@ def forget_password(request: RequestEmail, db: Session = Depends(get_db)):
     
     token = generate_token()
     expires_at = datetime.utcnow() + timedelta(hours=1)
-    reset_token = PasswordResetTokenEmployeeBase(id=uuid.uuid4(), account_id=account.id, token=token, expires_at=expires_at)
+    reset_token = PasswordResetTokenEmployeeBase(id=str(uuid.uuid4()), account_id=account.id, token=token, expires_at=expires_at)
     db.add(reset_token)
     db.commit()
 

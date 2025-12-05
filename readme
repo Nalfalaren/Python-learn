@@ -1,0 +1,28 @@
+Dự án E-Commerce Drone Rack 
+Ngôn ngữ: Backend: Python (FastAPI)
+          Frontend: Svelte 
+          Test: Pytest
+          CI/CD: Github Actions
+          Deploy: Backend: Render, Frontend: Vercel
+Nghiệp vụ:
+Public site:
+Drone Rack bao gồm các chức năng:
+-	Login/Sign up/Quên mật khẩu.
+-	Trang mua hàng: Dành cho khách hàng có role = CUSTOMER.
+-	Searching/Filtering theo tên, theo category và theo giá.
+-	Quick View về thông tin sản phẩm.
+-	Phân trang.
+-	Add to cart, checkout.
+Admin site:
+-	CRUD sản phẩm, orders, order item, customer, employee, assign order cho Employee.
+-	Phân quyền
+-	Có 2 role chính:
+Admin: Trang Admin, có thể tạo Employee, thêm sửa xóa các bảng, assign order cho Employee.
+Employee: Trang Employee, chỉ xem được thành viên và thực hiện làm đơn hàng.
+-	1 đơn hàng có 5 trạng thái:
+PENDING: Trạng thái sau khi customer gửi order.
+ASSIGNED: Sau khi admin thực hiện assign cho Employee (Employee sẽ thực hiện gọi điện cho customer xác nhận đơn hàng) => Nếu xác nhận chuyển sang PROCESSING, nếu không thì CANCELLED.
+PROCESSING: Đơn hàng bất đầu xử lý.
+COMPLETED: Đơn hàng hoàn tất. 
+CANCELLED: Hủy đơn hàng.
+

@@ -81,9 +81,6 @@
     }
   }
 
-  function viewCart() {
-    goto("/cart");
-  }
 </script>
 
 {#if isLoading}
@@ -94,13 +91,6 @@
   <section class="product-detail">
     <div class="top-nav">
       <a href="/" class="breadcrumb">← Marketplace</a>
-      
-      <button class="cart-btn" on:click={viewCart}>
-        🛒 Cart
-        {#if cartCount > 0}
-          <span class="cart-badge">{cartCount}</span>
-        {/if}
-      </button>
     </div>
 
     <div class="detail-container">

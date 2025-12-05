@@ -68,7 +68,7 @@
                 <span class="qty">x{item.quantity}</span>
               </div>
 
-              <strong class="price">{(item.price * item.quantity).toFixed(2)}$</strong>
+              <strong class="price">{Number(item.price * item.quantity).toFixed(2).replace(/\.00$/, "") + "$"}</strong>
             </li>
           {/each}
         </ul>

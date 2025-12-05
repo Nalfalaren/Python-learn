@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import ProductDetailModal from "../../../components/modal/ProductDetailModal.svelte";
+    import { goto } from "$app/navigation";
 
     type Product = {
         id?: string;
@@ -44,6 +45,10 @@
         url.searchParams.set("limit", String(limit));
         if (search) url.searchParams.set("search_product", search);
         if (cursor) url.searchParams.set("next_cursor", cursor);
+
+        const newUrl = `?${url.toString()}`;
+
+        goto(newUrl, { replaceState: true, noScroll: true });
         return url.toString();
     };
 
@@ -142,28 +147,19 @@
             <input
                 bind:value={search}
                 placeholder="Search drones by name or model..."
-                oninput={() => {
-                    cursorStack = [];
-                    currentPage = 1;
-                    currentCursor = null;
-                    nextCursor = null;
-                    fetchProducts(null);
-                }}
             />
             {#if search}
                 <button
-                    class="clear-btn"
+                    class="search-btn"
                     onclick={() => {
-                        search = "";
                         cursorStack = [];
                         currentPage = 1;
                         currentCursor = null;
                         nextCursor = null;
+                        buildUrl();
                         fetchProducts(null);
-                    }}
+                    }}>Search</button
                 >
-                    ✕
-                </button>
             {/if}
         </div>
         <div class="results-info">
@@ -425,27 +421,21 @@
         transform: translateY(-2px);
     }
 
-    .clear-btn {
+    .search-btn {
         position: absolute;
         right: 16px;
         top: 50%;
         transform: translateY(-50%);
-        background: #f1f5f9;
         border: none;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+        border-radius: 5px;
+        padding: 10px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748b;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
         transition: all 0.2s;
-    }
-
-    .clear-btn:hover {
-        background: #e2e8f0;
-        color: #334155;
     }
 
     .results-info {

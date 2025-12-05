@@ -12,6 +12,9 @@
     let sortBy = "featured";
     let quickView: Product | null = null;
 
+    // categories
+    let categories = ["All", "Multirotor", "Fixed-wing"];
+
     let isLoading = false;
     let error = "";
     let mounted = false;
@@ -38,6 +41,19 @@
         cartItems = value;
     });
 
+    function updateURL() {
+        const params = new URLSearchParams();
+
+        if (query) params.set("query", query);
+        if (category && category !== "All") params.set("category", category);
+        if (sortBy) params.set("sortBy", sortBy);
+        if (currentPage > 1) params.set("page", String(currentPage));
+
+        const newUrl = `?${params.toString()}`;
+
+        goto(newUrl, { replaceState: true, noScroll: true });
+    }
+
     /** Fetch products from API */
     const fetchProducts = async (
         cursor: string | null = null,
@@ -53,7 +69,7 @@
             if (query) params.append("search_product", query);
             if (category && category !== "All")
                 params.append("category", category);
-            if (sortBy) params.append("sort", sortBy);
+            if (sortBy) params.append("sort_by", sortBy);
             if (limit) params.append("limit", String(limit));
             if (cursor) params.append("next_cursor", cursor);
 
@@ -101,16 +117,6 @@
         }
     };
 
-    export function debounce(fn, delay = 300) {
-        let timeout: number | undefined;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                fn(...args);
-            }, delay);
-        };
-    }
-
     onMount(() => {
         isLoggedIn = !!localStorage.getItem("accessToken");
         fetchProducts();
@@ -119,17 +125,12 @@
     // top 5 section
     $: topFive = products.slice(0, 5);
 
-    // categories
-    $: categories = ["All", ...new Set(products.map((p) => p.category))];
-
     // Cart total count
     const cartCount = derived(cart, ($cart) =>
-    $cart.reduce((total, item) => total + item.quantity, 0)
-);
-
-    // Has more pages
+        $cart.reduce((total, item) => total + item.quantity, 0),
+    );
     $: hasPrevPage = currentPage > 1;
-    $: hasNextPage = nextCursor !== null;
+    $: hasNextPage = nextCursor !== null && products.length >= limit;
 
     // actions
     function openQuickView(product: Product) {
@@ -202,13 +203,14 @@
         }
     }
 
-    const debouncedFetch = debounce(() => {
+    const handleSearch = () => {
         cursorHistory = [];
         currentCursor = null;
         nextCursor = null;
         currentPage = 1;
+        updateURL();
         fetchProducts(null, "initial");
-    }, 400);
+    };
 
     async function logout() {
         try {
@@ -295,19 +297,18 @@
             <input
                 placeholder="Search drones..."
                 bind:value={query}
-                oninput={debouncedFetch}
-                style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0; min-width:260px"
+                style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0; min-width:200px"
             />
             <select
                 bind:value={category}
-                onchange={debouncedFetch}
+                onchange={handleSearch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
                 {#each categories as c}<option value={c}>{c}</option>{/each}
             </select>
             <select
                 bind:value={sortBy}
-                onchange={debouncedFetch}
+                onchange={handleSearch}
                 style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
             >
                 <option value="featured">Featured</option>
@@ -315,12 +316,17 @@
                 <option value="price-desc">Price: High → Low</option>
                 <option value="rating">Top Rated</option>
             </select>
+            <div style="display:flex; gap:10px">
+                <button
+                    class="btn-primary"
+                    onclick={() => handleSearch()}>Search</button
+                >
+            </div>
         </div>
         <div style="display:flex; gap:10px; margin-top:6px">
             <button class="btn-primary" onclick={() => goto("/products/list")}
                 >Buy Now</button
             >
-            <button class="btn-ghost">Sell Drone</button>
         </div>
     </div>
     <div class="hero-right">
@@ -358,7 +364,8 @@
                         </div>
                         <button
                             class="top-list-btn"
-                            onclick={() => openQuickView(p)} disabled={p.stock === 0}>View</button
+                            onclick={() => openQuickView(p)}
+                            disabled={p.stock === 0}>View</button
                         >
                     </div>
                 {/each}
@@ -447,7 +454,7 @@
         {/if}
     </div>
 
-    {#if !isLoading && !error && (hasPrevPage || hasNextPage)}
+    {#if !isLoading && !error}
         <div class="pagination">
             <button
                 class="pagination-btn"
@@ -492,7 +499,8 @@
                         ) ?? "—"}
                     </div>
                     <p style="margin-top:12px; color:#334155">
-                        Short description: {quickView.description || 'No description'}
+                        Short description: {quickView.description ||
+                            "No description"}
                     </p>
                     <div
                         style="display:flex; gap:12px; margin-top:18px; align-items:center"
@@ -536,7 +544,8 @@
                             ) ?? "—"}
                         </div>
                         <p style="margin-top:12px; color:#334155">
-                            Short description: {addToCartProduct.description || 'No descrption'}
+                            Short description: {addToCartProduct.description ||
+                                "No descrption"}
                         </p>
                         <div
                             style="margin-top:16px; display:flex; align-items:center; gap:12px"
@@ -763,7 +772,6 @@
         justify-content: center;
         font-weight: 700;
         box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-
     }
 
     nav {

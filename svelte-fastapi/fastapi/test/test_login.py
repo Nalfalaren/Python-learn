@@ -43,7 +43,7 @@ def test_signup_duplicate(test_client):
     res = test_client.post("/auth/signup", json=signup_data)
     assert res.status_code == 400
     # Bạn đang dùng detail chung "Incorrect email or password!" -> test theo đó
-    assert res.json()["detail"] == "Incorrect email or password!"
+    assert res.json()["detail"] == "Account is existed!"
 
 
 # ---------- LOGIN TESTS ----------

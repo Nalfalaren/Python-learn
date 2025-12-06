@@ -32,6 +32,7 @@
   // search
   let searchId = $state("");
   let searchName = $state("");
+  let searchRole = $state("");
 
   // === Helper ===
   function buildUrl(cursor: string | null = null) {
@@ -39,6 +40,7 @@
     url.searchParams.set("limit", String(pageSize));
     if (searchId) url.searchParams.set("search_id", searchId);
     if (searchName) url.searchParams.set("search_employee", searchName);
+    if (searchRole) url.searchParams.set("role", searchRole);
     if (cursor) url.searchParams.set("next_cursor", cursor);
     return url;
   }
@@ -61,7 +63,6 @@
       employees = res.search_result || [];
       totalRecords = res.total_employee || 0;
       nextCursor = res.next_cursor || null;
-      console.log(nextCursor);
       currentCursor = cursor; // record which cursor we used
       loadedCount = (cursorStack.length + 1) * pageSize;
     } catch (error) {
@@ -95,12 +96,15 @@
 
   async function handleDelete(id: string) {
     const token = localStorage.getItem("admin_access_token");
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employee/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/employee/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (response.ok) {
       message = "Employee deleted";
@@ -115,14 +119,17 @@
       const token = localStorage.getItem("admin_access_token");
       const decoded = token ? jwtDecode<{ id: string }>(token) : null;
       const currentUserId = decoded?.id;
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ id: currentUserId }),
         },
-        body: JSON.stringify({ id: currentUserId }),
-      });
+      );
 
       if (!res.ok) {
         console.error("Logout API failed:", res.status);
@@ -137,9 +144,9 @@
   }
 
   onMount(() => {
-    if(!$authStore.isAuthenticated) {
-      goto("/employees/login")
-    } 
+    if (!$authStore.isAuthenticated) {
+      goto("/employees/login");
+    }
     fetchEmployees(null);
   });
 </script>
@@ -183,6 +190,16 @@
         onValueChange={(v: string) => (searchName = v)}
       />
     </div>
+    <div class={styles.tableSearchInput}>
+      <label style="font-family: system-ui, sans-serif;">
+        Search Role
+        <select bind:value={searchRole} class={styles.selectInput}>
+          <option value="" disabled selected hidden>Select role…</option>
+          <option value="ADMIN">Admin</option>
+          <option value="EMPLOYEE">Employee</option>
+        </select>
+      </label>
+    </div>
     <button onclick={handleSearch}>Search</button>
   </div>
 
@@ -190,7 +207,7 @@
   <div class={styles.tableContainer}>
     {#if loading}
       <p>Loading...</p>
-    {:else if $authStore.role !== "ADMIN" && $authStore.role !== "EMPLOYEE" }
+    {:else if $authStore.role !== "ADMIN" && $authStore.role !== "EMPLOYEE"}
       <div class={styles.forbiddenBox}>
         <h2>403 – Forbidden</h2>
         <p>You do not have permission to access this page.</p>
@@ -218,20 +235,20 @@
               <td>{emp.email}</td>
               <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
               {#if $authStore.role === "ADMIN"}
-              <td>
-                <button
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    goto(`/employees/update/${emp.id}`);
-                  }}>Edit</button
-                >
-                <button
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(emp.id);
-                  }}>Delete</button
-                >
-              </td>
+                <td>
+                  <button
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      goto(`/employees/update/${emp.id}`);
+                    }}>Edit</button
+                  >
+                  <button
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(emp.id);
+                    }}>Delete</button
+                  >
+                </td>
               {/if}
             </tr>
           {/each}

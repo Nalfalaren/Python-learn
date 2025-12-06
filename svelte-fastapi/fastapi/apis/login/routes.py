@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 def sign_up(account_info: EmployeeSignUpSchema, db: Session = Depends(get_db)):
     existing = db.query(AdminBase).filter(AdminBase.email == account_info.email).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Incorrect email or password!")
+        raise HTTPException(status_code=400, detail="Account is existed!")
     if account_info.password != account_info.confirmPassword:
         raise HTTPException(status_code=400, detail="Incorrect email or password!")
 

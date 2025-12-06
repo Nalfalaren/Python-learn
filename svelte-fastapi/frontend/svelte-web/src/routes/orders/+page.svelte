@@ -54,7 +54,7 @@
     // === Fetch Orders ===
     async function fetchOrders() {
         loading = true;
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("admin_access_token");
 
         try {
             const res = await fetch(buildUrl(), {
@@ -84,7 +84,7 @@
     }
 
     async function fetchEmployees() {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("admin_access_token");
 
         const res = await fetch(
             `${import.meta.env.VITE_API_BASE_URL}/employees?role=EMPLOYEE`,
@@ -103,7 +103,7 @@
             return;
         }
 
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("admin_access_token");
         if (!token) {
             message = "Bạn chưa đăng nhập!";
             return;
@@ -144,7 +144,7 @@
 
     // === Delete ===
     async function handleDelete(id: string) {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("admin_access_token");
 
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
             method: "DELETE",
@@ -160,7 +160,7 @@
     }
 
     function handleLogout() {
-        localStorage.removeItem("accessToken");
+        localStorage.removeItem("admin_access_token");
         goto("/employees/login");
     }
 

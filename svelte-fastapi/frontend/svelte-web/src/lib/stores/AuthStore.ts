@@ -4,12 +4,13 @@ import { jwtDecode } from 'jwt-decode';
 import { goto } from '$app/navigation';
 
 function createAuthStore() {
-  interface AuthProps{
-    token: string | null
-    role: string | null
-    isAuthenticated: boolean
-    id: string | null
+  interface AuthProps {
+    token: string | null;
+    role: string | null;
+    isAuthenticated: boolean;
+    id: string | null;
   }
+
   const initialValue: AuthProps = {
     token: null,
     role: null,
@@ -17,38 +18,63 @@ function createAuthStore() {
     id: null
   };
 
+  // =============================
+  // 🔥 KHỞI TẠO STORE
+  // =============================
   if (browser) {
-    const savedToken = localStorage.getItem("accessToken");
-    const decoded = savedToken ? jwtDecode<{ id: string; role: string }>(savedToken) : null;
-    if (savedToken && decoded?.role && decoded?.id) {
-      initialValue.token = savedToken;
+    const adminToken = localStorage.getItem("admin_access_token");
+    const customerToken = localStorage.getItem("accessToken");
+
+    let tokenToUse = adminToken || customerToken;
+
+    const decoded = tokenToUse
+      ? jwtDecode<{ id: string; role: string }>(tokenToUse)
+      : null;
+
+    if (tokenToUse && decoded?.role && decoded?.id) {
+      initialValue.token = tokenToUse;
       initialValue.role = decoded.role;
       initialValue.isAuthenticated = true;
       initialValue.id = decoded.id;
     }
   }
 
-  const { subscribe, set, update } = writable(initialValue);
+  const { subscribe, set } = writable(initialValue);
 
   return {
     subscribe,
 
+    // =============================
+    // 🔥 LOGIN
+    // =============================
     login: (token: string) => {
       if (browser) {
-        localStorage.setItem('accessToken', token);
+        const decoded = jwtDecode<{ id: string; role: string }>(token);
+
+        if (decoded.role === "ADMIN" || decoded.role === "EMPLOYEE") {
+          localStorage.setItem("admin_access_token", token);
+        } else {
+          localStorage.setItem("accessToken", token);
+        }
+
+        set({
+          token,
+          role: decoded.role,
+          isAuthenticated: true,
+          id: decoded.id
+        });
       }
-      const decoded = token ? jwtDecode<{ id: string; role: string }>(token) : null;
-      set({
-        token,
-        role: decoded?.role || null,
-        isAuthenticated: true,
-        id: decoded?.id || null
-      });
     },
 
+    // =============================
+    // 🔥 LOGOUT
+    // =============================
     logout: async () => {
       if (browser) {
-        const token = localStorage.getItem("accessToken");
+        const adminToken = localStorage.getItem("admin_access_token");
+        const customerToken = localStorage.getItem("accessToken");
+        const token = adminToken || customerToken;
+
         const decoded = token ? jwtDecode<{ id: string }>(token) : null;
 
         try {
@@ -66,8 +92,8 @@ function createAuthStore() {
           console.error("Logout API failed:", err);
         }
 
+        localStorage.removeItem("admin_access_token");
         localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
       }
 
       set({
@@ -80,23 +106,36 @@ function createAuthStore() {
       goto("/employees/login");
     },
 
+    // =============================
+    // 🔥 CHECK AUTH STATUS
+    // =============================
     isAuthenticated: (): boolean => {
       if (browser) {
-        return !!localStorage.getItem('accessToken');
+        return (
+          !!localStorage.getItem("admin_access_token") ||
+          !!localStorage.getItem("accessToken")
+        );
       }
       return false;
     },
 
+    // =============================
+    // 🔥 TỰ CHECK TOKEN
+    // =============================
     checkAuth: () => {
       if (browser) {
-        const token = localStorage.getItem('accessToken');
+        const adminToken = localStorage.getItem("admin_access_token");
+        const customerToken = localStorage.getItem("accessToken");
+
+        const token = adminToken || customerToken;
+
         if (token) {
           const decoded = jwtDecode<{ id: string; role: string }>(token);
           set({
             token,
-            role: decoded?.role || null,
+            role: decoded.role,
             isAuthenticated: true,
-            id: decoded?.id || null
+            id: decoded.id
           });
         } else {
           set({

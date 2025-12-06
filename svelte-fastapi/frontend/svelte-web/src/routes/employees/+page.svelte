@@ -45,7 +45,7 @@
 
   async function fetchEmployees(cursor: string | null = null) {
     loading = true;
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_access_token");
     try {
       const response = await fetch(buildUrl(cursor), {
         headers: {
@@ -94,7 +94,7 @@
   }
 
   async function handleDelete(id: string) {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_access_token");
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employee/${id}`, {
       method: "DELETE",
       headers: {
@@ -112,7 +112,7 @@
 
   async function handleLogout() {
     try {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("admin_access_token");
       const decoded = token ? jwtDecode<{ id: string }>(token) : null;
       const currentUserId = decoded?.id;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
@@ -130,7 +130,7 @@
     } catch (err) {
       console.error("Logout request error:", err);
     } finally {
-      localStorage.removeItem("accessToken");
+      localStorage.removeItem("admin_access_token");
       localStorage.removeItem("refreshToken");
       goto("/employees/login");
     }

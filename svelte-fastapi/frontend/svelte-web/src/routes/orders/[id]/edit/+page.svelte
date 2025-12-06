@@ -19,7 +19,7 @@
     const id = $page.params.id; // assuming route: /orders/edit/[id]
     if (!id) return;
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_access_token");
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -48,7 +48,7 @@
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_access_token");
 
     const payload = {
       customer_name: customer_name.trim(),

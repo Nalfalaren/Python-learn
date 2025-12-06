@@ -42,7 +42,7 @@
     orderId = params.id;
 
     onMount(async () => {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("admin_access_token");
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });

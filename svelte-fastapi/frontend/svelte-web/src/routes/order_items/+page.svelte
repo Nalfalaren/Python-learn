@@ -38,7 +38,7 @@
 
     async function fetchItems() {
         loading = true;
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("admin_access_token");
         try {
             const res = await fetch(buildUrl(), {
                 headers: {
@@ -62,7 +62,7 @@
     }
 
     function handleLogout() {
-        localStorage.removeItem("accessToken");
+        localStorage.removeItem("admin_access_token");
         goto("/employees/login");
     }
 

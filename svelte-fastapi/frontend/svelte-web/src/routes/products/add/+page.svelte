@@ -20,7 +20,7 @@
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_access_token");
 
     const payload = {
       product_name: product_name?.trim(),

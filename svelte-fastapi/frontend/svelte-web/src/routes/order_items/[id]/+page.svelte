@@ -24,7 +24,7 @@
   onMount(async () => {
     if (!$authStore.isAuthenticated) goto("/employees/login");
 
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("admin_access_token");
     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/order_items/${itemId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });

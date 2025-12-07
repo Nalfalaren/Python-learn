@@ -2,7 +2,8 @@
   import { goto } from "$app/navigation";
   import { CartStore } from "$lib/stores/CartStore";
   import { get } from "svelte/store";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { authCustomer } from "$lib/stores/AuthCustomer"
+  import { clientApi } from "../../hooks/apiFetch";
 
   let cart = get(CartStore);
 
@@ -18,7 +19,7 @@
       alert("Please fill in all fields");
       return;
     }
-    let customer_id = $authStore.id
+    let customer_id = $authCustomer.id
     try {
       const payload = {
         customer: { customer_id, name, email, phone, address },
@@ -30,7 +31,7 @@
         })),
       };
       const token = localStorage.getItem('accessToken')
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/checkout`, {
+      const res = await clientApi(`${import.meta.env.VITE_API_BASE_URL}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),

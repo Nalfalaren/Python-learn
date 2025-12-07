@@ -238,3 +238,13 @@ def delete_all_items_in_order(
         "order_id": order_id,
         "deleted_count": items_count
     }
+
+@order_items_router.delete("/orders/{order_id}")
+def delete_order_item(order_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
+    order_item = db.query(OrderItem).filter(OrderItem.id == order_id).first()
+    if not order_item:
+        raise HTTPException(status_code=404, detail="Cannot found order item")
+    db.delete(order_item)
+    db.commit()
+    db.refresh(order_item)
+    return {"message" : "Delete order item successfully!"}

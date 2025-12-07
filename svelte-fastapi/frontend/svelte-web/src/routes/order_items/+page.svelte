@@ -4,7 +4,8 @@
     import styles from "$lib/styles/header/orders.module.css";
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
-    import { authStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminApi } from "../../hooks/apiFetch";
 
     interface OrderItem {
         id: string;
@@ -38,19 +39,10 @@
 
     async function fetchItems() {
         loading = true;
-        const token = localStorage.getItem("admin_access_token");
         try {
-            const res = await fetch(buildUrl(), {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
+            const res = await adminApi(buildUrl());
             if (!res.ok) throw new Error("Failed to fetch order items");
-
             const data = await res.json();
-            console.log(data);
             totalRecords = data.items_count || 0;
             items = data.search_result || [];
         } catch (err) {
@@ -85,6 +77,27 @@
         }
     }
 
+    /** 🔥 DELETE ORDER ITEM */
+    async function deleteItem(id: string) {
+        if (!confirm("Bạn có chắc chắn muốn xóa Order Item này?")) return;
+        try {
+            const res = await adminApi(
+                `${import.meta.env.VITE_API_BASE_URL}/order_items/${id}`,
+                {
+                    method: "DELETE",
+                }
+            );
+
+            if (!res.ok) throw new Error("Xóa thất bại!");
+
+            alert("Xóa thành công!");
+            fetchItems(); // reload lại dữ liệu
+        } catch (err) {
+            console.error(err);
+            alert("Không thể xóa Order Item. Kiểm tra log.");
+        }
+    }
+
     onMount(() => fetchItems());
 </script>
 
@@ -95,7 +108,7 @@
             <button onclick={handleLogout}>Logout</button>
         </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
+    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
 </div>
 
 <div class={styles.tableSearch}>
@@ -121,7 +134,7 @@
 <div class={styles.tableContainer}>
     {#if loading}
         <p>Loading...</p>
-    {:else if $authStore.role !== "ADMIN"}
+    {:else if $adminAuthStore.role !== "ADMIN"}
         <div class={styles.forbiddenBox}>
             <h2>403 – Forbidden</h2>
             <p>You do not have permission to access this page.</p>
@@ -138,23 +151,29 @@
                     <th>Qty</th>
                     <th>Price</th>
                     <th>Created At</th>
+                    <th>Action</th> <!-- 🔥 Thêm cột -->
                 </tr>
             </thead>
             <tbody>
                 {#each items as item}
-                    <tr onclick={() => goto(`/order_items/${item.id}`)}>
+                    <tr>
                         <td>{item.id}</td>
                         <td>{item.order_id}</td>
                         <td>{item.product_name}</td>
                         <td>{item.qty}</td>
                         <td>{item.price}$</td>
                         <td>
-                            {new Date(item?.created_at).toLocaleString(
-                                "vi-VN",
-                                {
-                                    timeZone: "Asia/Ho_Chi_Minh",
-                                },
-                            )}
+                            {new Date(item?.created_at).toLocaleString("vi-VN", {
+                                timeZone: "Asia/Ho_Chi_Minh",
+                            })}
+                        </td>
+                        <td>
+                            <button 
+                                style="color: white; background: red; padding: 6px 10px; border-radius: 4px;"
+                                onclick={() => deleteItem(item.id)}
+                            >
+                                Delete
+                            </button>
                         </td>
                     </tr>
                 {/each}

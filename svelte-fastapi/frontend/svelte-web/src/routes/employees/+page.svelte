@@ -5,7 +5,8 @@
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode"; /** Product type */
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminApi } from "../../hooks/apiFetch";
 
   interface Employee {
     id: string;
@@ -47,15 +48,8 @@
 
   async function fetchEmployees(cursor: string | null = null) {
     loading = true;
-    const token = localStorage.getItem("admin_access_token");
     try {
-      const response = await fetch(buildUrl(cursor), {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      const response = await adminApi(buildUrl(cursor));
       if (!response.ok) throw new Error("Failed to fetch employees");
 
       const res = await response.json();
@@ -95,14 +89,10 @@
   }
 
   async function handleDelete(id: string) {
-    const token = localStorage.getItem("admin_access_token");
-    const response = await fetch(
+    const response = await adminApi(
       `${import.meta.env.VITE_API_BASE_URL}/employee/${id}`,
       {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       },
     );
 
@@ -144,7 +134,7 @@
   }
 
   onMount(() => {
-    if (!$authStore.isAuthenticated) {
+    if (!$adminAuthStore.isAuthenticated) {
       goto("/employees/login");
     }
     fetchEmployees(null);
@@ -157,7 +147,7 @@
     <div class={styles.headerContent}>
       <div><h1 style="font-family: system-ui, sans-serif;">Employees</h1></div>
       <div>
-        {#if $authStore.role === "ADMIN"}
+        {#if $adminAuthStore.role === "ADMIN"}
           <button onclick={() => goto("/employees/signup")}
             >+ Add Employee</button
           >
@@ -165,7 +155,7 @@
         <button onclick={handleLogout}>Logout</button>
       </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
+    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
   </div>
 
   <!-- Search -->
@@ -207,7 +197,7 @@
   <div class={styles.tableContainer}>
     {#if loading}
       <p>Loading...</p>
-    {:else if $authStore.role !== "ADMIN" && $authStore.role !== "EMPLOYEE"}
+    {:else if $adminAuthStore.role !== "ADMIN" && $adminAuthStore.role !== "EMPLOYEE"}
       <div class={styles.forbiddenBox}>
         <h2>403 – Forbidden</h2>
         <p>You do not have permission to access this page.</p>
@@ -223,7 +213,7 @@
             <th>Role</th>
             <th>Email</th>
             <th>Status</th>
-            {#if $authStore.role === "ADMIN"}<th>Action</th>{/if}
+            {#if $adminAuthStore.role === "ADMIN"}<th>Action</th>{/if}
           </tr>
         </thead>
         <tbody>
@@ -234,7 +224,7 @@
               <td>{emp.role}</td>
               <td>{emp.email}</td>
               <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
-              {#if $authStore.role === "ADMIN"}
+              {#if $adminAuthStore.role === "ADMIN"}
                 <td>
                   <button
                     onclick={(e) => {
@@ -243,11 +233,19 @@
                     }}>Edit</button
                   >
                   <button
+                    class="delete-btn"
                     onclick={(e) => {
                       e.stopPropagation();
-                      handleDelete(emp.id);
-                    }}>Delete</button
+                      if (
+                        confirm("Bạn có chắc chắn muốn xóa account này không?")
+                      ) {
+                        handleDelete(emp.id);
+                      }
+                    }}
+                    disabled={emp.role === "ADMIN"}
                   >
+                    Delete
+                  </button>
                 </td>
               {/if}
             </tr>
@@ -270,3 +268,15 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .delete-btn:disabled {
+    cursor: not-allowed;
+    background-color: #ccc;
+    color: #666;
+    opacity: 0.7;
+  }
+  .delete-btn:disabled:hover {
+    background-color: #ccc;
+  }
+</style>

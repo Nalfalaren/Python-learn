@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import styles from "$lib/styles/detail/employee-detail.module.css"; 
-  // dùng lại style EXACT để giống hoàn toàn
   import { goto } from "$app/navigation";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminApi } from "../../../hooks/apiFetch";
 
   let itemId: string;
   export let params;
@@ -22,12 +22,8 @@
   itemId = params.id;
 
   onMount(async () => {
-    if (!$authStore.isAuthenticated) goto("/employees/login");
-
-    const token = localStorage.getItem("admin_access_token");
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/order_items/${itemId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    if (!$adminAuthStore.isAuthenticated) goto("/employees/login");
+    const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/order_items/${itemId}`);
 
     if (res.ok) {
       orderItem = await res.json();

@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { get } from "svelte/store";
+    import { adminApi } from "../../../../hooks/apiFetch";
 
   // form state
   let product_id: string = "";
@@ -28,16 +29,8 @@
 
     loading = true;
     try {
-      const token = localStorage.getItem("admin_access_token");
-      const res = await fetch(
+      const res = await adminApi(
         `${import.meta.env.VITE_API_BASE_URL}/products/${productId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
       );
 
       if (!res.ok) {
@@ -82,16 +75,10 @@
         rating: rating ? Number(rating).toFixed(2) : 0,
         stock: stock || 0
       };
-
-      const token = localStorage.getItem("admin_access_token");
-      const res = await fetch(
+      const res = await adminApi(
         `${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`,
         {
-          method: "PUT", // or PATCH depending on your backend
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          method: "PUT",
           body: JSON.stringify(payload),
         },
       );

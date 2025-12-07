@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
-  import { cart, type Product } from '$lib/stores/CartStore';
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { cart, type Product } from "$lib/stores/CartStore";
+  import { clientApi } from "../../../../hooks/apiFetch";
 
   let product: Product | null = null;
   let isLoading = true;
@@ -24,13 +25,9 @@
 
   async function fetchProduct() {
     try {
-      const token = localStorage.getItem("accessToken");
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products/${productId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await clientApi(
+        `${import.meta.env.VITE_API_BASE_URL}/products/${productId}`,
+      );
       if (!res.ok) throw new Error(`Failed to fetch product: ${res.status}`);
       const data = await res.json();
       product = {
@@ -80,7 +77,6 @@
       quantity--;
     }
   }
-
 </script>
 
 {#if isLoading}
@@ -110,7 +106,10 @@
         <h1 class="title">{product.product_name}</h1>
         <div class="meta">
           <span class="category">{product.category}</span>
-          <span class="rating">{renderStars(product.rating)} ({product.rating?.toFixed(1) ?? "—"})</span>
+          <span class="rating"
+            >{renderStars(product.rating)} ({product.rating?.toFixed(1) ??
+              "—"})</span
+          >
           <span class="stock">
             {product.stock ?? "—"} in stock
             {#if product.stock && product.stock < 10}
@@ -125,8 +124,14 @@
           <h3>Specifications</h3>
           <ul>
             <li><strong>Category:</strong> {product.category}</li>
-            <li><strong>Status:</strong> {product.is_active ? "Available" : "Unavailable"}</li>
-            <li><strong>Rating:</strong> {product.rating?.toFixed(1) ?? "N/A"} / 5.0</li>
+            <li>
+              <strong>Status:</strong>
+              {product.is_active ? "Available" : "Unavailable"}
+            </li>
+            <li>
+              <strong>Rating:</strong>
+              {product.rating?.toFixed(1) ?? "N/A"} / 5.0
+            </li>
             <li><strong>Stock:</strong> {product.stock ?? "N/A"} units</li>
           </ul>
         </div>
@@ -138,13 +143,16 @@
 
           <div class="price-container">
             <div class="price">${product.price}</div>
-            <div class="price-note">Free shipping on orders over $100</div>
           </div>
 
           <div class="quantity-selector">
             <label>Quantity:</label>
             <div class="quantity-controls">
-              <button on:click={decreaseQuantity} class="qty-btn" disabled={product.stock === 0}>−</button>
+              <button
+                on:click={decreaseQuantity}
+                class="qty-btn"
+                disabled={product.stock === 0}>−</button
+              >
               <input
                 type="number"
                 bind:value={quantity}
@@ -153,7 +161,11 @@
                 class="qty-input"
                 disabled={product.stock === 0}
               />
-              <button on:click={increaseQuantity} class="qty-btn" disabled={product.stock === 0}>+</button>
+              <button
+                on:click={increaseQuantity}
+                class="qty-btn"
+                disabled={product.stock === 0}>+</button
+              >
             </div>
           </div>
 
@@ -161,7 +173,7 @@
             <button
               on:click={addToCart}
               class="btn-primary"
-              disabled={product.stock === 0}
+              disabled={quantity <= 0}
             >
               Add to cart
             </button>
@@ -567,6 +579,12 @@
     font-size: 14px;
     color: #64748b;
     margin: 0;
+  }
+
+  .btn-primary[disabled] {
+    cursor: not-allowed;
+    background-color: grey;
+    opacity: 0.6;
   }
 
   @media (max-width: 768px) {

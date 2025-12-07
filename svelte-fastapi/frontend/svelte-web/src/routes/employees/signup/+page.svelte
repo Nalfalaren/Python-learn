@@ -1,7 +1,7 @@
 <script>
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import { authStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthStore";
     let employeeName = "";
     let email = "";
     let password = "";
@@ -84,7 +84,7 @@
     onMount(() => emailInput?.focus());
 
     onMount(() => {
-        if(!$authStore.isAuthenticated) goto("/employees/login")
+        if(!$adminAuthStore.isAuthenticated) goto("/employees/login")
     })
 </script>
 

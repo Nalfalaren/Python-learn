@@ -3,7 +3,9 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminApi } from "../../../../hooks/apiFetch";
+    import MessageModal from "../../../../components/modal-success/MessageModal.svelte";
 
   // --- Reactive states ---
   let order_id = "";
@@ -13,17 +15,27 @@
   let address = "";
   let status = "";
   let message = "";
+  let showMessageModal = false;
+  let messageType: "success" | "error" = "success";
 
-  // --- Fetch current order info on mount ---
+  // Auto close modal
+   function showMessage(msg: string, type: "success" | "error" = "success") {
+        message = msg;
+        messageType = type;
+        showMessageModal = true;
+
+        setTimeout(() => {
+            showMessageModal = false;
+        }, 2500);
+    }
+
   onMount(async () => {
-    const id = $page.params.id; // assuming route: /orders/edit/[id]
+    const id = $page.params.id;
     if (!id) return;
 
-    const token = localStorage.getItem("admin_access_token");
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`);
+
       if (!res.ok) throw new Error("Failed to fetch order");
 
       const data = await res.json();
@@ -35,7 +47,7 @@
       status = data?.order?.status;
     } catch (err) {
       console.error(err);
-      message = "❌ Failed to load order";
+      showMessage("❌ Failed to load order");
     }
   });
 
@@ -44,11 +56,9 @@
     e?.preventDefault();
 
     if (!customer_name || !email || !phone) {
-      alert("Please fill all required fields");
+      showMessage("⚠ Please fill all required fields");
       return;
     }
-
-    const token = localStorage.getItem("admin_access_token");
 
     const payload = {
       customer_name: customer_name.trim(),
@@ -59,26 +69,26 @@
     };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${order_id}`, {
-        method: "PUT", // or PATCH if backend supports partial update
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${order_id}`, {
+        method: "PUT",
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to update order");
-
-      message = "✅ Order updated successfully!";
-      if ($authStore.role === "ADMIN") {
-        goto("/orders");
-      } else if ($authStore.role === "EMPLOYEE") {
-        goto("/employee_orders");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        showMessage(errData?.detail || "❌ Failed to update order.");
+        return;
       }
+
+      showMessage("✅ Order updated successfully!");
+
+      setTimeout(() => {
+        if ($adminAuthStore.role === "ADMIN") goto("/orders");
+        else goto("/employee_orders");
+      }, 1000);
     } catch (err) {
       console.error("Order update failed:", err);
-      message = "❌ Failed to update order — check backend logs.";
+      showMessage("❌ Failed to update order — check backend logs.");
     }
   }
 </script>
@@ -89,35 +99,17 @@
   <form class={styles.form} on:submit|preventDefault={handleSubmit}>
     <label class={styles.field}>
       <span class={styles.label}>Customer Name</span>
-      <input
-        class={styles.input}
-        disabled
-        type="text"
-        bind:value={customer_name}
-        required
-      />
+      <input class={styles.input} disabled type="text" bind:value={customer_name} required />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Email</span>
-      <input
-        class={styles.input}
-        disabled
-        type="email"
-        bind:value={email}
-        required
-      />
+      <input class={styles.input} disabled type="email" bind:value={email} required />
     </label>
 
     <label class={styles.field}>
       <span class={styles.label}>Phone</span>
-      <input
-        class={styles.input}
-        disabled
-        type="text"
-        bind:value={phone}
-        required
-      />
+      <input class={styles.input} disabled type="text" bind:value={phone} required />
     </label>
 
     <label class={styles.field}>
@@ -138,15 +130,13 @@
 
     <div class={styles.actions}>
       <button type="submit" class={styles.button}>Update</button>
+
       <button
         type="button"
         class={styles.secondary}
         on:click={() => {
-          if ($authStore.role === "ADMIN") {
-            goto("/orders");
-          } else if ($authStore.role === "EMPLOYEE") {
-            goto("/employee_orders");
-          }
+          if ($adminAuthStore.role === "ADMIN") goto("/orders");
+          else goto("/employee_orders");
         }}
       >
         Cancel
@@ -154,7 +144,46 @@
     </div>
   </form>
 
-  {#if message}
-    <p class={styles.message}>{message}</p>
-  {/if}
+  <MessageModal show={showMessageModal} message={message} type={messageType} />
 </main>
+
+<style>
+  .messageModalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 50;
+  }
+
+  .messageModal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    z-index: 100;
+    text-align: center;
+    width: 320px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    animation: pop 0.22s ease-out;
+  }
+
+  @keyframes pop {
+    from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+
+  .closeBtn {
+    margin-top: 15px;
+    padding: 7px 16px;
+    border-radius: 4px;
+    background: #444;
+    color: white;
+  }
+
+  .closeBtn:hover {
+    background: #000;
+  }
+</style>

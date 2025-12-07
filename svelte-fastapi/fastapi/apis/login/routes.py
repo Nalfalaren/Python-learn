@@ -3,20 +3,19 @@ import uuid
 import logging
 from datetime import datetime, timedelta
 from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, Header
 from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from passlib.hash import argon2 
 from dotenv import load_dotenv
-
 from role import StatusCode
 from .models import AdminBase
 from apis.customer.models import CustomerBase
 from .schema import EmployeeSignUpSchema, AccountSchema
 from database import SessionLocal
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_token, get_current_user, handle_login_role
+from pydantic import BaseModel
 
 router = APIRouter(prefix='/auth', tags=["Authentication"])
 load_dotenv()
@@ -111,7 +110,6 @@ def refresh_token(authorization: str = Header(None)):
             content={"message": "Invalid refresh token"},
         )
 
-from pydantic import BaseModel
 
 class LogoutRequest(BaseModel):
     id: str

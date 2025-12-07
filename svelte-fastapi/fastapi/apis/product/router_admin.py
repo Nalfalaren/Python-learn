@@ -8,6 +8,7 @@ from auth import require_admin
 import uuid
 from datetime import datetime
 from .models import ProductBase
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 router_admin = APIRouter(prefix="/admin", tags=["Admin Products"])
 
@@ -75,10 +76,28 @@ def update_product(product_id: str, product: ProductUpdatePropsSchema, db: Sessi
 
 @router_admin.delete("/products/{product_id}", response_model=SuccessMessageSchema)
 def delete_product(product_id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
-    product_obj = get_product_by_id(db, product_id)
-    if not product_obj:
-        raise HTTPException(status_code=404, detail="Product not found")
-    db.delete(product_obj)
-    db.commit()
-    return {"message" :  "Product deleted successfully"}
+    try:
+        product_obj = get_product_by_id(db, product_id)
+
+        if not product_obj:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        db.delete(product_obj)
+        db.commit()
+
+        return {"message": "Product deleted successfully"}
+
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete product because it is referenced in orders."
+        )
+
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error while deleting product"
+        )
 

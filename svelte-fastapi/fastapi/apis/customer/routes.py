@@ -4,7 +4,7 @@ from passlib.hash import argon2
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 import uuid
-from auth import get_current_user, handle_login_role
+from auth import get_current_user, handle_login_role, require_admin
 import logging
 from sqlalchemy.orm import Session
 from database import SessionLocal
@@ -86,7 +86,8 @@ def get_customers(
     search_id: Optional[str] = None,
     search_name: Optional[str] = None,
     next_cursor: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_admin)
 ):
 
     query = db.query(CustomerBase).options(load_only(
@@ -124,7 +125,7 @@ def get_customers(
     }
 
 @router.get("/customers/{id}")
-def get_customer_detail(id: str, db: Session = Depends(get_db)):
+def get_customer_detail(id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
     customer = db.query(CustomerBase).options(load_only(
         CustomerBase.id,
         CustomerBase.customer_name,
@@ -139,7 +140,7 @@ def get_customer_detail(id: str, db: Session = Depends(get_db)):
     return customer
 
 @router.delete("/customers/{id}")
-def delete_customer(id: str, db: Session = Depends(get_db)):
+def delete_customer(id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):
 
     customer = db.query(CustomerBase).filter(CustomerBase.id == id).first()
 

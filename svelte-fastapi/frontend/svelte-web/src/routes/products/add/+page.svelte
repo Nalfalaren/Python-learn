@@ -1,6 +1,7 @@
 <script lang="ts">
   import styles from "$lib/styles/register/register.module.css";
   import { goto } from "$app/navigation";
+    import { adminApi } from "../../../hooks/apiFetch";
   
   // Form state
   let product_id = "";
@@ -32,12 +33,8 @@
     };
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products`, {
+      const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/admin/products`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json", 
-          "Authorization": `Bearer ${token}`,
-        },
         body: JSON.stringify(payload)
       });
 

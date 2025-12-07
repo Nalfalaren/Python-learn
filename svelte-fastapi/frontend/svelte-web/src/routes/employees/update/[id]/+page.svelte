@@ -2,7 +2,8 @@
   import { onMount } from "svelte";
   import styles from "$lib/styles/update-employee/update.module.css";
   import { goto } from "$app/navigation";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminApi } from "../../../../hooks/apiFetch";
 
   let employeeId: string;
   let employee = {
@@ -16,14 +17,9 @@
   employeeId = params.id;
   let active_status = false;
 
-  // Fetch employee data
   onMount(async () => {
-    const token = localStorage.getItem("admin_access_token");
-    const res = await fetch(
+    const res = await adminApi(
       `${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
     );
 
     if (res.ok) {
@@ -34,17 +30,11 @@
     }
   });
 
-  // Update employee data
   async function handleUpdate() {
-    const token = localStorage.getItem("admin_access_token");
-    const res = await fetch(
+    const res = await adminApi(
       `${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`,
       {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(employee),
       },
     );
@@ -59,7 +49,7 @@
   }
 
   onMount(() => {
-    if (!$authStore.isAuthenticated) goto("/employees/login");
+    if (!$adminAuthStore.isAuthenticated) goto("/employees/login");
   });
 </script>
 

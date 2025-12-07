@@ -4,7 +4,9 @@
     import styles from "$lib/styles/header/orders.module.css";
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
-    import { authStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminApi } from "../../hooks/apiFetch";
+    import MessageModal from "../../components/modal-success/MessageModal.svelte";
 
     interface Order {
         id: string;
@@ -18,17 +20,14 @@
         items: string[];
     }
 
-    // === Reactive States ===
     let orders: Order[] = $state([]);
     let loading = $state(false);
     let message = $state("");
     let totalRecords = $state(0);
 
-    // pagination states
     let pageSize = 10;
     let page = 1;
 
-    // search
     let searchId = $state("");
     let searchName = $state("");
 
@@ -37,41 +36,47 @@
     let employees = $state([]);
     let selectedEmployee: string | null = null;
 
-    // === Helper: Build URL ===
+    // message modal
+    let showMessageModal = $state(false);
+    let messageType: "success" | "error" = "success";
+
+    function showMessage(msg: string, type: "success" | "error" = "success") {
+        message = msg;
+        messageType = type;
+        showMessageModal = true;
+
+        setTimeout(() => {
+            showMessageModal = false;
+        }, 2500);
+    }
+
     function buildUrl() {
         const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/orders`);
         url.searchParams.set("limit", String(pageSize));
         if (searchId) url.searchParams.set("search_id", searchId);
         if (searchName) url.searchParams.set("customer_name", searchName);
-
         return url;
     }
 
-    onMount(() => {
-        fetchOrders();
-    });
-
-    // === Fetch Orders ===
     async function fetchOrders() {
         loading = true;
         const token = localStorage.getItem("admin_access_token");
 
         try {
-            const res = await fetch(buildUrl(), {
+            const res = await adminApi(buildUrl(), {
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            if (!res.ok) throw new Error("Failed to fetch Orders");
+            if (!res.ok) throw new Error("Failed to fetch");
 
             const data = await res.json();
             totalRecords = data.orders_count || 0;
             orders = data.search_result || [];
         } catch (err) {
-            console.error(err);
-            message = "Failed to load Orders";
+            showMessage("Failed to load orders", "error");
         } finally {
             loading = false;
         }
@@ -86,11 +91,11 @@
     async function fetchEmployees() {
         const token = localStorage.getItem("admin_access_token");
 
-        const res = await fetch(
+        const res = await adminApi(
             `${import.meta.env.VITE_API_BASE_URL}/employees?role=EMPLOYEE`,
             {
                 headers: { Authorization: `Bearer ${token}` },
-            },
+            }
         );
 
         const data = await res.json();
@@ -98,64 +103,41 @@
     }
 
     async function handleAssignOrder() {
-        if (!selectedEmployee || !selectedOrder) {
-            message = "Vui lòng chọn nhân viên!";
-            return;
-        }
-
-        const token = localStorage.getItem("admin_access_token");
-        if (!token) {
-            message = "Bạn chưa đăng nhập!";
-            return;
-        }
+        if (!selectedEmployee) return showMessage("Please choose employee", "error");
 
         try {
-            const res = await fetch(
-                `${import.meta.env.VITE_API_BASE_URL}/orders/${selectedOrder.id}/assign`,
+            const res = await adminApi(
+                `${import.meta.env.VITE_API_BASE_URL}/orders/${selectedOrder!.id}/assign`,
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        order_id: selectedOrder?.id,
+                        order_id: selectedOrder!.id,
                         employee_id: selectedEmployee,
                     }),
-                },
+                }
             );
 
-            if (!res.ok) throw new Error("Assign failed");
+            if (!res.ok) return showMessage("Assign failed", "error");
 
-            message = "Assigned successfully!";
-
-            orders = orders.map((o) =>
-                o.id === selectedOrder?.id
-                    ? { ...o, assigned_employee_id: selectedEmployee }
-                    : o,
-            );
-            fetchOrders();
+            showMessage("Assigned successfully!", "success");
             showAssignModal = false;
-        } catch (err) {
-            console.error(err);
-            message = "Có lỗi xảy ra khi gán nhân viên";
+            fetchOrders();
+        } catch {
+            showMessage("Error assigning employee", "error");
         }
     }
 
-    // === Delete ===
     async function handleDelete(id: string) {
-        const token = localStorage.getItem("admin_access_token");
-
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
+        const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
+            method: "DELETE"
         });
 
         if (res.ok) {
-            message = "Order deleted";
-            fetchOrders()
+            showMessage("Order deleted!", "success");
+            fetchOrders();
         } else {
-            message = "Delete failed";
+            showMessage("Delete failed", "error");
         }
     }
 
@@ -183,62 +165,45 @@
         }
     }
 
-    onMount(() => fetchOrders());
+    onMount(fetchOrders);
 </script>
 
 <!-- HEADER -->
-
 <div class={styles.headerContainer}>
     <div class={styles.headerContent}>
-        <h1 style="font-family: system-ui, sans-serif;">Orders</h1>
-        <div>
-            <button onclick={handleLogout}>Logout</button>
-        </div>
+        <h1>Orders</h1>
+        <button onclick={handleLogout}>Logout</button>
     </div>
-    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
+    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
 </div>
 
 <!-- SEARCH -->
-
 <div class={styles.tableSearch}>
-    <TextField
-        name="id"
-        title="ID"
-        placeholder="Search ID"
-        value={searchId}
-        onValueChange={(v: string) => (searchId = v)}
-    />
+    <TextField name="id" title="ID" placeholder="Search ID"
+        value={searchId} onValueChange={(v) => searchId = v} />
 
-    <TextField
-        name="customer_name"
-        title="Customer Name"
+    <TextField name="customer_name" title="Customer Name"
         placeholder="Search Customer Name"
-        value={searchName}
-        onValueChange={(v: string) => (searchName = v)}
-    />
+        value={searchName} onValueChange={(v) => searchName = v} />
 
     <button onclick={handleSearch}>Search</button>
 </div>
 
 <!-- TABLE -->
-
 <div class={styles.tableContainer}>
     {#if loading}
         <p>Loading...</p>
-    {:else if $authStore.role !== "ADMIN"}
-        <div class={styles.forbiddenBox}>
-            <h2>403 – Forbidden</h2>
-            <p>You do not have permission to access this page.</p>
-        </div>
+    {:else if $adminAuthStore.role !== "ADMIN"}
+        <p>403 Forbidden</p>
     {:else if orders.length === 0}
         <p>No Orders found.</p>
     {:else}
         <table class={styles.table}>
             <thead>
                 <tr>
-                    <th>ID</th> <th>Customer Name</th> <th>Email</th>
-                    <th>Phone</th> <th>Address</th> <th>Order Total</th>
-                    <th>Status</th>
+                    <th>ID</th><th>Name</th><th>Email</th>
+                    <th>Phone</th><th>Address</th><th>Total</th>
+                    <th>Status</th><th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -253,85 +218,38 @@
                         <td>{order.status.toUpperCase()}</td>
                         <td>
                             <button
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    goto(`/orders/${order.id}/edit`);
-                                }}
-                                disabled={order.status === "COMPLETED" ||
-                                    order.status === "CANCELLED"}
-                                class={styles.disabledButton}
-                            >
+                                onclick={(e) => { e.stopPropagation(); goto(`/orders/${order.id}/edit`); }}
+                                disabled={order.status === "COMPLETED" || order.status === "CANCELLED"}
+                                class={styles.disabledButton}>
                                 Edit
                             </button>
 
                             <button
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    openAssignModal(order);
-                                }}
-                                disabled={order.status !== "PENDING"}
-                                class={order.status !== "PENDING"
-                                    ? styles.disabledButton
-                                    : ""}
-                            >
-                                {order.status !== "PENDING"
-                                    ? "Assigned"
-                                    : "Assign"}
+                                onclick={(e) => { e.stopPropagation(); openAssignModal(order); }}
+                                disabled={order.status !== "PENDING"}>
+                                {order.status !== "PENDING" ? "Assigned" : "Assign"}
                             </button>
-                                <button
-                                    onclick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete(order.id);
-                                    }}
-                                    disabled={order.status !== "COMPLETED" &&
-                                        order.status !== "CANCELLED"}
-                                    class={styles.disabledButton}
-                                >
-                                    Delete
-                                </button>
+
+                            <button
+                                onclick={(e) => { e.stopPropagation(); handleDelete(order.id); }}
+                                disabled={order.status !== "COMPLETED" && order.status !== "CANCELLED"}
+                                class={styles.disabledButton}>
+                                Delete
+                            </button>
                         </td>
                     </tr>
                 {/each}
             </tbody>
         </table>
 
-        {#if showAssignModal && selectedOrder}
-            <!-- Modal Backdrop -->
-            <div class={styles.modalBackdrop}></div>
-
-            <!-- Modal -->
-            <div class={styles.modal}>
-                <h2>Assign Order: {selectedOrder.id}</h2>
-                <p>Customer: {selectedOrder.customer_name}</p>
-
-                <label>Chọn nhân viên:</label>
-                <select bind:value={selectedEmployee}>
-                    <option value="" disabled selected>Chọn nhân viên</option>
-                    {#each employees as emp}
-                        <option value={emp.id}>{emp.employee_name}</option>
-                    {/each}
-                </select>
-
-                <div class={styles.modalButtons}>
-                    <button onclick={handleAssignOrder}> Assign </button>
-
-                    <button
-                        onclick={() => {
-                            showAssignModal = false;
-                        }}>Cancel</button
-                    >
-                </div>
-            </div>
-        {/if}
-
+        <!-- Pagination -->
         <div class={styles.paginationControls}>
-            <button disabled={page === 1} onclick={handlePrevPage}
-                >Previous</button
-            >
-            <button
-                disabled={page === Math.ceil(totalRecords / pageSize)}
-                onclick={handleNextPage}>Next</button
-            >
+            <button disabled={page === 1} onclick={handlePrevPage}>Previous</button>
+            <button disabled={page === Math.ceil(totalRecords / pageSize)}
+                onclick={handleNextPage}>Next</button>
         </div>
     {/if}
 </div>
+
+<!-- MESSAGE MODAL -->
+<MessageModal show={showMessageModal} message={message} type={messageType} />

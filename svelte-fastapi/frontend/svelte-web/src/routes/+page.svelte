@@ -4,6 +4,7 @@
     import { jwtDecode } from "jwt-decode";
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
     import { derived } from "svelte/store";
+    import { clientApi } from "../hooks/apiFetch";
 
     /** Products list */
     let products: Product[] = [];
@@ -63,7 +64,6 @@
         error = "";
 
         try {
-            const token = localStorage.getItem("accessToken");
             const params = new URLSearchParams();
 
             if (query) params.append("search_product", query);
@@ -74,18 +74,8 @@
             if (cursor) params.append("next_cursor", cursor);
 
             const url = `${import.meta.env.VITE_API_BASE_URL}/products?${params.toString()}`;
-
-            const res = await fetch(url, {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-
+            const res = await clientApi(url);
             const data = await res.json();
-
             products = (data.search_result || []).map(
                 (p: Product, index: number) => ({
                     ...p,
@@ -317,9 +307,8 @@
                 <option value="rating">Top Rated</option>
             </select>
             <div style="display:flex; gap:10px">
-                <button
-                    class="btn-primary"
-                    onclick={() => handleSearch()}>Search</button
+                <button class="btn-primary" onclick={() => handleSearch()}
+                    >Search</button
                 >
             </div>
         </div>
@@ -567,8 +556,13 @@
                         <div style="display:flex; gap:12px; margin-top:18px">
                             <button
                                 onclick={confirmAddToCart}
-                                class="btn-primary">Add to Cart</button
+                                class="btn-primary"
+                                disabled={addToCartQuantity <= 0}
+                                class:btn-disabled={addToCartQuantity <= 0}
                             >
+                                Add to Cart
+                            </button>
+
                             <button
                                 onclick={closeAddToCartModal}
                                 class="btn-secondary">Cancel</button
@@ -1208,6 +1202,12 @@
         padding: 0 4px;
         font-size: 14px;
         color: #94a3b8;
+    }
+
+    .btn-disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        background-color: grey !important;
     }
 
     @media (max-width: 700px) {

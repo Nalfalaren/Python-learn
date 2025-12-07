@@ -5,15 +5,18 @@
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminApi } from "../../hooks/apiFetch";
+  import MessageModal from "../../components/modal-success/MessageModal.svelte";
+
   interface Product {
     id: string;
     product_name: string;
     category: string;
     price: number;
     created_at: string;
-    rating?: string
-    description?: string
+    rating?: string;
+    description?: string;
     stock: number;
     image_url?: string;
   }
@@ -21,11 +24,11 @@
   // === State ===
   let products: Product[] = $state([]);
   let loading = $state(false);
-  let message = $state("");
+  let message = $state(""); 
+
   let searchId = $state("");
   let searchName = $state("");
 
-  // Pagination cursor
   let nextCursor: string | null = $state(null);
   let currentCursor: string | null = $state(null);
   let cursorStack: (string | null)[] = $state([]);
@@ -33,7 +36,15 @@
   let totalRecords = $state(0);
   let pageSize = 10;
 
+  let showModal = $state(false);
+
   // === Helper ===
+  function showMessage(msg: string) {
+    message = msg;
+    showModal = true;
+    setTimeout(() => (showModal = false), 2000);
+  }
+
   function buildUrl(cursor: string | null) {
     const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/admin/products`);
     if (searchId) url.searchParams.set("search_id", searchId);
@@ -44,13 +55,7 @@
 
   async function fetchProducts(cursor: string | null = null) {
     loading = true;
-    const token = localStorage.getItem("admin_access_token");
-    const response = await fetch(buildUrl(cursor), {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await adminApi(buildUrl(cursor));
 
     if (response.ok) {
       const data = await response.json();
@@ -59,11 +64,12 @@
       currentCursor = cursor;
       loadedCount = (cursorStack.length + 1) * pageSize;
       totalRecords = data.total_product || 0;
-      loading = false;
     } else {
-      loading = false;
-      message = "❌ Failed to load products.";
+      const error = await response.json();  
+      showMessage(error?.detail);
     }
+
+    loading = false;
   }
 
   function handleSearch() {
@@ -86,39 +92,35 @@
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-    const token = localStorage.getItem("admin_access_token");
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      message = "✅ Product deleted!";
-      fetchProducts(currentCursor);
-    } else {
-      message = "❌ Failed to delete product.";
-    }
+  if (!confirm("Are you sure you want to delete this product?")) return;
+
+  const res = await adminApi(
+    `${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`,
+    { method: "DELETE" }
+  );
+
+  if (res.ok) {
+    showMessage("✅ Product deleted successfully!");
+    fetchProducts(currentCursor);
+  } else {
+    const error = await res.json();  
+    showMessage(error.detail || "❌ Failed to delete product.");
   }
+}
+
 
   async function handleLogout() {
     try {
       const token = localStorage.getItem("admin_access_token");
       const decoded = token ? jwtDecode<{ id: string }>(token) : null;
       const currentUserId = decoded?.id;
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
+
+      await adminApi(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ id: currentUserId }),
       });
-
-      if (!res.ok) {
-        console.error("Logout API failed:", res.status);
-      }
     } catch (err) {
-      console.error("Logout request error:", err);
+      console.error("Logout error:", err);
     } finally {
       localStorage.removeItem("admin_access_token");
       localStorage.removeItem("refreshToken");
@@ -132,22 +134,20 @@
 </script>
 
 <!-- HEADER -->
-
 <div class={styles.headerContainer}>
   <div class={styles.headerContent}>
     <h1 style="font-family: system-ui, sans-serif;">Products</h1>
     <div>
-      {#if $authStore.role === "ADMIN"}
+      {#if $adminAuthStore.role === "ADMIN"}
         <button onclick={() => goto("/products/add")}>+ Add Product</button>
       {/if}
       <button onclick={handleLogout}>Logout</button>
     </div>
   </div>
-  <TabNavigation is_admin={$authStore.role === "ADMIN"} />
+  <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
 </div>
 
 <!-- SEARCH -->
-
 <div class={styles.tableSearch}>
   <TextField
     name="id"
@@ -169,11 +169,10 @@
 </div>
 
 <!-- TABLE -->
-
 <div class={styles.tableContainer}>
   {#if loading}
     <p>Loading products...</p>
-  {:else if $authStore.role !== "ADMIN"}
+  {:else if $adminAuthStore.role !== "ADMIN"}
     <div class={styles.forbiddenBox}>
       <h2>403 – Forbidden</h2>
       <p>You do not have permission to access this page.</p>
@@ -240,3 +239,5 @@
     </div>
   {/if}
 </div>
+
+<MessageModal show={showModal} message={message} onClose={() => (showModal = false)} />

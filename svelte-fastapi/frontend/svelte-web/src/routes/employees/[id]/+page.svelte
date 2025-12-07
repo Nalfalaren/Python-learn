@@ -2,7 +2,8 @@
   import { onMount } from "svelte";
   import styles from "$lib/styles/detail/employee-detail.module.css";
   import { goto } from "$app/navigation";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminApi } from "../../../hooks/apiFetch";
 
   let employeeId: string;
   export let params;
@@ -19,12 +20,8 @@
   employeeId = params.id;
 
   onMount(async () => {
-    if(!$authStore.isAuthenticated) goto("/employees/login")
-    const token = localStorage.getItem("admin_access_token");
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
+    if(!$adminAuthStore.isAuthenticated) goto("/employees/login")
+    const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/employee/${employeeId}`);
     if (res.ok) {
       employee = await res.json();
     } else {

@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import styles from "$lib/styles/detail/order-detail.module.css";
     import { goto } from "$app/navigation";
+    import { adminApi } from "../../../hooks/apiFetch";
 
     let orderId: string;
     export let params;
@@ -42,10 +43,7 @@
     orderId = params.id;
 
     onMount(async () => {
-        const token = localStorage.getItem("admin_access_token");
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}`);
 
         if (res.ok) {
             orderInformation = await res.json();

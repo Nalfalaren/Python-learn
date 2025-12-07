@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import ProductDetailModal from "../../../components/modal/ProductDetailModal.svelte";
     import { goto } from "$app/navigation";
+    import { clientApi } from "../../../hooks/apiFetch";
 
     type Product = {
         id?: string;
@@ -55,13 +56,7 @@
     const fetchProducts = async (cursor: string | null = null) => {
         loading = true;
         try {
-            const token = localStorage.getItem("accessToken");
-            const res = await fetch(buildUrl(cursor), {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
+            const res = await clientApi(buildUrl(cursor));
             let data = await res.json();
 
             drones = (data.search_result || []).map(

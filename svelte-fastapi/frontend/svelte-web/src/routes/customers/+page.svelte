@@ -4,7 +4,8 @@
   import styles from "$lib/styles/header/customers.module.css";
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminApi } from "../../hooks/apiFetch";
   
 
   interface Customer {
@@ -54,15 +55,8 @@
    * ============================ */
   async function fetchCustomers(cursor: string | null = null) {
     loading = true;
-    const token = localStorage.getItem("admin_access_token");
-
     try {
-      const res = await fetch(buildUrl(cursor), {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const res = await adminApi(buildUrl(cursor));
 
       if (!res.ok) throw new Error("Failed to fetch customers");
 
@@ -107,27 +101,8 @@
     fetchCustomers(null);
   }
 
-  /** ============================
-   *  Delete
-   * ============================ */
-  async function handleDelete(id: string) {
-    const token = localStorage.getItem("admin_access_token");
-
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/customers/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (res.ok) {
-      message = "Customer deleted";
-      fetchCustomers(currentCursor);
-    } else {
-      message = "Delete failed";
-    }
-  }
-
   onMount(() => {
-    if (!$authStore.isAuthenticated) {
+    if (!$adminAuthStore.isAuthenticated) {
       goto("/employees/login");
       return;
     }
@@ -140,10 +115,10 @@
     <div class={styles.headerContent}>
       <div><h1 style="font-family: system-ui, sans-serif;">Customers</h1></div>
       <div>
-        <button onclick={() => authStore.logout()}>Logout</button>
+        <button onclick={() => adminAuthStore.logout()}>Logout</button>
       </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
+    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
   </div>
 
   <!-- Search -->
@@ -175,7 +150,7 @@
     {#if loading}
       <p>Loading...</p>
 
-    {:else if $authStore.role !== "ADMIN"}
+    {:else if $adminAuthStore.role !== "ADMIN"}
       <div class={styles.forbiddenBox}>
         <h2>403 – Forbidden</h2>
         <p>You do not have permission to access this page.</p>
@@ -193,7 +168,6 @@
             <th>Role</th>
             <th>Email</th>
             <th>Status</th>
-            <th>Action</th>
           </tr>
         </thead>
 
@@ -205,13 +179,6 @@
               <td>{cus.role}</td>
               <td>{cus.email}</td>
               <td>{cus.is_active === "Active" ? "Active" : "Inactive"}</td>
-              <td>
-                <button
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(cus.id);
-                  }}>Delete</button>
-              </td>
             </tr>
           {/each}
         </tbody>

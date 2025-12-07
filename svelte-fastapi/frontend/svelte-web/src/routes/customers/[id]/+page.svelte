@@ -2,7 +2,8 @@
   import { onMount } from "svelte";
   import styles from "$lib/styles/detail/customer-detail.module.css";
   import { goto } from "$app/navigation";
-  import { authStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthStore"
+  import { adminApi } from "../../../hooks/apiFetch";
 
   let customerId: string;
   export let params;
@@ -20,20 +21,14 @@
   customerId = params.id;
 
   onMount(async () => {
-    if (!$authStore.isAuthenticated) goto("/employees/login");
+    if (!$adminAuthStore.isAuthenticated) goto("/employees/login");
 
     const token = localStorage.getItem("admin_access_token");
 
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/customers/${customerId}`, {
+    const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/customers/${customerId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    if (res.ok) {
-      customer = await res.json();
-    } else {
-      alert("❌ Failed to load customer details");
-      goto("/customers");
-    }
+      customer = await res.json()
   });
 
   function goBack() {

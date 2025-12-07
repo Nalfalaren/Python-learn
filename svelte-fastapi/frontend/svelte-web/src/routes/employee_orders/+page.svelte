@@ -1,10 +1,11 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import styles from "$lib/styles/header/orders.module.css";
-    import { authStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthStore";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
     import TextField from "../../components/input/TextField.svelte";
     import { goto } from "$app/navigation";
+    import { adminApi } from "../../hooks/apiFetch";
 
     interface Order {
         id: string;
@@ -37,7 +38,7 @@
         const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/orders`);
         url.searchParams.set("limit", String(pageSize));
         url.searchParams.set("page", String(page));
-        url.searchParams.set("employee_id", String($authStore.id));
+        url.searchParams.set("employee_id", String($adminAuthStore.id));
 
         if (searchId) url.searchParams.set("search_id", searchId);
         if (searchName) url.searchParams.set("customer_name", searchName);
@@ -55,12 +56,7 @@
         }
 
         try {
-            const res = await fetch(buildUrl(), {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const res = await adminApi(buildUrl());
 
             if (!res.ok) throw new Error("Failed to fetch Orders");
 
@@ -76,13 +72,7 @@
     }
 
     async function handleDelete(id: string) {
-        const token = localStorage.getItem("admin_access_token");
-
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
+        const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {method: 'DELETE'});
         if (res.ok) {
             message = "Order deleted";
         } else {
@@ -118,10 +108,10 @@
             <h1 style="font-family: system-ui, sans-serif;">Customer Orders</h1>
         </div>
         <div>
-            <button onclick={() => authStore.logout()}>Logout</button>
+            <button onclick={() => adminAuthStore.logout()}>Logout</button>
         </div>
     </div>
-    <TabNavigation is_admin={$authStore.role === "ADMIN"} />
+    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
 </div>
 
 <!-- Search -->
@@ -190,7 +180,7 @@
                             >
                                 Edit
                             </button>
-                            {#if $authStore.role == "ADMIN"}
+                            {#if $adminAuthStore.role == "ADMIN"}
                             <button
                                 onclick={(e) => {
                                     e.stopPropagation();

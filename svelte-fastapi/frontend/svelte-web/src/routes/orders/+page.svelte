@@ -60,15 +60,8 @@
 
     async function fetchOrders() {
         loading = true;
-        const token = localStorage.getItem("admin_access_token");
-
         try {
-            const res = await adminApi(buildUrl(), {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const res = await adminApi(buildUrl());
 
             if (!res.ok) throw new Error("Failed to fetch");
 
@@ -89,13 +82,8 @@
     }
 
     async function fetchEmployees() {
-        const token = localStorage.getItem("admin_access_token");
-
         const res = await adminApi(
             `${import.meta.env.VITE_API_BASE_URL}/employees?role=EMPLOYEE`,
-            {
-                headers: { Authorization: `Bearer ${token}` },
-            }
         );
 
         const data = await res.json();
@@ -143,6 +131,7 @@
 
     function handleLogout() {
         localStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_refresh_token");
         goto("/employees/login");
     }
 
@@ -241,6 +230,35 @@
                 {/each}
             </tbody>
         </table>
+
+          {#if showAssignModal && selectedOrder}
+            <!-- Modal Backdrop -->
+            <div class={styles.modalBackdrop}></div>
+
+            <!-- Modal -->
+            <div class={styles.modal}>
+                <h2>Assign Order: {selectedOrder.id}</h2>
+                <p>Customer: {selectedOrder.customer_name}</p>
+
+                <label>Chọn nhân viên:</label>
+                <select bind:value={selectedEmployee}>
+                    <option value="" disabled selected>Chọn nhân viên</option>
+                    {#each employees as emp}
+                        <option value={emp.id}>{emp.employee_name}</option>
+                    {/each}
+                </select>
+
+                <div class={styles.modalButtons}>
+                    <button onclick={handleAssignOrder}> Assign </button>
+
+                    <button
+                        onclick={() => {
+                            showAssignModal = false;
+                        }}>Cancel</button
+                    >
+                </div>
+            </div>
+        {/if}
 
         <!-- Pagination -->
         <div class={styles.paginationControls}>

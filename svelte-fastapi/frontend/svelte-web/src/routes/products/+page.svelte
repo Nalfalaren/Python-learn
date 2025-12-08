@@ -108,7 +108,6 @@
   }
 }
 
-
   async function handleLogout() {
     try {
       const token = localStorage.getItem("admin_access_token");
@@ -123,7 +122,7 @@
       console.error("Logout error:", err);
     } finally {
       localStorage.removeItem("admin_access_token");
-      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("admin_refresh_token");
       goto("/employees/login");
     }
   }

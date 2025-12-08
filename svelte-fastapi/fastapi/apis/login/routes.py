@@ -3,7 +3,7 @@ import uuid
 import logging
 from datetime import datetime, timedelta
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Body, Depends, HTTPException, Header
 from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -81,22 +81,25 @@ def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
         "role": employee.role
     }
 
-
-# Refresh token
 @router.post("/refresh")
-def refresh_token(authorization: str = Header(None)):
-    if not authorization:
+def refresh_token(data: dict = Body(...)):
+    refresh_token = data.get("refresh_token")
+    if not refresh_token:
         return JSONResponse(
             status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
             content={"message": "Missing refresh token"},
         )
 
-    refresh_token = authorization.replace("Bearer ", "")
     try:
-        payload = jwt.decode(refresh_token, os.getenv("JWT_SECRET_KEY"), algorithms=[os.getenv("ALGORITHM")])
+        payload = jwt.decode(
+            refresh_token,
+            os.getenv("JWT_SECRET_KEY"),
+            algorithms=[os.getenv("ALGORITHM")]
+        )
         email = payload.get("sub")
         new_access_token = create_token(
-            {"sub": email}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+           {"sub": email, "role": payload['role'], "id": payload['id']},
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         return {"access_token": new_access_token}
     except jwt.ExpiredSignatureError:
@@ -109,7 +112,6 @@ def refresh_token(authorization: str = Header(None)):
             status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
             content={"message": "Invalid refresh token"},
         )
-
 
 class LogoutRequest(BaseModel):
     id: str

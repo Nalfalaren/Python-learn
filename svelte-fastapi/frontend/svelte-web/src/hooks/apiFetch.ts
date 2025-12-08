@@ -1,3 +1,5 @@
+import { jwtDecode } from "jwt-decode";
+
 const API_URL: string = import.meta.env.VITE_API_BASE_URL;
 
 let isRefreshing: boolean = false;
@@ -11,23 +13,38 @@ interface ApiOptions extends RequestInit {
     headers?: ApiHeaders;
 }
 
-async function refreshAccessToken(): Promise<string> {
+type UserType = "CUSTOMER" | "ADMIN" | 'EMPLOYEE';
+
+async function refreshAccessToken(userType: UserType): Promise<string> {
+    const accessKey = userType === "ADMIN" || userType === "EMPLOYEE" ? "admin_access_token" : "accessToken";
+    const refreshKey = userType === "ADMIN" || userType === "EMPLOYEE" ? "admin_refresh_token" : "customer_refresh_token";
+
     if (!isRefreshing) {
         isRefreshing = true;
 
-        refreshPromise = fetch(`${API_URL}/refresh`, {
+        const refreshToken = localStorage.getItem(refreshKey);
+        if (!refreshToken) throw new Error("No refresh token found");
+
+        refreshPromise = fetch(`${API_URL}/auth/refresh`, {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: refreshToken }),
             credentials: "include"
         })
-            .then(async res => {
-                if (!res.ok) throw new Error("Refresh failed");
-                const data = await res.json();
-                localStorage.setItem("access_token", data.access_token);
-                return data.access_token as string;
-            })
-            .finally(() => {
-                isRefreshing = false;
-            });
+        .then(async res => {
+            if (!res.ok) throw new Error("Refresh failed");
+            const data = await res.json();
+
+            localStorage.setItem(accessKey, data.access_token);
+            if (data.refresh_token) {
+                localStorage.setItem(refreshKey, data.refresh_token);
+            }
+
+            return data.access_token;
+        })
+        .finally(() => {
+            isRefreshing = false;
+        });
     }
 
     return refreshPromise!;
@@ -35,7 +52,6 @@ async function refreshAccessToken(): Promise<string> {
 
 export async function clientApi(url: string, options: RequestInit = {}) {
     const token = localStorage.getItem("accessToken");
-
     // Merge headers đúng chuẩn
     const mergedHeaders = {
         "Content-Type": "application/json",
@@ -50,10 +66,8 @@ export async function clientApi(url: string, options: RequestInit = {}) {
     };
 
     let res = await fetch(url, mergedOptions);
-
     if (res.status === 401) {
-        const newToken = await refreshAccessToken();
-
+        const newToken = await refreshAccessToken('CUSTOMER');
         const retryHeaders = {
             "Content-Type": "application/json",
             Authorization: `Bearer ${newToken}`,
@@ -75,8 +89,8 @@ export async function clientApi(url: string, options: RequestInit = {}) {
 
 export async function adminApi(url: string | URL, options: RequestInit = {}) {
     const token = localStorage.getItem("admin_access_token");
+    const decoded = token ? jwtDecode<{ role: 'ADMIN' | 'EMPLOYEE' }>(token) : null;
 
-    // Merge headers đúng chuẩn
     const mergedHeaders = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -92,7 +106,7 @@ export async function adminApi(url: string | URL, options: RequestInit = {}) {
     let res = await fetch(url, mergedOptions);
 
     if (res.status === 401) {
-        const newToken = await refreshAccessToken();
+        const newToken = await refreshAccessToken(decoded.role);
 
         const retryHeaders = {
             "Content-Type": "application/json",
@@ -111,5 +125,3 @@ export async function adminApi(url: string | URL, options: RequestInit = {}) {
 
     return res;
 }
-
-

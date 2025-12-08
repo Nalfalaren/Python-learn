@@ -31,9 +31,10 @@ const { subscribe, set } = writable(initial);
 
 export const adminAuthStore = {
   subscribe,
-  login(token: string) {
+  login(token: string, refresh_token: string) {
     if (browser) {
       localStorage.setItem("admin_access_token", token);
+      localStorage.setItem("admin_refresh_token", refresh_token);
       const decoded = jwtDecode<{ id: string; role: string }>(token);
       set({
         token,
@@ -46,6 +47,7 @@ export const adminAuthStore = {
   logout() {
     if (browser) {
       localStorage.removeItem("admin_access_token");
+      localStorage.removeItem("admin_refresh_token");
       window.location.href = "/employees/login"
     }
     set({ token: null, role: null, id: null, isAuthenticated: false });

@@ -42,6 +42,7 @@
             const data = await res.json().catch(() => ({}));
             message = data.message || "Login successful!";
             localStorage.setItem("accessToken", data.access_token);
+            localStorage.setItem("customer_refresh_token", data.refresh_token)
             window.location.href = `/`;
         } catch (err) {
             console.error(err);

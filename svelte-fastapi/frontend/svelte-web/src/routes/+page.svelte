@@ -107,8 +107,21 @@
         }
     };
 
+     function isTokenValid(token: string | null): boolean {
+        if (!token) return false;
+
+        try {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            const exp = payload.exp * 1000;
+            return Date.now() < exp;
+        } catch {
+            return false;
+        }
+    }
+
     onMount(() => {
-        isLoggedIn = !!localStorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken");
+        isLoggedIn = isTokenValid(token);
         fetchProducts();
     });
 
@@ -227,7 +240,7 @@
             console.error("Logout request error:", err);
         } finally {
             localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("customer_refresh_token");
             cart.clear();
             isLoggedIn = false;
             goto("/login");

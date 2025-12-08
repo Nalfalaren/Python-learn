@@ -22,12 +22,7 @@
 
   onMount(async () => {
     if (!$adminAuthStore.isAuthenticated) goto("/employees/login");
-
-    const token = localStorage.getItem("admin_access_token");
-
-    const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/customers/${customerId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/customers/${customerId}`);
       customer = await res.json()
   });
 

@@ -4,7 +4,6 @@
   import { onMount } from "svelte";
   import { cart, type Product } from "$lib/stores/CartStore";
   import { clientApi } from "../../../../hooks/apiFetch";
-
   let product: Product | null = null;
   let isLoading = true;
   let error = "";
@@ -18,8 +17,21 @@
     cartCount = cart.getTotalCount();
   });
 
+  function isTokenValid(token: string | null): boolean {
+    if (!token) return false;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const exp = payload.exp * 1000;
+      return Date.now() < exp;
+    } catch {
+      return false;
+    }
+  }
+
   onMount(() => {
-    isLoggedIn = !!localStorage.getItem("accessToken");
+    const token = localStorage.getItem("accessToken");
+    isLoggedIn = isTokenValid(token);
     fetchProduct();
   });
 
@@ -173,7 +185,7 @@
             <button
               on:click={addToCart}
               class="btn-primary"
-              disabled={quantity <= 0}
+              disabled={quantity <= 0 || !isLoggedIn}
             >
               Add to cart
             </button>

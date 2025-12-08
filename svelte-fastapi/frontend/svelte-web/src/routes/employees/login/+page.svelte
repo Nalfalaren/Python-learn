@@ -42,6 +42,7 @@
             const data = await res.json().catch(() => ({}));
             message = data.message || "Login successful";
             localStorage.setItem("admin_access_token", data.access_token);
+            localStorage.setItem("admin_refresh_token", data.refresh_token)
             window.location.href = `/employees?role=${data?.role?.toLowerCase()}`;
          
         } catch (err) {

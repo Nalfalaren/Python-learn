@@ -30,14 +30,16 @@ const { subscribe, set } = writable(initial);
 export const authCustomer = {
   subscribe,
 
-  login(token: string) {
+  login(token: string, refresh_token: string) {
     const decoded = jwtDecode<{ id: string }>(token);
     localStorage.setItem("accessToken", token);
+    localStorage.setItem("customer_refresh_token", refresh_token)
     set({ token, id: decoded.id, isAuthenticated: true });
   },
 
   logout() {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("customer_refresh_token")
     set({ token: null, id: null, isAuthenticated: false });
   }
 };

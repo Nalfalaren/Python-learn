@@ -55,6 +55,7 @@
 
     function handleLogout() {
         localStorage.removeItem("admin_access_token");
+        localStorage.removeItem("admin_refresh_token");
         goto("/employees/login");
     }
 
@@ -151,7 +152,7 @@
                     <th>Qty</th>
                     <th>Price</th>
                     <th>Created At</th>
-                    <th>Action</th> <!-- 🔥 Thêm cột -->
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>

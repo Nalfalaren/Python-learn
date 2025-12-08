@@ -53,7 +53,6 @@
       if (!response.ok) throw new Error("Failed to fetch employees");
 
       const res = await response.json();
-      console.log(res);
       employees = res.search_result || [];
       totalRecords = res.total_employee || 0;
       nextCursor = res.next_cursor || null;
@@ -128,7 +127,7 @@
       console.error("Logout request error:", err);
     } finally {
       localStorage.removeItem("admin_access_token");
-      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("admin_refresh_token");
       goto("/employees/login");
     }
   }

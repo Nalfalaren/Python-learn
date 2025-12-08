@@ -1,10 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import os
 from typing import Annotated, Optional
+from fastapi.responses import JSONResponse
 from passlib.hash import argon2 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Body, HTTPException, Depends
 from sqlalchemy.orm import Session
 import uuid
-from auth import get_current_user, handle_login_role, require_admin
+from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_token, get_current_user, handle_login_role, require_admin
 import logging
 from sqlalchemy.orm import Session
 from database import SessionLocal
@@ -13,6 +15,7 @@ from .models import CustomerBase
 from role import StatusCode
 from apis.login.schema import AccountSchema
 from sqlalchemy.orm import load_only
+from jose import JWTError, jwt
 
 router = APIRouter(tags=["Customers"])
 
@@ -123,6 +126,39 @@ def get_customers(
         "next_cursor": next_cursor_value,
         "total_employee": total
     }
+
+@router.post("/refresh")
+def refresh_token(data: dict = Body(...)):
+    refresh_token = data.get("refresh_token")
+    if not refresh_token:
+        return JSONResponse(
+            status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
+            content={"message": "Missing refresh token"},
+        )
+
+    try:
+        payload = jwt.decode(
+            refresh_token,
+            os.getenv("JWT_SECRET_KEY"),
+            algorithms=[os.getenv("ALGORITHM")]
+        )
+        email = payload.get("sub")
+        new_access_token = create_token(
+           {"sub": email, "role": payload['role'], "id": payload['id']},
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
+        return {"access_token": new_access_token}
+    except jwt.ExpiredSignatureError:
+        return JSONResponse(
+            status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
+            content={"message": "Refresh token expired"},
+        )
+    except JWTError:
+        return JSONResponse(
+            status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
+            content={"message": "Invalid refresh token"},
+        )
+    
 
 @router.get("/customers/{id}")
 def get_customer_detail(id: str, db: Session = Depends(get_db), _: dict = Depends(require_admin)):

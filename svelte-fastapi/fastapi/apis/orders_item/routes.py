@@ -23,47 +23,66 @@ def get_account(current_user: dict = Depends(get_current_user)):
 
 
 @order_items_router.post("/checkout")
+
 def checkout(payload: CheckoutPayload, db: Session = Depends(get_db)):
     customer_info = payload.customer
     cart_info = payload.cart
+    email = customer_info.email
+
+    for key, value in customer_info:
+        if value in [None, "", []]:
+            raise HTTPException(status_code=400, detail=f"Customer field '{key}' is empty")
 
     order = OrderBase(
         id=str(uuid.uuid4()), 
-        customer_name=customer_info["name"],
-        email=customer_info["email"],
-        phone=customer_info["phone"],
-        address=customer_info["address"],
+        customer_name=customer_info.name,
+        email=customer_info.email,
+        phone=customer_info.phone,
+        address=customer_info.address,
         employee_id=None,
-        customer_id=customer_info["customer_id"], 
+        customer_id=customer_info.customer_id, 
         status="PENDING"
     )
     db.add(order)
     db.commit()
     db.refresh(order)
 
-    for item in cart_info:
+    if not cart_info:
+        raise HTTPException(status_code=400, detail="Cart is empty")
+    
+    if "@" not in email or email.startswith("@") or email.endswith("@"):
+        raise HTTPException(status_code=400, detail="Customer email is invalid")
+
+    for i, item in enumerate(cart_info):
+        for key, value in item:
+            if value in [None, "", []]:
+                raise HTTPException(status_code=400, detail=f"Cart item {i} field '{key}' is empty")
+
         order_item = OrderItem(
             id=str(uuid.uuid4()),
             order_id=order.id, 
-            product_id=item["product_id"],
-            product_name=item["product_name"],
-            qty=item["qty"],
-            price=item["price"]
+            product_id=item.product_id,
+            product_name=item.product_name,
+            qty=item.qty,
+            price=item.price
         )
         db.add(order_item)
-        product = db.query(ProductBase).filter(ProductBase.id == item['product_id']).first()
+
+        product = db.query(ProductBase).filter(ProductBase.id == item.product_id).first()
         if not product:
             db.rollback()
             raise HTTPException(
                 status_code=404, 
-                detail=f"Product '{item['product_name']}' not found"
+                detail=f"Product '{item.get('product_name')}' not found"
             )
-        elif product.stock >= item["qty"]:
-            product.stock -= item["qty"]
+        elif product.stock >= item.qty:
+            product.stock -= item.qty
         else:
             db.rollback()
-            raise HTTPException(status_code=400, detail=f"Product '{product.product_name}' chỉ còn {product.stock} items")
-
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Product '{product.product_name}' chỉ còn {product.stock} items"
+            )
     db.commit()
 
     return {

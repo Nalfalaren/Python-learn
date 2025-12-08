@@ -42,7 +42,8 @@
         CartStore.set([]);
         goto("/");
       } else {
-        alert("Failed to place order");
+        const error = await res.json()
+        alert(error.detail || "Failed to place order");
       }
     } catch (e) {
       console.error(e);

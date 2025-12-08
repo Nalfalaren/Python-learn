@@ -1,6 +1,6 @@
 from datetime import datetime
 import enum
-from typing import Any, Optional
+from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 
 class OrderStatusEnum(str, enum.Enum):
@@ -20,9 +20,23 @@ class OrderSchema(BaseModel):
     created_at: Optional[datetime] = None
     items: Any
 
+class CartItemPayload(BaseModel):
+    product_id: str
+    product_name: str
+    qty: int
+    price: float
+
+
+class CustomerPayload(BaseModel):
+    customer_id: str
+    name: str
+    email: str
+    phone: str
+    address: str
+
 class CheckoutPayload(BaseModel):
-    customer: dict
-    cart: list[Any]
+    customer: CustomerPayload
+    cart: List[CartItemPayload]
 
 class OrderItemCreate(BaseModel):
     """Schema để tạo order item mới"""

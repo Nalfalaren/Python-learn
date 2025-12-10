@@ -81,28 +81,35 @@ def test_login_unknown_email(test_client):
 def test_refresh_token_success(test_client):
     login_res = test_client.post("/auth/login", json=login_data)
     refresh_token = login_res.json()["refresh_token"]
-
+    
     res = test_client.post(
         "/auth/refresh",
-        headers={"Authorization": f"Bearer {refresh_token}"}
+        json={"refresh_token": refresh_token}
     )
+    
     assert res.status_code == 200
-    assert "access_token" in res.json()
+    data = res.json()
+    assert "access_token" in data
+    print("New access token:", data["access_token"])
 
 
-def test_refresh_token_missing_header(test_client):
-    res = test_client.post("/auth/refresh")
+def test_refresh_token_missing(test_client):
+    res = test_client.post(
+        "/auth/refresh",
+        json={"refresh_token": ""}
+    )
     assert res.status_code == 401
-    assert res.json()["message"] == "Missing refresh token"
+    assert "Missing refresh token" in res.json()["message"]
 
 
 def test_refresh_token_invalid(test_client):
     res = test_client.post(
         "/auth/refresh",
-        headers={"Authorization": "Bearer INVALIDTOKEN"}
+        json={"refresh_token": "invalid_token_here"}
     )
+    
     assert res.status_code == 401
-    assert res.json()["message"] == "Invalid refresh token"
+    assert "Invalid refresh token" in res.json()["message"]
 
 
 def test_logout_success(test_client):

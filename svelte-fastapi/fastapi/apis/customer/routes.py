@@ -13,7 +13,7 @@ from database import SessionLocal
 from .schema import CustomerSignUpSchema
 from .models import CustomerBase
 from role import StatusCode
-from apis.login.schema import AccountSchema
+from apis.login.schema import AccountSchema, RefreshTokenRequest
 from sqlalchemy.orm import load_only
 from jose import JWTError, jwt
 from apis.login.models import AdminBase
@@ -142,8 +142,8 @@ def get_customers(
     }
 
 @router.post("/refresh")
-def refresh_token(data: dict = Body(...)):
-    refresh_token = data.get("refresh_token")
+def refresh_token(request: RefreshTokenRequest):
+    refresh_token = request.refresh_token
     if not refresh_token:
         return JSONResponse(
             status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
@@ -158,8 +158,8 @@ def refresh_token(data: dict = Body(...)):
         )
         email = payload.get("sub")
         new_access_token = create_token(
-           {"sub": email, "role": payload['role'], "id": payload['id']},
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            {"sub": email, "role": payload['role'], "id": payload['id']},
+            timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         return {"access_token": new_access_token}
     except jwt.ExpiredSignatureError:

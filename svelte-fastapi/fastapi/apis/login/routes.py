@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from role import StatusCode
 from .models import AdminBase
 from apis.customer.models import CustomerBase
-from .schema import EmployeeSignUpSchema, AccountSchema
+from .schema import EmployeeSignUpSchema, AccountSchema, RefreshTokenRequest
 from database import SessionLocal
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, create_token, get_current_user, handle_login_role
 from pydantic import BaseModel
@@ -82,8 +82,9 @@ def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
     }
 
 @router.post("/refresh")
-def refresh_token(data: dict = Body(...)):
-    refresh_token = data.get("refresh_token")
+def refresh_token(request: RefreshTokenRequest):
+    refresh_token = request.refresh_token
+    
     if not refresh_token:
         return JSONResponse(
             status_code=StatusCode.HTTP_UNAUTHORIZE_401.value,
@@ -98,8 +99,8 @@ def refresh_token(data: dict = Body(...)):
         )
         email = payload.get("sub")
         new_access_token = create_token(
-           {"sub": email, "role": payload['role'], "id": payload['id']},
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            {"sub": email, "role": payload['role'], "id": payload['id']},
+            timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         return {"access_token": new_access_token}
     except jwt.ExpiredSignatureError:

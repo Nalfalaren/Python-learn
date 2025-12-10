@@ -13,3 +13,6 @@ class EmployeeSignUpSchema(BaseModel):
     password: str
     confirmPassword: str
     role: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str

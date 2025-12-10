@@ -1,4 +1,5 @@
 <script>
+    import { goto } from "$app/navigation";
     import { onMount } from "svelte";
 
     let email = "";
@@ -14,7 +15,8 @@
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email.trim()) errors.email = "Please enter your email.";
-        else if (!emailRegex.test(email)) errors.email = "Invalid email address.";
+        else if (!emailRegex.test(email))
+            errors.email = "Invalid email address.";
 
         if (!password) errors.password = "Please enter your password.";
         else if (password.length < 6)
@@ -42,7 +44,7 @@
             const data = await res.json().catch(() => ({}));
             message = data.message || "Login successful!";
             localStorage.setItem("accessToken", data.access_token);
-            localStorage.setItem("customer_refresh_token", data.refresh_token)
+            localStorage.setItem("customer_refresh_token", data.refresh_token);
             window.location.href = `/`;
         } catch (err) {
             console.error(err);
@@ -51,6 +53,28 @@
             loading = false;
         }
     }
+
+    // async function loginAsClient(e) {
+    //     e.preventDefault();
+    //     if (!validate()) return;
+    //     loading = true;
+    //     const adminToken = localStorage.getItem("admin_access_token");
+    //     const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/login-as-client`, {
+    //         method: "POST",
+    //         headers: {
+    //             "Content-Type": "application/json",
+    //             Authorization: `Bearer ${adminToken}`,
+    //         },
+    //     });
+
+    //     if (!res.ok) {
+    //         throw new Error("Không thể login as client");
+    //     }
+
+    //     const data = await res.json();
+    //     localStorage.setItem("client_access_token", data.client_access_token);
+    //     goto("/");
+    // }
 
     let emailInput;
     onMount(() => {
@@ -124,6 +148,19 @@
                 Login
             {/if}
         </button>
+
+         <!-- <button
+            class="submit"
+            on:click={loginAsClient}
+            disabled={loading}
+            aria-busy={loading}
+        >
+            {#if loading}
+                <span class="spinner" aria-hidden="true"></span> Processing...
+            {:else}
+                Login as Admin
+            {/if}
+        </button> -->
 
         <div class="links">
             <a href="/forget_password">Forgot password?</a>

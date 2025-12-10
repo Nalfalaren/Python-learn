@@ -12,6 +12,7 @@ from .utils import generate_token, hash_password
 from .models import PasswordResetTokenCustomerBase
 from .schema import RequestEmail, ResetPasswordRequestPayload
 from apis.customer.models import CustomerBase
+from role import StatusCode
 customer_router = APIRouter(prefix="/customer", tags=["Authentication"])
 load_dotenv()
 
@@ -60,17 +61,17 @@ def reset_password(request: ResetPasswordRequestPayload, db: Session = Depends(g
     confirm_password = request.confirm_password
     
     if new_password != confirm_password:
-        raise HTTPException(status_code=400, detail="Passwords do not match")
+        raise HTTPException(status_code=StatusCode.HTTP_BAD_REQUEST_400, detail="Passwords do not match")
 
     reset = db.query(PasswordResetTokenCustomerBase).filter(
         PasswordResetTokenCustomerBase.token == request.token
     ).first()
 
     if not reset:
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=StatusCode.HTTP_BAD_REQUEST_400, detail="Invalid token")
 
     if reset.expires_at < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Token expired")
+        raise HTTPException(status_code=StatusCode.HTTP_BAD_REQUEST_400, detail="Token expired")
 
     user = db.query(CustomerBase).filter(
         CustomerBase.id == reset.customer_id

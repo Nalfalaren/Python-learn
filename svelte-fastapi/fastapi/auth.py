@@ -33,7 +33,6 @@ def create_token(data: dict, expires_delta: timedelta):
 def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-
         exp = payload.get("exp")
         if exp is None:
             raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Token missing expiration")

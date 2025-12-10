@@ -6,6 +6,7 @@ class UserRole(str, Enum):
     MEMBER = 'customer'
 
 class StatusCode(int, Enum):
+    HTTP_BAD_REQUEST_400 = 400
     HTTP_UNAUTHORIZE_401 = 401
     HTTP_FORBIDDEN_403 = 403
     HTTP_ERROR_404 = 404

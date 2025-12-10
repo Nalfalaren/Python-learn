@@ -16,7 +16,7 @@ from role import StatusCode
 from apis.login.schema import AccountSchema
 from sqlalchemy.orm import load_only
 from jose import JWTError, jwt
-
+from apis.login.models import AdminBase
 router = APIRouter(tags=["Customers"])
 
 def get_db():
@@ -41,9 +41,9 @@ def get_account(current_user: dict = Depends(get_current_user)):
 def sign_up(account_info: CustomerSignUpSchema, db: Session = Depends(get_db)):
     existing = db.query(CustomerBase).filter(CustomerBase.email == account_info.email).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Customer already exists!")
+        raise HTTPException(status_code=StatusCode.HTTP_BAD_REQUEST_400, detail="Customer already exists!")
     if account_info.password != account_info.confirmPassword:
-        raise HTTPException(status_code=400, detail="Passwords do not match")
+        raise HTTPException(status_code=StatusCode.HTTP_BAD_REQUEST_400, detail="Passwords do not match")
     account = CustomerBase(
         id=str(uuid.uuid4()),
         email=account_info.email,
@@ -83,6 +83,20 @@ def login(customer_info: AccountSchema, db: Session = Depends(get_db)):
         "refresh_token": tokens['refresh_token'],
     }
 
+# @router.post("/admin/login-as-client")
+# def login_as_client(
+#     current_admin = Depends(get_current_user), 
+#     db: Session = Depends(get_db)
+# ):
+#     admin_email = current_admin.get("sub")
+#     admin = db.query(AdminBase).filter(AdminBase.email == admin_email).first()
+#     if not admin:
+#         raise HTTPException(404, "Admin not found")
+
+#     client_token = handle_login_role(current_admin)
+
+#     return {"client_access_token": client_token}
+
 @router.get("/customers")
 def get_customers(
     limit: int = 10,
@@ -104,7 +118,7 @@ def get_customers(
     if search_id:
         query = query.filter(CustomerBase.id == search_id)
     if search_name:
-        query = query.filter(CustomerBase.customer_name.ilike(f"%{search_name}%"))
+        query = query.filter(CustomerBase.customer_name.like(f"%{search_name}%"))
 
     # Cursor pagination
     if next_cursor:

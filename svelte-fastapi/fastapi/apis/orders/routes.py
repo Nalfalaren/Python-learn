@@ -38,13 +38,12 @@ def get_list_orders(
     limit: int = 10,
 ):
     order_list = db.query(OrderBase).order_by(OrderBase.created_at.desc())
-    
     if employee_id: 
-        order_list = order_list.filter(OrderBase.employee_id == employee_id)
-    elif search_id:
-        order_list = order_list.filter(OrderBase.id == search_id)
-    elif customer_name:
-        order_list = order_list.filter(func.lower(OrderBase.customer_name).like(f"%{customer_name.lower()}%"))
+        order_list = order_list.filter(OrderBase.employee_id.contains(employee_id))
+    if search_id:
+        order_list = order_list.filter(OrderBase.id.contains(search_id))
+    if customer_name:
+        order_list = order_list.filter(OrderBase.customer_name.contains(customer_name))
     
     total_orders = order_list.count() 
     offset = (page - 1) * limit
@@ -93,7 +92,6 @@ def update_order_info(
     order_info = db.query(OrderBase).filter(OrderBase.id == order_id).first()
     if not order_info:
         raise HTTPException(status_code=404, detail="Order not found")
-
     for k, v in order.dict(exclude_unset=True).items():
         setattr(order_info, k, v)
     order_info.updated_at = datetime.utcnow()

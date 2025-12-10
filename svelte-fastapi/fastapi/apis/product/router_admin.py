@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from .models import ProductBase
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-
+from role import StatusCode
 router_admin = APIRouter(prefix="/admin", tags=["Admin Products"])
 
 def get_db():
@@ -90,7 +90,7 @@ def delete_product(product_id: str, db: Session = Depends(get_db), _: dict = Dep
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
-            status_code=400,
+            status_code=StatusCode.HTTP_BAD_REQUEST_400,
             detail="Cannot delete product because it is referenced in orders."
         )
 

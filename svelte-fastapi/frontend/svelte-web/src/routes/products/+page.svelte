@@ -8,6 +8,7 @@
   import { adminAuthStore } from "$lib/stores/AuthStore";
   import { adminApi } from "../../hooks/apiFetch";
   import MessageModal from "../../components/modal-success/MessageModal.svelte";
+  import Header from "../../components/header/header.svelte";
 
   interface Product {
     id: string;
@@ -24,7 +25,7 @@
   // === State ===
   let products: Product[] = $state([]);
   let loading = $state(false);
-  let message = $state(""); 
+  let message = $state("");
 
   let searchId = $state("");
   let searchName = $state("");
@@ -65,7 +66,7 @@
       loadedCount = (cursorStack.length + 1) * pageSize;
       totalRecords = data.total_product || 0;
     } else {
-      const error = await response.json();  
+      const error = await response.json();
       showMessage(error?.detail);
     }
 
@@ -92,21 +93,21 @@
   }
 
   async function handleDelete(id: string) {
-  if (!confirm("Are you sure you want to delete this product?")) return;
+    if (!confirm("Are you sure you want to delete this product?")) return;
 
-  const res = await adminApi(
-    `${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`,
-    { method: "DELETE" }
-  );
+    const res = await adminApi(
+      `${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`,
+      { method: "DELETE" },
+    );
 
-  if (res.ok) {
-    showMessage("✅ Product deleted successfully!");
-    fetchProducts(currentCursor);
-  } else {
-    const error = await res.json();  
-    showMessage(error.detail || "❌ Failed to delete product.");
+    if (res.ok) {
+      showMessage("✅ Product deleted successfully!");
+      fetchProducts(currentCursor);
+    } else {
+      const error = await res.json();
+      showMessage(error.detail || "❌ Failed to delete product.");
+    }
   }
-}
 
   async function handleLogout() {
     try {
@@ -132,41 +133,46 @@
   });
 </script>
 
-<!-- HEADER -->
-<div class={styles.headerContainer}>
-  <div class={styles.headerContent}>
-    <h1 style="font-family: system-ui, sans-serif;">Products</h1>
-    <div>
-      {#if $adminAuthStore.role === "ADMIN"}
-        <button onclick={() => goto("/products/add")}>+ Add Product</button>
-      {/if}
-      <button onclick={handleLogout}>Logout</button>
-    </div>
-  </div>
+<!-- === UI === -->
+<Header {handleLogout} username="tuanchu" />
+<div style="display: flex; min-height: 100vh">
   <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-</div>
-
-<!-- SEARCH -->
-<div class={styles.tableSearch}>
-  <TextField
-    name="id"
-    title="ID"
-    placeholder="Search ID"
-    value={searchId}
-    onValueChange={(v: string) => (searchId = v)}
-  />
-
-  <TextField
-    name="productName"
-    title="Product Name"
-    placeholder="Search Product Name"
-    value={searchName}
-    onValueChange={(v: string) => (searchName = v)}
-  />
-
-  <button onclick={handleSearch}>Search</button>
-</div>
-
+  <div style="width: 100%; background: #f5f5f5; padding: 20px">
+    <div>
+      <span style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
+        >Products</span
+      >
+    </div>
+    <!-- Search -->
+    <div class={styles.tableSearch}>
+      <div class={styles.tableSearchInput}>
+        <TextField
+          name="id"
+          title="ID"
+          placeholder="Search ID"
+          value={searchId}
+          onValueChange={(v: string) => (searchId = v)}
+        />
+      </div>
+      <div class={styles.tableSearchInput}>
+        <TextField
+          name="productName"
+          title="Product Name"
+          placeholder="Search Product Name"
+          value={searchName}
+          onValueChange={(v: string) => (searchName = v)}
+        />
+      </div>
+      <button
+        onclick={handleSearch}
+        style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+      {#if $adminAuthStore.role === "ADMIN"}
+        <button
+          style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+          onclick={() => goto("/employees/signup")}>+ Add Products</button
+        >
+      {/if}
+    </div>
 <!-- TABLE -->
 <div class={styles.tableContainer}>
   {#if loading}
@@ -238,5 +244,7 @@
     </div>
   {/if}
 </div>
+</div>
+</div>
 
-<MessageModal show={showModal} message={message} onClose={() => (showModal = false)} />
+<MessageModal show={showModal} {message} onClose={() => (showModal = false)} />

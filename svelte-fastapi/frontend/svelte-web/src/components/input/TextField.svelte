@@ -11,16 +11,17 @@
 </script>
 
 <div class={styles.textFieldContainer}>
-    <label style="font-family: system-ui, sans-serif;">
+    <label class={styles.textFieldLabel}>
         {title}
-        <input
-            name={name}
-            type={type}
-            placeholder={placeholder}
-            class={styles.textFieldInput}
-            bind:value={value}
-            bind:this={inputRef}
-            on:input={(e) => onValueChange((e.target as HTMLInputElement).value)}
-        />
     </label>
+    <input
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        class={styles.textFieldInput}
+        bind:value={value}
+        bind:this={inputRef}
+        on:input={(e) => onValueChange((e.target as HTMLInputElement).value)}
+    />
 </div>
+

@@ -1,3 +1,17 @@
-.textFieldInput{
-    height: 25px;
+.textFieldContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; 
+    margin-bottom: 25px;
+}
+
+.textFieldLabel {
+    color: rgba(0, 0, 0, 0.88);
+}
+
+.textFieldInput {
+    padding: 6px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }

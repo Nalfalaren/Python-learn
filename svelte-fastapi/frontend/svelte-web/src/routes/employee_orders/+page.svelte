@@ -6,6 +6,7 @@
     import TextField from "../../components/input/TextField.svelte";
     import { goto } from "$app/navigation";
     import { adminApi } from "../../hooks/apiFetch";
+    import Header from "../../components/header/header.svelte";
 
     interface Order {
         id: string;
@@ -72,14 +73,17 @@
     }
 
     async function handleDelete(id: string) {
-        const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {method: 'DELETE'});
+        const res = await adminApi(
+            `${import.meta.env.VITE_API_BASE_URL}/orders/${id}`,
+            { method: "DELETE" },
+        );
         if (res.ok) {
             message = "Order deleted";
         } else {
             message = "Delete failed";
         }
     }
-    
+
     function handlePrevPage() {
         if (page > 1) {
             page--;
@@ -102,113 +106,118 @@
     onMount(() => fetchOrders());
 </script>
 
-<div class={styles.headerContainer}>
-    <div class={styles.headerContent}>
-        <div>
-            <h1 style="font-family: system-ui, sans-serif;">Customer Orders</h1>
-        </div>
-        <div>
-            <button onclick={() => adminAuthStore.logout()}>Logout</button>
-        </div>
-    </div>
+<Header handleLogout={() => adminAuthStore.logout()} username="tuanchu" />
+<div style="display: flex; min-height: 100vh">
     <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-</div>
-
-<!-- Search -->
-<div class={styles.tableSearch}>
-    <div class={styles.tableSearchInput}>
-        <TextField
-            name="id"
-            title="ID"
-            placeholder="Search ID"
-            value={searchId}
-            onValueChange={(v) => (searchId = v)}
-        />
-    </div>
-
-    <div class={styles.tableSearchInput}>
-        <TextField
-            name="customer_name"
-            title="Customer Name"
-            placeholder="Search Name"
-            value={searchName}
-            onValueChange={(v) => (searchName = v)}
-        />
-    </div>
-
-    <button onclick={handleSearch}>Search</button>
-</div>
-
-<!-- Table -->
-<div class={styles.tableContainer}>
-    {#if loading}
-        <p>Loading...</p>
-    {:else if orders.length === 0}
-        <p>No Orders found.</p>
-    {:else}
-        <table class={styles.table}>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Customer Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each orders as order}
-                    <tr>
-                        <td>{order.id}</td>
-                        <td>{order.customer_name}</td>
-                        <td>{order.email}</td>
-                        <td>{order.phone}</td>
-                        <td>{order.address}</td>
-                        <td>{order.total}đ</td>
-                        <td>{order.status.toUpperCase()}</td>
-                        <td>
-                            <button
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    goto(`/orders/${order.id}/edit`);
-                                }}
-                                disabled={order.status === "COMPLETED" ||
-                                    order.status === "CANCELLED"}
-                                class={styles.disabledButton}
-                            >
-                                Edit
-                            </button>
-                            {#if $adminAuthStore.role == "ADMIN"}
-                            <button
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(order.id);
-                                }}
-                                disabled={order.status !== "COMPLETED" &&
-                                    order.status !== "CANCELLED"}
-                                class={styles.disabledButton}
-                            >
-                                Delete
-                            </button>
-                            {/if}
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-
-        <!-- Pagination -->
-        <div class={styles.paginationControls}>
-            <button onclick={handlePrevPage} disabled={page === 1}
-                >Previous</button
-            >
-            <button
-                onclick={handleNextPage}
-                disabled={page === Math.ceil(totalRecords / pageSize)}
-                >Next</button
+    <div style="width: 100%; background: #f5f5f5; padding: 20px">
+        <div>
+            <span
+                style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
+                >Employee Orders</span
             >
         </div>
-    {/if}
+
+        <!-- Search -->
+        <div class={styles.tableSearch}>
+            <div class={styles.tableSearchInput}>
+                <TextField
+                    name="id"
+                    title="ID"
+                    placeholder="Search ID"
+                    value={searchId}
+                    onValueChange={(v) => (searchId = v)}
+                />
+            </div>
+
+            <div class={styles.tableSearchInput}>
+                <TextField
+                    name="customer_name"
+                    title="Customer Name"
+                    placeholder="Search Name"
+                    value={searchName}
+                    onValueChange={(v) => (searchName = v)}
+                />
+            </div>
+
+            <button
+                onclick={handleSearch}
+                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+        </div>
+
+        <!-- Table -->
+        <div class={styles.tableContainer}>
+            {#if loading}
+                <p>Loading...</p>
+            {:else if orders.length === 0}
+                <p>No Orders found.</p>
+            {:else}
+                <table class={styles.table}>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each orders as order}
+                            <tr>
+                                <td>{order.id}</td>
+                                <td>{order.customer_name}</td>
+                                <td>{order.email}</td>
+                                <td>{order.phone}</td>
+                                <td>{order.address}</td>
+                                <td>{order.total}đ</td>
+                                <td>{order.status.toUpperCase()}</td>
+                                <td>
+                                    <button
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            goto(`/orders/${order.id}/edit`);
+                                        }}
+                                        disabled={order.status ===
+                                            "COMPLETED" ||
+                                            order.status === "CANCELLED"}
+                                        class={styles.disabledButton}
+                                    >
+                                        Edit
+                                    </button>
+                                    {#if $adminAuthStore.role == "ADMIN"}
+                                        <button
+                                            onclick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(order.id);
+                                            }}
+                                            disabled={order.status !==
+                                                "COMPLETED" &&
+                                                order.status !== "CANCELLED"}
+                                            class={styles.disabledButton}
+                                        >
+                                            Delete
+                                        </button>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                <div class={styles.paginationControls}>
+                    <button onclick={handlePrevPage} disabled={page === 1}
+                        >Previous</button
+                    >
+                    <button
+                        onclick={handleNextPage}
+                        disabled={page === Math.ceil(totalRecords / pageSize)}
+                        >Next</button
+                    >
+                </div>
+            {/if}
+        </div>
+    </div>
 </div>

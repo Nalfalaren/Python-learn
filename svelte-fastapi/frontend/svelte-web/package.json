@@ -23,6 +23,7 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-node": "^5.4.0",
+		"lucide-svelte": "^0.556.0",
 		"svelte-preprocess": "^6.0.3",
 		"vite-plugin-markdown": "^2.2.0",
 		"zustand": "^5.0.8"

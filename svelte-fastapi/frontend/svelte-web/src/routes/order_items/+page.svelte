@@ -6,6 +6,7 @@
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
     import { adminAuthStore } from "$lib/stores/AuthStore";
     import { adminApi } from "../../hooks/apiFetch";
+    import Header from "../../components/header/header.svelte";
 
     interface OrderItem {
         id: string;
@@ -86,7 +87,7 @@
                 `${import.meta.env.VITE_API_BASE_URL}/order_items/${id}`,
                 {
                     method: "DELETE",
-                }
+                },
             );
 
             if (!res.ok) throw new Error("Xóa thất bại!");
@@ -102,93 +103,100 @@
     onMount(() => fetchItems());
 </script>
 
-<div class={styles.headerContainer}>
-    <div class={styles.headerContent}>
-        <h1 style="font-family: system-ui, sans-serif;">Order Items</h1>
+<Header {handleLogout} username="tuanchu" />
+<div style="display: flex; min-height: 100vh">
+    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
+    <div style="width: 100%; background: #f5f5f5; padding: 20px">
         <div>
-            <button onclick={handleLogout}>Logout</button>
+            <span
+                style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
+                >Order Item</span
+            >
+        </div>
+        <div class={styles.tableSearch}>
+            <TextField
+                name="product_name"
+                title="Product"
+                placeholder="Search Product Name"
+                value={searchProduct}
+                onValueChange={(v: string) => (searchProduct = v)}
+            />
+
+            <TextField
+                name="order_id"
+                title="Order ID"
+                placeholder="Search Order ID"
+                value={searchOrderId}
+                onValueChange={(v: string) => (searchOrderId = v)}
+            />
+
+            <button
+                onclick={handleSearch}
+                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+        </div>
+
+        <div class={styles.tableContainer}>
+            {#if loading}
+                <p>Loading...</p>
+            {:else if $adminAuthStore.role !== "ADMIN"}
+                <div class={styles.forbiddenBox}>
+                    <h2>403 – Forbidden</h2>
+                    <p>You do not have permission to access this page.</p>
+                </div>
+            {:else if items.length === 0}
+                <p>No Order Items found.</p>
+            {:else}
+                <table class={styles.table}>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Order ID</th>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Created At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each items as item}
+                            <tr>
+                                <td>{item.id}</td>
+                                <td>{item.order_id}</td>
+                                <td>{item.product_name}</td>
+                                <td>{item.qty}</td>
+                                <td>{item.price}$</td>
+                                <td>
+                                    {new Date(item?.created_at).toLocaleString(
+                                        "vi-VN",
+                                        {
+                                            timeZone: "Asia/Ho_Chi_Minh",
+                                        },
+                                    )}
+                                </td>
+                                <td>
+                                    <button
+                                        style="color: white; background: red; padding: 6px 10px; border-radius: 4px;"
+                                        onclick={() => deleteItem(item.id)}
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+
+                <div class={styles.paginationControls}>
+                    <button disabled={page === 1} onclick={handlePrevPage}
+                        >Previous</button
+                    >
+                    <button
+                        disabled={page === Math.ceil(totalRecords / pageSize)}
+                        onclick={handleNextPage}>Next</button
+                    >
+                </div>
+            {/if}
         </div>
     </div>
-    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-</div>
-
-<div class={styles.tableSearch}>
-    <TextField
-        name="product_name"
-        title="Product"
-        placeholder="Search Product Name"
-        value={searchProduct}
-        onValueChange={(v: string) => (searchProduct = v)}
-    />
-
-    <TextField
-        name="order_id"
-        title="Order ID"
-        placeholder="Search Order ID"
-        value={searchOrderId}
-        onValueChange={(v: string) => (searchOrderId = v)}
-    />
-
-    <button onclick={handleSearch}>Search</button>
-</div>
-
-<div class={styles.tableContainer}>
-    {#if loading}
-        <p>Loading...</p>
-    {:else if $adminAuthStore.role !== "ADMIN"}
-        <div class={styles.forbiddenBox}>
-            <h2>403 – Forbidden</h2>
-            <p>You do not have permission to access this page.</p>
-        </div>
-    {:else if items.length === 0}
-        <p>No Order Items found.</p>
-    {:else}
-        <table class={styles.table}>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Order ID</th>
-                    <th>Product</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Created At</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each items as item}
-                    <tr>
-                        <td>{item.id}</td>
-                        <td>{item.order_id}</td>
-                        <td>{item.product_name}</td>
-                        <td>{item.qty}</td>
-                        <td>{item.price}$</td>
-                        <td>
-                            {new Date(item?.created_at).toLocaleString("vi-VN", {
-                                timeZone: "Asia/Ho_Chi_Minh",
-                            })}
-                        </td>
-                        <td>
-                            <button 
-                                style="color: white; background: red; padding: 6px 10px; border-radius: 4px;"
-                                onclick={() => deleteItem(item.id)}
-                            >
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-
-        <div class={styles.paginationControls}>
-            <button disabled={page === 1} onclick={handlePrevPage}
-                >Previous</button
-            >
-            <button
-                disabled={page === Math.ceil(totalRecords / pageSize)}
-                onclick={handleNextPage}>Next</button
-            >
-        </div>
-    {/if}
 </div>

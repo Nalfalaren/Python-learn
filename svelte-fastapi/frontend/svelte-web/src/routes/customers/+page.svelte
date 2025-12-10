@@ -5,8 +5,8 @@
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { adminAuthStore } from "$lib/stores/AuthStore";
-    import { adminApi } from "../../hooks/apiFetch";
-  
+  import { adminApi } from "../../hooks/apiFetch";
+  import Header from "../../components/header/header.svelte";
 
   interface Customer {
     id: string;
@@ -110,93 +110,97 @@
   });
 </script>
 
-<div>
-  <div class={styles.headerContainer}>
-    <div class={styles.headerContent}>
-      <div><h1 style="font-family: system-ui, sans-serif;">Customers</h1></div>
-      <div>
-        <button onclick={() => adminAuthStore.logout()}>Logout</button>
+<Header handleLogout={() => adminAuthStore.logout()} username="tuanchu" />
+<div style="display: flex; min-height: 100vh">
+  <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
+  <div style="width: 100%; background: #f5f5f5; padding: 20px">
+    <div>
+      <span style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
+        >Customers</span
+      >
+    </div>
+
+    <div class={styles.tableSearch}>
+      <div class={styles.tableSearchInput}>
+        <TextField
+          name="id"
+          title="ID"
+          placeholder="Search ID"
+          value={searchId}
+          onValueChange={(v) => (searchId = v)}
+        />
       </div>
-    </div>
-    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-  </div>
-
-  <!-- Search -->
-  <div class={styles.tableSearch}>
-    <div class={styles.tableSearchInput}>
-      <TextField
-        name="id"
-        title="ID"
-        placeholder="Search ID"
-        value={searchId}
-        onValueChange={v => (searchId = v)}
-      />
-    </div>
-
-    <div class={styles.tableSearchInput}>
-      <TextField
-        name="customer_name"
-        title="Customer Name"
-        placeholder="Search Name"
-        value={searchName}
-        onValueChange={v => (searchName = v)}
-      />
-    </div>
-
-    <button onclick={handleSearch}>Search</button>
-  </div>
-
-  <div class={styles.tableContainer}>
-    {#if loading}
-      <p>Loading...</p>
-
-    {:else if $adminAuthStore.role !== "ADMIN"}
-      <div class={styles.forbiddenBox}>
-        <h2>403 – Forbidden</h2>
-        <p>You do not have permission to access this page.</p>
+      <div class={styles.tableSearchInput}>
+        <TextField
+          name="customer_name"
+          title="Customer Name"
+          placeholder="Search Name"
+          value={searchName}
+          onValueChange={(v) => (searchName = v)}
+        />
       </div>
-
-    {:else if customers.length === 0}
-      <p>No customers found.</p>
-
-    {:else}
-      <table class={styles.table}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Customer Name</th>
-            <th>Role</th>
-            <th>Email</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {#each customers as cus}
-            <tr onclick={() => goto(`/customers/${cus.id}`)}>
-              <td>{cus.id}</td>
-              <td>{cus.customer_name}</td>
-              <td>{cus.role}</td>
-              <td>{cus.email}</td>
-              <td>{cus.is_active === "Active" ? "Active" : "Inactive"}</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-
-      <!-- Pagination -->
-      <div class={styles.paginationControls}>
-        <button onclick={prevPage} disabled={!cursorStack.length}>
-          Previous
-        </button>
-
+      <button
+        onclick={handleSearch}
+        style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+        >Search</button
+      >
+      {#if $adminAuthStore.role === "ADMIN"}
         <button
-          onclick={nextPage}
-          disabled={!nextCursor || loadedCount >= totalRecords}
+          style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+          onclick={() => goto("/employees/signup")}>+ Add Customer</button
         >
-          Next
-        </button>
-      </div>
-    {/if}
+      {/if}
+    </div>
+
+    <div class={styles.tableContainer}>
+      {#if loading}
+        <p>Loading...</p>
+      {:else if $adminAuthStore.role !== "ADMIN"}
+        <div class={styles.forbiddenBox}>
+          <h2>403 – Forbidden</h2>
+          <p>You do not have permission to access this page.</p>
+        </div>
+      {:else if customers.length === 0}
+        <p>No customers found.</p>
+      {:else}
+        <table class={styles.table}>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer Name</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {#each customers as cus}
+              <tr onclick={() => goto(`/customers/${cus.id}`)}>
+                <td>{cus.id}</td>
+                <td>{cus.customer_name}</td>
+                <td>{cus.role}</td>
+                <td>{cus.email}</td>
+                <td>{cus.is_active === "Active" ? "Active" : "Inactive"}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class={styles.paginationControls}>
+          <button onclick={prevPage} disabled={!cursorStack.length}>
+            Previous
+          </button>
+
+          <button
+            onclick={nextPage}
+            disabled={!nextCursor || loadedCount >= totalRecords}
+          >
+            Next
+          </button>
+        </div>
+      {/if}
+    </div>
   </div>
 </div>

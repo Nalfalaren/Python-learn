@@ -7,6 +7,8 @@
   import { jwtDecode } from "jwt-decode"; /** Product type */
   import { adminAuthStore } from "$lib/stores/AuthStore";
   import { adminApi } from "../../hooks/apiFetch";
+  import UserMenu from "../../components/user-menu/UserMenu.svelte";
+    import Header from "../../components/header/header.svelte";
 
   interface Employee {
     id: string;
@@ -141,130 +143,136 @@
 </script>
 
 <!-- === UI === -->
-<div>
-  <div class={styles.headerContainer}>
-    <div class={styles.headerContent}>
-      <div><h1 style="font-family: system-ui, sans-serif;">Employees</h1></div>
-      <div>
-        {#if $adminAuthStore.role === "ADMIN"}
-          <button onclick={() => goto("/employees/signup")}
-            >+ Add Employee</button
-          >
-        {/if}
-        <button onclick={handleLogout}>Logout</button>
+<Header handleLogout={handleLogout} username="tuanchu" />
+<div style="display: flex; min-height: 100vh">
+  <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
+  <div style="width: 100%; background: #f5f5f5; padding: 20px">
+    <div>
+      <span style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
+        >Employees</span
+      >
+    </div>
+    <!-- Search -->
+    <div class={styles.tableSearch}>
+      <div class={styles.tableSearchInput}>
+        <TextField
+          name="id"
+          title="ID"
+          type="text"
+          placeholder="Search ID"
+          value={searchId}
+          onValueChange={(v: string) => (searchId = v)}
+        />
       </div>
-    </div>
-    <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-  </div>
-
-  <!-- Search -->
-  <div class={styles.tableSearch}>
-    <div class={styles.tableSearchInput}>
-      <TextField
-        name="id"
-        title="ID"
-        type="text"
-        placeholder="Search ID"
-        value={searchId}
-        onValueChange={(v: string) => (searchId = v)}
-      />
-    </div>
-    <div class={styles.tableSearchInput}>
-      <TextField
-        name="employee_name"
-        title="Employee Name"
-        type="text"
-        placeholder="Search Employee Name"
-        value={searchName}
-        onValueChange={(v: string) => (searchName = v)}
-      />
-    </div>
-    <div class={styles.tableSearchInput}>
-      <label style="font-family: system-ui, sans-serif;">
-        Search Role
-        <select bind:value={searchRole} class={styles.selectInput}>
-          <option value="" disabled selected hidden>Select role…</option>
-          <option value="ADMIN">Admin</option>
-          <option value="EMPLOYEE">Employee</option>
-        </select>
-      </label>
-    </div>
-    <button onclick={handleSearch}>Search</button>
-  </div>
-
-  <!-- Table -->
-  <div class={styles.tableContainer}>
-    {#if loading}
-      <p>Loading...</p>
-    {:else if $adminAuthStore.role !== "ADMIN" && $adminAuthStore.role !== "EMPLOYEE"}
-      <div class={styles.forbiddenBox}>
-        <h2>403 – Forbidden</h2>
-        <p>You do not have permission to access this page.</p>
+      <div class={styles.tableSearchInput}>
+        <TextField
+          name="employee_name"
+          title="Employee Name"
+          type="text"
+          placeholder="Search Employee Name"
+          value={searchName}
+          onValueChange={(v: string) => (searchName = v)}
+        />
       </div>
-    {:else if employees.length === 0}
-      <p>No employees found.</p>
-    {:else}
-      <table class={styles.table}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Employee Name</th>
-            <th>Role</th>
-            <th>Email</th>
-            <th>Status</th>
-            {#if $adminAuthStore.role === "ADMIN"}<th>Action</th>{/if}
-          </tr>
-        </thead>
-        <tbody>
-          {#each employees as emp}
-            <tr onclick={() => goto(`/employees/${emp.id}`)}>
-              <td>{emp.id}</td>
-              <td>{emp.employee_name}</td>
-              <td>{emp.role}</td>
-              <td>{emp.email}</td>
-              <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
-              {#if $adminAuthStore.role === "ADMIN"}
-                <td>
-                  <button
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      goto(`/employees/update/${emp.id}`);
-                    }}>Edit</button
-                  >
-                  <button
-                    class="delete-btn"
-                    onclick={(e) => {
-                      e.stopPropagation();
-                      if (
-                        confirm("Bạn có chắc chắn muốn xóa account này không?")
-                      ) {
-                        handleDelete(emp.id);
-                      }
-                    }}
-                    disabled={emp.role === "ADMIN"}
-                  >
-                    Delete
-                  </button>
-                </td>
-              {/if}
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-
-      <!-- Pagination -->
-      <div class={styles.paginationControls}>
-        <button onclick={handlePrev} disabled={cursorStack.length === 0}>
-          Previous
-        </button>
+      <div class={styles.tableSearchInput}>
+        <label style="color: rgba(0, 0, 0, 0.88); display: flex; flex-direction: column; gap: 4px; margin-bottom: 25px">
+          Search Role
+          <select bind:value={searchRole} class={styles.selectInput}>
+            <option value="" disabled selected hidden>Select role…</option>
+            <option value="ADMIN">Admin</option>
+            <option value="EMPLOYEE">Employee</option>
+          </select>
+        </label>
+      </div>
+      <button
+        onclick={handleSearch}
+        style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+        >Search</button
+      >
+      {#if $adminAuthStore.role === "ADMIN"}
         <button
-          onclick={handleNext}
-          disabled={!nextCursor || loadedCount >= totalRecords}
+          style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+          onclick={() => goto("/employees/signup")}>+ Add Employee</button
         >
-          Next
-        </button>
-      </div>
-    {/if}
+      {/if}
+    </div>
+
+    <!-- Table -->
+    <div class={styles.tableContainer}>
+      {#if loading}
+        <p>Loading...</p>
+      {:else if $adminAuthStore.role !== "ADMIN" && $adminAuthStore.role !== "EMPLOYEE"}
+        <div class={styles.forbiddenBox}>
+          <h2>403 – Forbidden</h2>
+          <p>You do not have permission to access this page.</p>
+        </div>
+      {:else if employees.length === 0}
+        <p>No employees found.</p>
+      {:else}
+        <table class={styles.table}>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Employee Name</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Status</th>
+              {#if $adminAuthStore.role === "ADMIN"}<th>Action</th>{/if}
+            </tr>
+          </thead>
+          <tbody>
+            {#each employees as emp}
+              <tr onclick={() => goto(`/employees/${emp.id}`)}>
+                <td>{emp.id}</td>
+                <td>{emp.employee_name}</td>
+                <td>{emp.role}</td>
+                <td>{emp.email}</td>
+                <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
+                {#if $adminAuthStore.role === "ADMIN"}
+                  <td>
+                    <button
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        goto(`/employees/update/${emp.id}`);
+                      }}>Edit</button
+                    >
+                    <button
+                      class="delete-btn"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        if (
+                          confirm(
+                            "Are you sure to delete this employee?",
+                          )
+                        ) {
+                          handleDelete(emp.id);
+                        }
+                      }}
+                      disabled={emp.role === "ADMIN"}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                {/if}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class={styles.paginationControls}>
+          <button onclick={handlePrev} disabled={cursorStack.length === 0}>
+            Previous
+          </button>
+          <button
+            onclick={handleNext}
+            disabled={!nextCursor || loadedCount >= totalRecords}
+          >
+            Next
+          </button>
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 

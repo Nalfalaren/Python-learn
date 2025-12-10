@@ -7,6 +7,7 @@
     import { adminAuthStore } from "$lib/stores/AuthStore";
     import { adminApi } from "../../hooks/apiFetch";
     import MessageModal from "../../components/modal-success/MessageModal.svelte";
+    import Header from "../../components/header/header.svelte";
 
     interface Order {
         id: string;
@@ -91,7 +92,8 @@
     }
 
     async function handleAssignOrder() {
-        if (!selectedEmployee) return showMessage("Please choose employee", "error");
+        if (!selectedEmployee)
+            return showMessage("Please choose employee", "error");
 
         try {
             const res = await adminApi(
@@ -103,7 +105,7 @@
                         order_id: selectedOrder!.id,
                         employee_id: selectedEmployee,
                     }),
-                }
+                },
             );
 
             if (!res.ok) return showMessage("Assign failed", "error");
@@ -117,9 +119,12 @@
     }
 
     async function handleDelete(id: string) {
-        const res = await adminApi(`${import.meta.env.VITE_API_BASE_URL}/orders/${id}`, {
-            method: "DELETE"
-        });
+        const res = await adminApi(
+            `${import.meta.env.VITE_API_BASE_URL}/orders/${id}`,
+            {
+                method: "DELETE",
+            },
+        );
 
         if (res.ok) {
             showMessage("Order deleted!", "success");
@@ -158,116 +163,159 @@
 </script>
 
 <!-- HEADER -->
-<div class={styles.headerContainer}>
-    <div class={styles.headerContent}>
-        <h1>Orders</h1>
-        <button onclick={handleLogout}>Logout</button>
-    </div>
+<Header {handleLogout} username="tuanchu" />
+<div style="display: flex; min-height: 100vh">
     <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-</div>
+    <div style="width: 100%; background: #f5f5f5; padding: 20px">
+        <div>
+            <span
+                style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
+                >Orders</span
+            >
+        </div>
+        <!-- SEARCH -->
+        <div class={styles.tableSearch}>
+            <TextField
+                name="id"
+                title="ID"
+                placeholder="Search ID"
+                value={searchId}
+                onValueChange={(v) => (searchId = v)}
+            />
 
-<!-- SEARCH -->
-<div class={styles.tableSearch}>
-    <TextField name="id" title="ID" placeholder="Search ID"
-        value={searchId} onValueChange={(v) => searchId = v} />
+            <TextField
+                name="customer_name"
+                title="Customer Name"
+                placeholder="Search Customer Name"
+                value={searchName}
+                onValueChange={(v) => (searchName = v)}
+            />
 
-    <TextField name="customer_name" title="Customer Name"
-        placeholder="Search Customer Name"
-        value={searchName} onValueChange={(v) => searchName = v} />
+            <button
+                onclick={handleSearch}
+                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+        </div>
 
-    <button onclick={handleSearch}>Search</button>
-</div>
+        <!-- TABLE -->
+        <div class={styles.tableContainer}>
+            {#if loading}
+                <p>Loading...</p>
+            {:else if $adminAuthStore.role !== "ADMIN"}
+                <p>403 Forbidden</p>
+            {:else if orders.length === 0}
+                <p>No Orders found.</p>
+            {:else}
+                <table class={styles.table}>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Name</th><th>Email</th>
+                            <th>Phone</th><th>Address</th><th>Total</th>
+                            <th>Status</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each orders as order}
+                            <tr onclick={() => goto(`/orders/${order.id}`)}>
+                                <td>{order.id}</td>
+                                <td>{order.customer_name}</td>
+                                <td>{order.email}</td>
+                                <td>{order.phone}</td>
+                                <td>{order.address}</td>
+                                <td>{order.total}$</td>
+                                <td>{order.status.toUpperCase()}</td>
+                                <td>
+                                    <button
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            goto(`/orders/${order.id}/edit`);
+                                        }}
+                                        disabled={order.status ===
+                                            "COMPLETED" ||
+                                            order.status === "CANCELLED"}
+                                        class={styles.disabledButton}
+                                    >
+                                        Edit
+                                    </button>
 
-<!-- TABLE -->
-<div class={styles.tableContainer}>
-    {#if loading}
-        <p>Loading...</p>
-    {:else if $adminAuthStore.role !== "ADMIN"}
-        <p>403 Forbidden</p>
-    {:else if orders.length === 0}
-        <p>No Orders found.</p>
-    {:else}
-        <table class={styles.table}>
-            <thead>
-                <tr>
-                    <th>ID</th><th>Name</th><th>Email</th>
-                    <th>Phone</th><th>Address</th><th>Total</th>
-                    <th>Status</th><th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each orders as order}
-                    <tr onclick={() => goto(`/orders/${order.id}`)}>
-                        <td>{order.id}</td>
-                        <td>{order.customer_name}</td>
-                        <td>{order.email}</td>
-                        <td>{order.phone}</td>
-                        <td>{order.address}</td>
-                        <td>{order.total}$</td>
-                        <td>{order.status.toUpperCase()}</td>
-                        <td>
-                            <button
-                                onclick={(e) => { e.stopPropagation(); goto(`/orders/${order.id}/edit`); }}
-                                disabled={order.status === "COMPLETED" || order.status === "CANCELLED"}
-                                class={styles.disabledButton}>
-                                Edit
+                                    <button
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            openAssignModal(order);
+                                        }}
+                                        disabled={order.status !== "PENDING"}
+                                    >
+                                        {order.status !== "PENDING"
+                                            ? "Assigned"
+                                            : "Assign"}
+                                    </button>
+
+                                    <button
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(order.id);
+                                        }}
+                                        disabled={order.status !==
+                                            "COMPLETED" &&
+                                            order.status !== "CANCELLED"}
+                                        class={styles.disabledButton}
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+
+                {#if showAssignModal && selectedOrder}
+                    <!-- Modal Backdrop -->
+                    <div class={styles.modalBackdrop}></div>
+
+                    <!-- Modal -->
+                    <div class={styles.modal}>
+                        <h2>Assign Order: {selectedOrder.id}</h2>
+                        <p>Customer: {selectedOrder.customer_name}</p>
+
+                        <label>Chọn nhân viên:</label>
+                        <select bind:value={selectedEmployee}>
+                            <option value="" disabled selected
+                                >Chọn nhân viên</option
+                            >
+                            {#each employees as emp}
+                                <option value={emp.id}
+                                    >{emp.employee_name}</option
+                                >
+                            {/each}
+                        </select>
+
+                        <div class={styles.modalButtons}>
+                            <button onclick={handleAssignOrder}>
+                                Assign
                             </button>
 
                             <button
-                                onclick={(e) => { e.stopPropagation(); openAssignModal(order); }}
-                                disabled={order.status !== "PENDING"}>
-                                {order.status !== "PENDING" ? "Assigned" : "Assign"}
-                            </button>
+                                onclick={() => {
+                                    showAssignModal = false;
+                                }}>Cancel</button
+                            >
+                        </div>
+                    </div>
+                {/if}
 
-                            <button
-                                onclick={(e) => { e.stopPropagation(); handleDelete(order.id); }}
-                                disabled={order.status !== "COMPLETED" && order.status !== "CANCELLED"}
-                                class={styles.disabledButton}>
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-
-          {#if showAssignModal && selectedOrder}
-            <!-- Modal Backdrop -->
-            <div class={styles.modalBackdrop}></div>
-
-            <!-- Modal -->
-            <div class={styles.modal}>
-                <h2>Assign Order: {selectedOrder.id}</h2>
-                <p>Customer: {selectedOrder.customer_name}</p>
-
-                <label>Chọn nhân viên:</label>
-                <select bind:value={selectedEmployee}>
-                    <option value="" disabled selected>Chọn nhân viên</option>
-                    {#each employees as emp}
-                        <option value={emp.id}>{emp.employee_name}</option>
-                    {/each}
-                </select>
-
-                <div class={styles.modalButtons}>
-                    <button onclick={handleAssignOrder}> Assign </button>
-
+                <!-- Pagination -->
+                <div class={styles.paginationControls}>
+                    <button disabled={page === 1} onclick={handlePrevPage}
+                        >Previous</button
+                    >
                     <button
-                        onclick={() => {
-                            showAssignModal = false;
-                        }}>Cancel</button
+                        disabled={page === Math.ceil(totalRecords / pageSize)}
+                        onclick={handleNextPage}>Next</button
                     >
                 </div>
-            </div>
-        {/if}
-
-        <!-- Pagination -->
-        <div class={styles.paginationControls}>
-            <button disabled={page === 1} onclick={handlePrevPage}>Previous</button>
-            <button disabled={page === Math.ceil(totalRecords / pageSize)}
-                onclick={handleNextPage}>Next</button>
+            {/if}
         </div>
-    {/if}
+    </div>
 </div>
 
 <!-- MESSAGE MODAL -->
-<MessageModal show={showMessageModal} message={message} type={messageType} />
+<MessageModal show={showMessageModal} {message} type={messageType} />

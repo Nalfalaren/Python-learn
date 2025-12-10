@@ -51,7 +51,6 @@
         if (currentPage > 1) params.set("page", String(currentPage));
 
         const newUrl = `?${params.toString()}`;
-
         goto(newUrl, { replaceState: true, noScroll: true });
     }
 
@@ -62,20 +61,33 @@
     ): Promise<void> => {
         isLoading = true;
         error = "";
-
+        
         try {
             const params = new URLSearchParams();
+            if (query) {
+                params.set("search_product", query);
+            }
 
-            if (query) params.append("search_product", query);
-            if (category && category !== "All")
-                params.append("category", category);
-            if (sortBy) params.append("sort_by", sortBy);
-            if (limit) params.append("limit", String(limit));
-            if (cursor) params.append("next_cursor", cursor);
+            if (category && category !== "All") {
+                params.set("category", category);
+            }
+
+            if (sortBy) {
+                params.set("sort_by", sortBy);
+            }
+
+            if (limit) {
+                params.set("limit", String(limit));
+            }
+
+            if (cursor) {
+                params.set("next_cursor", cursor);
+            }
 
             const url = `${import.meta.env.VITE_API_BASE_URL}/products?${params.toString()}`;
             const res = await clientApi(url);
             const data = await res.json();
+            
             products = (data.search_result || []).map(
                 (p: Product, index: number) => ({
                     ...p,
@@ -97,7 +109,9 @@
             } else {
                 currentPage = 1;
             }
-
+            
+            // Update URL sau khi fetch thành công
+            updateURL();
             mounted = true;
         } catch (e) {
             console.error(e);
@@ -107,7 +121,7 @@
         }
     };
 
-     function isTokenValid(token: string | null): boolean {
+    function isTokenValid(token: string | null): boolean {
         if (!token) return false;
 
         try {
@@ -211,7 +225,6 @@
         currentCursor = null;
         nextCursor = null;
         currentPage = 1;
-        updateURL();
         fetchProducts(null, "initial");
     };
 

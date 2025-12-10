@@ -1,11 +1,8 @@
-/* === Layout === */
 .headerContainer {
-  width: 80%;
-  margin: 30px auto 20px auto;
-  background: linear-gradient(135deg, #f8fafc, #eff6ff);
+  background: #001529;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  padding: 16px 24px;
-  border-radius: 12px;
+  padding: 8px 24px;
+  min-height: 40px;
 }
 
 .headerContent {
@@ -18,7 +15,7 @@
 .headerContent h1 {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #1e3a8a;
+  color: white;
 }
 
 /* === Buttons === */
@@ -42,16 +39,12 @@
 
 /* === Search Section === */
 .tableSearch {
-  width: 80%;
   display: flex;
+  justify-content: flex-end;
   align-items: center;
   gap: 14px;
   height: 60px;
-  margin: 20px auto;
-  background-color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border-radius: 10px;
-  padding: 10px 20px;
+  margin-top: 20px;
 }
 
 .tableSearch button {
@@ -71,7 +64,6 @@
 
 /* === Table === */
 .tableContainer {
-  width: 80%;
   margin: 0 auto 40px auto;
   background: #fff;
   border-radius: 12px;
@@ -198,6 +190,13 @@
 .paginationControls span {
   font-weight: 500;
   color: #374151;
+}
+
+.selectInput{
+    height: 30px;
+    width: 180px;
+    border-radius: 5px;
+    border: 1px solid #d9d9d9;
 }
 
 .disabledButton {

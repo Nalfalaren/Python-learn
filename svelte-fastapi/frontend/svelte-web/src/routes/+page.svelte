@@ -5,7 +5,17 @@
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
     import { derived } from "svelte/store";
     import { clientApi } from "../hooks/apiFetch";
-
+    import styles from "$lib/styles/landing/landing.module.css"
+    import droneImage from "$lib/assets/uav.png";
+    import shoppingCart from "$lib/assets/shopping_cart.svg";
+    import shoppingAddToCart from "$lib/assets/shopping_cart_white.svg";
+    import user from "$lib/assets/user.svg";
+    import searchIcon from "$lib/assets/search_icon.svg";
+    import CreditCard from "$lib/assets/credit_card.svg";
+    import HeadPhone from "$lib/assets/headphones.svg";
+    import Trophy from "$lib/assets/trophy.svg";
+    import Package from "$lib/assets/package.svg";
+    import Eye from "$lib/assets/eye.svg";
     /** Products list */
     let products: Product[] = [];
     let query = "";
@@ -20,13 +30,7 @@
     let error = "";
     let mounted = false;
 
-    // cursor-based pagination
-    let nextCursor: string | null = null;
-    let prevCursor: string | null = null;
-    let currentCursor: string | null = null;
-    let cursorHistory: (string | null)[] = []; // Stack to track cursor history
     let currentPage = 1;
-    let totalRecords = 0;
     let limit = 5;
 
     /** Add to cart modal */
@@ -44,12 +48,10 @@
 
     function updateURL() {
         const params = new URLSearchParams();
-
         if (query) params.set("query", query);
         if (category && category !== "All") params.set("category", category);
         if (sortBy) params.set("sortBy", sortBy);
         if (currentPage > 1) params.set("page", String(currentPage));
-
         const newUrl = `?${params.toString()}`;
         goto(newUrl, { replaceState: true, noScroll: true });
     }
@@ -61,33 +63,20 @@
     ): Promise<void> => {
         isLoading = true;
         error = "";
-        
+
         try {
             const params = new URLSearchParams();
-            if (query) {
-                params.set("search_product", query);
-            }
-
-            if (category && category !== "All") {
+            if (query) params.set("search_product", query);
+            if (category && category !== "All")
                 params.set("category", category);
-            }
-
-            if (sortBy) {
-                params.set("sort_by", sortBy);
-            }
-
-            if (limit) {
-                params.set("limit", String(limit));
-            }
-
-            if (cursor) {
-                params.set("next_cursor", cursor);
-            }
+            if (sortBy) params.set("sort_by", sortBy);
+            if (limit) params.set("limit", String(limit));
+            if (cursor) params.set("next_cursor", cursor);
 
             const url = `${import.meta.env.VITE_API_BASE_URL}/products?${params.toString()}`;
             const res = await clientApi(url);
             const data = await res.json();
-            
+
             products = (data.search_result || []).map(
                 (p: Product, index: number) => ({
                     ...p,
@@ -97,11 +86,6 @@
                 }),
             );
 
-            totalRecords = data.total_product || products.length;
-            nextCursor = data.next_cursor || null;
-            currentCursor = cursor;
-
-            // Update page number based on direction
             if (direction === "next") {
                 currentPage++;
             } else if (direction === "prev") {
@@ -109,13 +93,12 @@
             } else {
                 currentPage = 1;
             }
-            
-            // Update URL sau khi fetch thành công
+
             updateURL();
             mounted = true;
         } catch (e) {
             console.error(e);
-            error = "Không thể tải danh sách drone. Vui lòng thử lại.";
+            error = "Error found!";
         } finally {
             isLoading = false;
         }
@@ -123,7 +106,6 @@
 
     function isTokenValid(token: string | null): boolean {
         if (!token) return false;
-
         try {
             const payload = JSON.parse(atob(token.split(".")[1]));
             const exp = payload.exp * 1000;
@@ -132,24 +114,18 @@
             return false;
         }
     }
-
     onMount(() => {
         const token = localStorage.getItem("accessToken");
         isLoggedIn = isTokenValid(token);
         fetchProducts();
     });
 
-    // top 5 section
     $: topFive = products.slice(0, 5);
 
-    // Cart total count
     const cartCount = derived(cart, ($cart) =>
         $cart.reduce((total, item) => total + item.quantity, 0),
     );
-    $: hasPrevPage = currentPage > 1;
-    $: hasNextPage = nextCursor !== null && products.length >= limit;
 
-    // actions
     function openQuickView(product: Product) {
         quickView = product;
     }
@@ -188,7 +164,6 @@
 
     function confirmAddToCart() {
         if (!addToCartProduct) return;
-
         cart.addItem(addToCartProduct, addToCartQuantity);
         closeAddToCartModal();
         alert(
@@ -196,34 +171,7 @@
         );
     }
 
-    function handleNext() {
-        if (!hasNextPage) return;
-
-        cursorHistory.push(currentCursor);
-
-        fetchProducts(nextCursor, "next");
-
-        const listEl = document.getElementById("product-list");
-        if (listEl) {
-            listEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-    }
-
-    function handlePrev() {
-        if (!hasPrevPage) return;
-
-        const previousCursor = cursorHistory.pop() ?? null;
-        fetchProducts(previousCursor, "prev");
-        const listEl = document.getElementById("product-list");
-        if (listEl) {
-            listEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-    }
-
     const handleSearch = () => {
-        cursorHistory = [];
-        currentCursor = null;
-        nextCursor = null;
         currentPage = 1;
         fetchProducts(null, "initial");
     };
@@ -261,127 +209,177 @@
     }
 </script>
 
-<!-- HEADER -->
-<header class:anim-in={mounted}>
-    <div class="brand">
-        <div class="logo">DR</div>
-        <div>
-            <div style="font-weight:700">DroneRack</div>
-            <div style="font-size:12px; color:#64748b">Buy • Sell • Fly</div>
-        </div>
-    </div>
-    <nav>
-        <a href="#">Explore</a>
-        <a href="#">Sell</a>
-        <button
-            style="background-color: transparent; border-color: transparent; position:relative"
-            onclick={() => openCartList()}
-        >
-            My Orders
-            {#if $cartCount > 0}
-                <span class="cart-badge">{$cartCount}</span>
-            {/if}
-        </button>
-        {#if isLoggedIn}
-            <button
-                style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
-                onclick={logout}
-            >
-                Log out
-            </button>
-        {:else}
-            <button
-                style="background-color: transparent; border: transparent; margin-left: 10px; color:#ef4444; font-weight:600; cursor:pointer"
-                onclick={() => goto("/login")}
-            >
-                Sign in
-            </button>
-        {/if}
-    </nav>
-</header>
+<header class={styles.header} class:anim-in={mounted}>
+    <div class={styles.container}>
+        <div class={styles.headerMain}>
+            <div class={styles.brand}>
+                <div class={styles.logo}>
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="6" fill="#000000" />
+                        <path d="M16 8L20 14H12L16 8Z" fill="white" />
+                        <circle cx="16" cy="18" r="3" fill="white" />
+                        <path
+                            d="M12 22L16 20L20 22"
+                            stroke="white"
+                            stroke-width="2"
+                        />
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-weight:700; font-size: 20px, color: #000000">
+                        DRONERACK
+                    </div>
+                </div>
+            </div>
 
-<section class="hero" class:anim-in={mounted}>
-    <div class="hero-left">
-        <h1 style="font-size:32px; margin:0">
-            Drone Marketplace — Buy, Sell, Compare, and Review
-        </h1>
-        <p style="color:#334155; margin-top:10px">
-            Find the perfect drone for photography, filmmaking, or adventure.
-            Compare specs, prices, and community reviews.
-        </p>
-        <div class="controls">
-            <input
-                placeholder="Search drones..."
-                bind:value={query}
-                style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0; min-width:200px"
-            />
-            <select
-                bind:value={category}
-                onchange={handleSearch}
-                style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
-            >
-                {#each categories as c}<option value={c}>{c}</option>{/each}
-            </select>
-            <select
-                bind:value={sortBy}
-                onchange={handleSearch}
-                style="padding:10px 12px; border-radius:10px; border:1px solid #e2e8f0"
-            >
-                <option value="featured">Featured</option>
-                <option value="price-asc">Price: Low → High</option>
-                <option value="price-desc">Price: High → Low</option>
-                <option value="rating">Top Rated</option>
-            </select>
-            <div style="display:flex; gap:10px">
-                <button class="btn-primary" onclick={() => handleSearch()}
-                    >Search</button
-                >
+            <div class={styles.searchBar}>
+                <img src={searchIcon} alt="search_icon" class={styles.searchIcon} />
+                <input
+                    placeholder="Search for drones, parts, accessories..."
+                    bind:value={query}
+                    onkeypress={(e) => e.key === "Enter" && handleSearch()}
+                />
+            </div>
+
+            <div class={styles.headerActions}>
+                <div class={styles.headerBtn}>
+                    <img src={user} alt="user" />
+                    {#if isLoggedIn}
+                        <button class={styles.logoutBtn} onclick={logout}>
+                            Logout
+                        </button>
+                    {:else}
+                        <button
+                            class={styles.loginBtn}
+                            onclick={() => goto("/login")}
+                        >
+                            Sign In
+                        </button>
+                    {/if}
+                </div>
+                <button class={styles.iconBtn} onclick={openCartList}>
+                    <img src={shoppingCart} alt="cart_img" />
+                    <span class={styles.label}>Cart</span>
+                    {#if $cartCount > 0}
+                        <span class={styles.cartBadge}>{$cartCount}</span>
+                    {/if}
+                </button>
             </div>
         </div>
-        <div style="display:flex; gap:10px; margin-top:6px">
-            <button class="btn-primary" onclick={() => goto("/products/list")}
-                >Buy Now</button
-            >
-        </div>
+
+        <nav class={styles.mainNav}>
+            <a href="#" class={styles.navItem}>
+                <span class={styles.navIcon}>☰</span>
+                All Categories
+            </a>
+        </nav>
     </div>
-    <div class="hero-right">
-        <img
-            src="https://picsum.photos/seed/hero/720/440"
-            alt="hero drone"
-            style="max-width:100%; border-radius:12px; box-shadow:0 18px 40px rgba(2,6,23,0.08)"
-        />
+</header>
+
+<!-- HERO BANNER -->
+<section class={styles.heroBanner} class:anim-in={mounted}>
+    <a href="/products/list" class={styles.container}>
+        <div class={styles.bannerContent}>
+            <div class={styles.bannerText}>
+                <span class={styles.bannerBadge}>Best Deal Online on drone</span>
+                <h1 class={styles.bannerTitle}>LATEST DRONE MODELS</h1>
+                <h2 class={styles.bannerSubtitle}>Up to 50% OFF</h2>
+            </div>
+            <div class={styles.bannerImage}>
+                <img src={droneImage} alt="Latest Drones" />
+            </div>
+        </div>
+    </a>
+</section>
+
+<!-- FEATURES BAR -->
+<section class={styles.featuresBar}>
+    <div class={styles.container}>
+        <div class={styles.featuresGrid}>
+            <div class={styles.featureItem}>
+                <img class={styles.featureIcon} src={Package} alt="package" />
+                <div>
+                    <div class={styles.featureTitle}>Fasted Delivery</div>
+                    <div class={styles.featureDesc}>Delivery in 24/H</div>
+                </div>
+            </div>
+            <div class={styles.featureItem}>
+                <img class={styles.featureIcon} src={Trophy} alt="trophy" />
+                <div>
+                    <div class={styles.featureTitle}>24 Hours Return</div>
+                    <div class={styles.featureDesc}>100% money-back guarantee</div>
+                </div>
+            </div>
+            <div class={styles.featureItem}>
+                <img class={styles.featureIcon} src={CreditCard} alt="credit_card" />
+                <div>
+                    <div class={styles.featureTitle}>Secure Payment</div>
+                    <div class={styles.featureDesc}>Your money is safe</div>
+                </div>
+            </div>
+            <div class={styles.featureItem}>
+                <img class={styles.featureIcon} src={HeadPhone} alt="headphone" />
+                <div>
+                    <div class={styles.featureTitle}>Support 24/7</div>
+                    <div class={styles.featureDesc}>Live contact/message</div>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
-<!-- TOP 5 -->
+<!-- TODAY'S DEALS -->
 {#if topFive.length}
-    <section class="top-list-section">
-        <div class="top-list-card">
-            <div class="top-list-header">
-                <span class="top-list-title">Top 5 Featured Drones</span>
-                <span class="top-list-sub">
-                    Based on current page results
-                </span>
+    <section class={styles.dealsSection}>
+        <div class={styles.container}>
+            <div class={styles.sectionHeader}>
+                <h2 class={styles.sectionTitle}>TODAY'S DEALS OF THE DAY</h2>
+                <button
+                    class={styles.viewAllBtn}
+                    onclick={() => goto("/products/list")}>View All →</button
+                >
             </div>
-            <div class="top-list-scroll">
-                {#each topFive as p}
-                    <div class="top-list-item">
-                        <div class="top-list-thumb">
-                            <img src={p.img} alt={p.product_name} />
-                        </div>
-                        <div class="top-list-meta">
-                            <div class="top-list-name">{p.product_name}</div>
-                            <div class="top-list-info">
-                                {p.category} • ${p.price} • Rating: {p.rating?.toFixed(
-                                    1,
-                                ) ?? "—"}
+            <div class={styles.dealsGrid}>
+                {#each topFive as product, i}
+                    <div
+                        class={styles.dealCard}
+                        style={`animation-delay: ${i * 60}ms`}
+                    >
+                        <div class={styles.dealBadge}>🔥 HOT</div>
+                        <img src={product.img} alt={product.product_name} />
+                        <div class={styles.dealContent}>
+                            <div class={styles.dealCategory}>{product.category}</div>
+                            <h2 class={styles.dealTitle}>{product.product_name}</h2>
+                            <div class={styles.rating}>
+                                <span class={styles.stars}>
+                                    {#each Array(5) as _, i}
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            class:filled={i <
+                                                Math.floor(product.rating || 0)}
+                                        >
+                                            <path
+                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                                            />
+                                        </svg>
+                                    {/each}
+                                </span>
+                                <span class={styles.ratingText}
+                                    >{product.rating || 0}</span
+                                >
                             </div>
                         </div>
-                        <button
-                            class="top-list-btn"
-                            onclick={() => openQuickView(p)}
-                            disabled={p.stock === 0}>View</button
+                        <a
+                            class={styles.dealPrice}
+                            href={`/products/details/${product.id}`}
                         >
+                            <span class={styles.dealPriceText}>
+                                BUY NOW
+                                <span class={styles.dealPriceDetail}>
+                                    -{product.price}$
+                                </span>
+                            </span>
+                        </a>
                     </div>
                 {/each}
             </div>
@@ -390,146 +388,333 @@
 {/if}
 
 <!-- PRODUCT LIST -->
-<section id="product-list">
-    <div style="padding:6px 24px; color:#475569; font-size:13px">
-        {#if isLoading}
-            Loading products...
-        {:else if error}
-            {error}
-        {:else}
-            {products.length} products on this page • Page {currentPage} • Total:
-            {totalRecords} products
-        {/if}
-    </div>
-
-    <div class="grid">
-        {#if !isLoading && !error}
-            {#each products as p, i}
-                <article
-                    class="card anim-in"
-                    style={`animation-delay: ${80 + i * 40}ms`}
-                    onclick={() => goto(`/products/details/${p.id}`)}
+<section id="product-list" class={styles.productsSection}>
+    <div class={styles.container}>
+        <div class={styles.sectionHeader}>
+            <h2 class={styles.sectionTitle}>FREQUENTLY BOUGHT TOGETHER</h2>
+            <div class={styles.controls}>
+                <select
+                    bind:value={category}
+                    onchange={handleSearch}
+                    class={styles.filterSelect}
                 >
-                    <img alt={p.product_name} src={p.img} />
-                    <div class="card-body">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center"
-                        >
-                            <div style="font-weight:700">{p.product_name}</div>
-                            <div class="badge">{p.category}</div>
-                        </div>
+                    {#each categories as c}<option value={c}>{c}</option>{/each}
+                </select>
+                <select
+                    bind:value={sortBy}
+                    onchange={handleSearch}
+                    class={styles.filterSelect}
+                >
+                    <option value="featured">Featured</option>
+                    <option value="price-asc">Price: Low → High</option>
+                    <option value="price-desc">Price: High → Low</option>
+                    <option value="rating">Top Rated</option>
+                </select>
+            </div>
+        </div>
 
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; gap:10px"
+        {#if isLoading}
+            <div class={styles.loading}>Loading products...</div>
+        {:else if error}
+            <div class={styles.error}>{error}</div>
+        {:else}
+            <div class={styles.productsContainer}>
+                <div class={styles.featuredProduct}>
+                    <article class="{styles.productCard} {styles.productFirst}">
+                        {#if products?.[0]?.stock === 0}
+                            <div class={styles.outOfStockBadge}>OUT OF STOCK</div>
+                        {:else}
+                            <div class={styles.discountBadge}>HOT</div>
+                        {/if}
+                        <a
+                            class={styles.productImage}
+                            href={`/products/details/${products?.[0]?.id}`}
                         >
-                            <div>
-                                <div class="price">${p.price}</div>
-                                <div style="font-size:12px; color:#64748b">
-                                    Rating: {p.rating?.toFixed(1) ?? "—"} • Stock:
-                                    {p.stock ?? "—"}
-                                </div>
+                            <img
+                                class="{styles.productImage} {styles.coverImg}"
+                                src={products?.[0]?.img}
+                                alt={products?.[0]?.product_name}
+                            />
+
+                            <div class={styles.productActions}>
+                                <button
+                                    type="button"
+                                    class={styles.actionBtn}
+                                    onclick={() => openQuickView(products?.[0])}
+                                >
+                                    <div class={styles.eyeImgContainer}>
+                                        <img
+                                            src={Eye}
+                                            alt="eye"
+                                            class={styles.eyeImg}
+                                        />
+                                    </div>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class={styles.actionBtn}
+                                    onclick={() => openAddToCartModal(products?.[0])}
+                                    disabled={products?.[0]?.stock === 0}
+                                >
+                                    <div class={styles.cartImgContainer}>
+                                        <img
+                                            src={shoppingCart}
+                                            alt={products?.[0]?.product_name}
+                                            class={styles.cartImg}
+                                        />
+                                    </div>
+                                </button>
                             </div>
-                            <div
-                                style="display:flex; flex-direction:column; gap:8px"
-                            >
-                                <!-- Add button -->
+                        </a>
+
+                        <div class={styles.productInfo}>
+                            <div class={styles.productCategory}>
+                                {products?.[0]?.category}
+                            </div>
+                            <h3 class={styles.productName}>
+                                {products?.[0]?.product_name}
+                            </h3>
+                            <div class={styles.rating}>
+                                <span class={styles.stars}>
+                                    {#each Array(5) as _, i}
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            class:filled={i <
+                                                Math.floor(
+                                                    products?.[0]?.rating || 0,
+                                                )}
+                                        >
+                                            <path
+                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                                            />
+                                        </svg>
+                                    {/each}
+                                </span>
+                                <span class={styles.ratingText}
+                                    >{products?.[0]?.rating || 0}</span
+                                >
+                            </div>
+                            <div class={styles.productPrice}>
+                                <span class={styles.priceCurrent}
+                                    >${products?.[0]?.price}</span
+                                >
+                                <span class={styles.priceOld}
+                                    >${(products?.[0]?.price * 1.4).toFixed(0)}</span
+                                >
+                            </div>
+                            <div class={styles.productInformation}>
+                                <span style="color: #5F6C72"
+                                    ><span style="font-weight: bold"
+                                        >Description:</span
+                                    >
+                                    {products?.[0]?.description || "N/A"}</span
+                                >
+                            </div>
+                            <div style="position: relative">
                                 <button
                                     onclick={(e) => {
                                         e.stopPropagation();
-                                        openAddToCartModal(p);
+                                        openAddToCartModal(products?.[0]);
                                     }}
-                                    class="btn-primary"
-                                    disabled={p.stock === 0}
-                                    title={p.stock === 0
+                                    class="{styles.btnPrimary} {styles.addBtn}"
+                                    disabled={products?.[0]?.stock === 0}
+                                    title={products?.[0]?.stock === 0
                                         ? "Out of stock"
                                         : "Add to cart"}
                                 >
-                                    Add
-                                </button>
-
-                                <!-- Quick View button -->
-                                <button
-                                    onclick={(e) => {
-                                        e.stopPropagation();
-                                        openQuickView(p);
-                                    }}
-                                    class="btn-small-ghost"
-                                    disabled={p.stock === 0}
-                                    title={p.stock === 0
-                                        ? "Out of stock"
-                                        : "Quick View"}
-                                >
-                                    Quick View
+                                    <img
+                                        src={shoppingAddToCart}
+                                        alt="shopping-cart"
+                                        class="{styles.cartImg} {styles.addCartImg}"
+                                    />
+                                    ADD TO CART
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </article>
-            {/each}
+                    </article>
+                </div>
+
+                <div class={styles.productsGrid}>
+                    {#each products.slice(1).filter(product => 
+                        product && 
+                        product.id && 
+                        product.product_name && 
+                        product.img &&
+                        !isNaN(product.price)
+                    ) as product, i}
+                        <article
+                            class={styles.productCard}
+                            style={`animation-delay: ${i * 40}ms`}
+                        >
+                            {#if product.stock === 0}
+                                <div class={styles.outOfStockBadge}>
+                                    OUT OF STOCK
+                                </div>
+                            {:else if i % 3 === 0}
+                                <div class={styles.discountBadge}>-32% OFF</div>
+                            {/if}
+                            <a
+                                class={styles.productImage}
+                                href={`/products/details/${product.id}`}
+                            >
+                                <img
+                                    class={styles.productImage}
+                                    src={product.img}
+                                    alt={product.product_name}
+                                />
+
+                                <div class={styles.productActions}>
+                                    <button
+                                        type="button"
+                                        class={styles.actionBtn}
+                                        onclick={() => openQuickView(product)}
+                                    >
+                                        <div class={styles.eyeImgContainer}>
+                                            <img
+                                                src={Eye}
+                                                alt="eye"
+                                                class={styles.eyeImg}
+                                            />
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class={styles.actionBtn}
+                                        onclick={() =>
+                                            openAddToCartModal(product)}
+                                        disabled={product.stock === 0}
+                                    >
+                                        <img
+                                            src={shoppingCart}
+                                            alt="cart_img"
+                                            class={styles.cartImg}
+                                        />
+                                    </button>
+                                </div>
+                            </a>
+
+                            <div class={styles.productInfo}>
+                                <div class={styles.productCategory}>
+                                    {product.category}
+                                </div>
+                                <h3 class={styles.productName}>
+                                    {product.product_name}
+                                </h3>
+                                <div class={styles.rating}>
+                                    <span class={styles.stars}>
+                                        {#each Array(5) as _, i}
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                class:filled={i <
+                                                    Math.floor(
+                                                        product.rating || 0,
+                                                    )}
+                                            >
+                                                <path
+                                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                                                />
+                                            </svg>
+                                        {/each}
+                                    </span>
+                                    <span class={styles.ratingText}>{product.rating || 0}</span>
+                                </div>
+                                <div class={styles.productPrice}>
+                                    <span class={styles.priceCurrent}>${product.price}</span>
+                                    <span class={styles.priceOld}>${(product.price * 1.4).toFixed(0)}</span>
+                                </div>
+                            </div>
+                        </article>
+                    {/each}
+                </div>
+            </div>
         {/if}
     </div>
-
-    {#if !isLoading && !error}
-        <div class="pagination">
-            <button
-                class="pagination-btn"
-                onclick={handlePrev}
-                disabled={!hasPrevPage || isLoading}
-            >
-                ‹ Prev
-            </button>
-
-            <div class="pagination-pages">
-                <span style="color:#64748b; font-size:14px">
-                    Page {currentPage}
-                </span>
-            </div>
-
-            <button
-                class="pagination-btn"
-                onclick={handleNext}
-                disabled={!hasNextPage || isLoading}
-            >
-                Next ›
-            </button>
-        </div>
-    {/if}
 </section>
 
 <!-- QUICK VIEW MODAL -->
 {#if quickView}
-    <div class="modal-backdrop" onclick={closeQuickView}>
-        <div class="modal" onclick={(e) => e.stopPropagation}>
-            <div style="display:flex; gap:16px; align-items:flex-start">
-                <img
-                    src={quickView.img}
-                    alt={quickView.product_name}
-                    style="width:400px; max-width:40%; border-radius:8px; object-fit:cover"
-                />
-                <div style="flex:1">
-                    <h2>{quickView.product_name}</h2>
-                    <div style="color:#64748b; margin-top:6px">
-                        {quickView.category} • Rating: {quickView.rating?.toFixed(
-                            1,
-                        ) ?? "—"}
+    <div
+        class={styles.modalBackdrop}
+        role="button"
+        tabindex="0"
+        aria-label="Close quick view"
+        onclick={closeQuickView}
+        onkeydown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                closeQuickView();
+            }
+        }}
+    >
+        <div
+            class={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quick-view-title"
+        >
+            <button
+                type="button"
+                class={styles.modalClose}
+                aria-label="Close"
+                onclick={closeQuickView}
+            >
+                ×
+            </button>
+
+            <div class={styles.modalContent}>
+                <div class={styles.modalImage}>
+                    <img src={quickView.img} alt={quickView.product_name} />
+                </div>
+
+                <div class={styles.modalDetails}>
+                    <div class={styles.modalCategory}>
+                        {quickView.category}
                     </div>
-                    <p style="margin-top:12px; color:#334155">
-                        Short description: {quickView.description ||
-                            "No description"}
+
+                    <h2 id="quick-view-title" class={styles.modalTitle}>
+                        {quickView.product_name}
+                    </h2>
+
+                    <div class={styles.modalRating}>
+                        {"⭐".repeat(Math.floor(quickView.rating || 0))}
+                        <span>
+                            ({quickView.rating?.toFixed(1) || "—"})
+                        </span>
+                    </div>
+
+                    <p class={styles.modalDescription}>
+                        {quickView.description ||
+                            "High-quality drone perfect for photography and aerial exploration."}
                     </p>
-                    <div
-                        style="display:flex; gap:12px; margin-top:18px; align-items:center"
-                    >
-                        <div style="font-size:20px; font-weight:800">
+
+                    <div class={styles.modalPrice}>
+                        <span class={styles.priceLarge}>
                             ${quickView.price}
-                        </div>
+                        </span>
+                        <span class={styles.priceOldLarge}>
+                            ${(quickView.price * 1.4).toFixed(0)}
+                        </span>
+                    </div>
+                    <div class={styles.modalActions}>
                         <button
-                            onclick={() => openAddToCartModal(quickView)}
-                            class="btn-primary">Add to Cart</button
+                            type="button"
+                            class={styles.btnAddCart}
+                            onclick={() => {
+                                openAddToCartModal(quickView);
+                                closeQuickView();
+                            }}
+                            disabled={quickView.stock === 0}
                         >
-                        <button onclick={closeQuickView} class="btn-secondary"
-                            >Close</button
+                            Add to Cart
+                        </button>
+
+                        <a
+                            class={styles.btnBuyNow}
+                            href={`/products/details/${quickView.id}`}
                         >
+                            Buy Now
+                        </a>
                     </div>
                 </div>
             </div>
@@ -537,717 +722,277 @@
     </div>
 {/if}
 
-<!-- ADD TO CART MODAL OR LOGIN REQUIRED -->
-{#if isLoggedIn}
-    {#if showAddToCartModal && addToCartProduct}
-        <!-- Add to Cart Modal -->
-        <div class="modal-backdrop">
-            <div class="modal" onclick={(e) => e.stopPropagation}>
-                <div
-                    style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap"
-                >
+<!-- ADD TO CART MODAL -->
+{#if isLoggedIn && showAddToCartModal && addToCartProduct}
+    <div
+        class={styles.modalBackdrop}
+        role="button"
+        tabindex="0"
+        aria-label="Close add to cart dialog"
+        onkeydown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                closeAddToCartModal();
+            }
+        }}
+    >
+        <div
+            class="{styles.modal} {styles.modalSm}"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-to-cart-title"
+        >
+            <button
+                type="button"
+                class={styles.modalClose}
+                aria-label="Close"
+                onclick={closeAddToCartModal}
+            >
+                ×
+            </button>
+
+            <div class={styles.modalContent}>
+                <div class={styles.modalImageSm}>
                     <img
                         src={addToCartProduct.img}
                         alt={addToCartProduct.product_name}
-                        style="width:200px; max-width:40%; border-radius:8px; object-fit:cover"
                     />
-                    <div style="flex:1; min-width:220px">
-                        <h2>{addToCartProduct.product_name}</h2>
-                        <div style="color:#64748b; margin-top:6px">
-                            {addToCartProduct.category} • Rating: {addToCartProduct.rating?.toFixed(
-                                1,
-                            ) ?? "—"}
-                        </div>
-                        <p style="margin-top:12px; color:#334155">
-                            Short description: {addToCartProduct.description ||
-                                "No descrption"}
-                        </p>
-                        <div
-                            style="margin-top:16px; display:flex; align-items:center; gap:12px"
-                        >
-                            <div style="font-size:20px; font-weight:800">
-                                ${addToCartProduct.price}
-                            </div>
-                            <div>
-                                <label>Quantity:</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={addToCartProduct.stock ?? 99}
-                                    bind:value={addToCartQuantity}
-                                    style="width:60px; padding:4px; border-radius:6px; border:1px solid #ccc"
-                                />
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:12px; margin-top:18px">
-                            <button
-                                onclick={confirmAddToCart}
-                                class="btn-primary"
-                                disabled={addToCartQuantity <= 0}
-                                class:btn-disabled={addToCartQuantity <= 0}
-                            >
-                                Add to Cart
-                            </button>
+                </div>
 
-                            <button
-                                onclick={closeAddToCartModal}
-                                class="btn-secondary">Cancel</button
-                            >
-                        </div>
+                <div class={styles.modalDetails}>
+                    <h3 id="add-to-cart-title">
+                        {addToCartProduct.product_name}
+                    </h3>
+
+                    <div class={styles.modalPrice}>
+                        <span class={styles.priceLarge}>
+                            ${addToCartProduct.price}
+                        </span>
+                    </div>
+
+                    <div class={styles.quantitySelector}>
+                        <label for="quantity-input"> Quantity: </label>
+                        <input
+                            id="quantity-input"
+                            type="number"
+                            min="1"
+                            max={addToCartProduct.stock ?? 99}
+                            bind:value={addToCartQuantity}
+                        />
+                    </div>
+
+                    <div class={styles.modalActions}>
+                        <button
+                            type="button"
+                            class={styles.btnPrimaryFull}
+                            onclick={confirmAddToCart}
+                            disabled={addToCartQuantity <= 0}
+                        >
+                            Add to Cart
+                        </button>
+
+                        <button
+                            type="button"
+                            class={styles.btnSecondaryFull}
+                            onclick={closeAddToCartModal}
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    {:else if showAddToCardListModal}
-        <div class="modal-backdrop" onclick={closeCartList}>
-            <div
-                class="modal"
-                onclick={(e) => e.stopPropagation}
-                style="max-width:600px;"
-            >
-                <h2 style="margin-bottom:12px">Your Cart</h2>
-
-                {#if cartItems.length === 0}
-                    <p>No products in your cart.</p>
-                {:else}
-                    <div
-                        style="display:flex; flex-direction:column; gap:12px; max-height:340px; overflow-y:auto"
-                    >
-                        {#each cartItems as item}
-                            <div
-                                style="display:flex; gap:12px; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px"
-                            >
-                                <img
-                                    src={item.img}
-                                    alt={item.product_name}
-                                    style="width:80px; height:80px; border-radius:8px; object-fit:cover"
-                                />
-
-                                <div style="flex:1">
-                                    <div style="font-weight:700">
-                                        {item.product_name}
-                                    </div>
-                                    <div style="font-size:13px; color:#64748b">
-                                        {item.category} • ${item.price}
-                                    </div>
-                                    <div style="margin-top:4px; font-size:13px">
-                                        Quantity: {item.quantity}
-                                    </div>
-                                </div>
-
-                                <button
-                                    class="btn-small-ghost"
-                                    onclick={() => deleteCart(item.id!)}
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        {/each}
-                    </div>
-
-                    <div
-                        style="margin-top:16px; padding-top:12px; border-top:2px solid #e2e8f0"
-                    >
-                        <div
-                            style="display:flex; justify-content:space-between; font-size:18px; font-weight:700"
-                        >
-                            <span>Total:</span>
-                            <span>${cart.getTotalPrice().toFixed(2)}</span>
-                        </div>
-                    </div>
-                {/if}
-
-                <div
-                    style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px"
-                >
-                    <button onclick={closeCartList} class="btn-secondary"
-                        >Close</button
-                    >
-                    <button
-                        class={cartItems.length === 0
-                            ? "btn-disabled"
-                            : "btn-primary"}
-                        onclick={() => goto("/checkout")}
-                        disabled={cartItems.length === 0}
-                    >
-                        Checkout
-                    </button>
-                </div>
-            </div>
-        </div>
-    {/if}
-{:else if !isLoggedIn && showAddToCardListModal}
-    <!-- Login Required Modal -->
-    <div class="modal-backdrop" onclick={closeCartList}>
-        <div
-            class="modal"
-            onclick={(e) => e.stopPropagation}
-            style="padding:24px; text-align:center"
-        >
-            <h2>Please Login</h2>
-            <p>You need to log in to view your cart.</p>
-            <div
-                style="margin-top:16px; display:flex; justify-content:center; gap:12px"
-            >
-                <button onclick={redirectToLogin} class="btn-primary"
-                    >Login</button
-                >
-                <button onclick={closeCartList} class="btn-secondary"
-                    >Cancel</button
-                >
             </div>
         </div>
     </div>
 {/if}
 
-<style>
-    /* Basic responsive layout, modern clean look */
-    :global(body) {
-        font-family:
-            system-ui,
-            -apple-system,
-            "Segoe UI",
-            Roboto,
-            "Helvetica Neue",
-            Arial;
-        margin: 0;
-        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 40%);
-        color: #0f172a;
-    }
+<!-- CART LIST MODAL -->
+{#if showAddToCardListModal}
+    <div
+        class={styles.modalBackdrop}
+        role="button"
+        tabindex="0"
+        aria-label="Close cart dialog"
+        onkeydown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                closeCartList();
+            }
+        }}
+    >
+        {#if isLoggedIn}
+            <div
+                class="{styles.modal} {styles.modalCart}"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="cart-dialog-title"
+            >
+                <button
+                    type="button"
+                    class={styles.modalClose}
+                    aria-label="Close"
+                    onclick={closeCartList}
+                >
+                    ×
+                </button>
+
+                <h2 id="cart-dialog-title" class={styles.modalTitle}>
+                    Your Shopping Cart
+                </h2>
+
+                {#if cartItems.length === 0}
+                    <div class={styles.emptyCart}>
+                        <div class={styles.emptyIcon}>
+                            <img src={shoppingCart} alt="cart_img" />
+                        </div>
+                        <p>Your cart is empty</p>
+                        <button
+                            type="button"
+                            class={styles.btnPrimaryFull}
+                            onclick={closeCartList}
+                        >
+                            Continue Shopping
+                        </button>
+                    </div>
+                {:else}
+                    <div class={styles.cartItems}>
+                        {#each cartItems as item}
+                            <div class={styles.cartItem}>
+                                <img src={item.img} alt={item.product_name} />
+
+                                <div class={styles.cartItemDetails}>
+                                    <h4>{item.product_name}</h4>
+                                    <div class={styles.cartItemMeta}>
+                                        {item.category} • ${item.price}
+                                    </div>
+                                    <div class={styles.cartItemQuantity}>
+                                        Qty: {item.quantity}
+                                    </div>
+                                </div>
+
+                                <div class={styles.cartItemActions}>
+                                    <div class={styles.cartItemPrice}>
+                                        ${Number((item.price * item.quantity).toFixed(2))}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class={styles.removeBtn}
+                                        aria-label="Remove item"
+                                        onclick={() => deleteCart(item.id!)}
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                    <div class={styles.cartTotal}>
+                        <div class="{styles.totalRow} {styles.totalFinal}">
+                            <span>Total:</span>
+                            <span>
+                                ${Number(cart.getTotalPrice().toFixed(2))}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class={styles.cartActions}>
+                        <button
+                            type="button"
+                            class={styles.btnSecondaryFull}
+                            onclick={closeCartList}
+                        >
+                            Continue Shopping
+                        </button>
+
+                        <a class={styles.btnPrimaryFull} href="/checkout">
+                            Proceed to Checkout
+                        </a>
+                    </div>
+                {/if}
+            </div>
+        {:else}
+            <div
+                class="{styles.modal} {styles.modalSm}"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="login-required-title"
+            >
+                <button
+                    type="button"
+                    class={styles.modalClose}
+                    aria-label="Close"
+                    onclick={closeCartList}
+                >
+                    ×
+                </button>
+
+                <div class={styles.loginRequired}>
+                    <div class={styles.loginIcon}>🔒</div>
+
+                    <h3 id="login-required-title">Login Required</h3>
+
+                    <p>
+                        Please log in to view your cart and complete your
+                        purchase.
+                    </p>
+
+                    <div class={styles.modalActions}>
+                        <button
+                            type="button"
+                            class={styles.btnPrimaryFull}
+                            onclick={redirectToLogin}
+                        >
+                            Login
+                        </button>
+
+                        <button
+                            type="button"
+                            class={styles.btnSecondaryFull}
+                            onclick={closeCartList}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {/if}
+    </div>
+{/if}
+
+<!-- FOOTER -->
+<footer class={styles.footer}>
+    <div class={styles.container}>
+        <div class={styles.footerContent}>
+            <div class={styles.footerCol}>
+                <div class={styles.footerLogo}>
+                    <span class={styles.logoIcon}>🚁</span>
+                    <span class={styles.logoText}>DRONERACK</span>
+                </div>
+                <p>
+                    Your trusted marketplace for drones, parts, and accessories.
+                </p>
+            </div>
+            <div class={styles.footerCol}>
+                <h4>Quick Links</h4>
+                <a href="#">About Us</a>
+                <a href="#">Contact</a>
+                <a href="#">FAQs</a>
+            </div>
+            <div class={styles.footerCol}>
+                <h4>Support</h4>
+                <a href="#">Shipping Info</a>
+                <a href="#">Returns</a>
+                <a href="#">Warranty</a>
+            </div>
+            <div class={styles.footerCol}>
+                <h4>Follow Us</h4>
+                <div class={styles.socialLinks}>
+                    <a href="#">Facebook</a>
+                    <a href="#">Twitter</a>
+                    <a href="#">Instagram</a>
+                </div>
+            </div>
+        </div>
+        <div class={styles.footerBottom}>
+            <p>© 2024 DroneRack. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
 
-    /* ====== ANIMATION KEYFRAMES ====== */
-    @keyframes fadeDown {
-        from {
-            opacity: 0;
-            transform: translateY(-12px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes fadeUp {
-        from {
-            opacity: 0;
-            transform: translateY(16px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes modalIn {
-        from {
-            opacity: 0;
-            transform: translateY(12px) scale(0.96);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    /* ====== LAYOUT ====== */
-
-    header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px 24px;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        backdrop-filter: blur(18px);
-        background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.9) 0%,
-            rgba(255, 255, 255, 0.75) 60%,
-            transparent 100%
-        );
-        border-bottom: 1px solid rgba(226, 232, 240, 0.7);
-        opacity: 0;
-        transform: translateY(-12px);
-    }
-
-    header.anim-in {
-        animation: fadeDown 420ms ease forwards;
-    }
-
-    .brand {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .logo {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    nav {
-        display: flex;
-        align-items: center;
-    }
-
-    nav a {
-        margin-right: 16px;
-        color: #0f172a;
-        text-decoration: none;
-        font-size: 14px;
-        position: relative;
-        padding-bottom: 2px;
-    }
-
-    nav a:last-child {
-        margin-right: 0;
-    }
-
-    nav a::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        bottom: -2px;
-        width: 0;
-        height: 2px;
-        border-radius: 999px;
-        background: linear-gradient(90deg, #0ea5e9, #22c55e);
-        transition: width 180ms ease;
-    }
-
-    nav a:hover::after {
-        width: 100%;
-    }
-
-    .cart-badge {
-        position: absolute;
-        top: -6px;
-        right: -8px;
-        background: #ef4444;
-        color: white;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 6px;
-        min-width: 18px;
-        text-align: center;
-    }
-
-    .hero {
-        padding: 36px 24px;
-        display: flex;
-        gap: 24px;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        opacity: 0;
-        transform: translateY(16px);
-    }
-
-    .hero.anim-in {
-        animation: fadeUp 460ms ease 80ms forwards;
-    }
-
-    .hero-left {
-        max-width: 640px;
-    }
-
-    .hero-right {
-        flex: 1;
-        min-width: 280px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .controls {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        margin: 18px 0;
-    }
-
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 18px;
-        padding: 12px 24px 40px;
-    }
-
-    .card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 6px 18px rgba(12, 20, 40, 0.06);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        transform: translateY(6px);
-        opacity: 0;
-        transition:
-            transform 160ms ease,
-            box-shadow 160ms ease,
-            border 160ms ease,
-            background 160ms ease;
-        border: 1px solid transparent;
-        cursor: pointer;
-    }
-
-    .card.anim-in {
-        animation: fadeUp 380ms ease forwards;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 28px rgba(12, 20, 40, 0.12);
-    }
-
-    .card img {
-        width: 100%;
-        height: 160px;
-        object-fit: cover;
-        transition: transform 220ms ease;
-    }
-
-    .card:hover img {
-        transform: scale(1.05);
-    }
-
-    .card-body {
-        padding: 12px 14px 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        flex: 1;
-    }
-
-    .price {
-        font-weight: 700;
-    }
-
-    .badge {
-        font-size: 12px;
-        padding: 6px 8px;
-        background: #eef2ff;
-        border-radius: 999px;
-    }
-
-    .footer {
-        padding: 22px 24px;
-        text-align: center;
-        font-size: 14px;
-        color: #475569;
-    }
-
-    /* ====== TOP VERTICAL LIST ====== */
-
-    .top-list-section {
-        padding: 0 24px 16px;
-        margin-top: -8px;
-    }
-
-    .top-list-card {
-        border-radius: 16px;
-        background: linear-gradient(135deg, #ffffff, #f8fafc);
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-        padding: 14px 16px;
-    }
-
-    .top-list-header {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin-bottom: 8px;
-    }
-
-    .top-list-title {
-        font-weight: 600;
-        font-size: 14px;
-        color: #0f172a;
-    }
-
-    .top-list-sub {
-        font-size: 12px;
-        color: #64748b;
-    }
-
-    .top-list-scroll {
-        max-height: 240px;
-        overflow-y: auto;
-        padding-right: 4px;
-    }
-
-    .top-list-scroll::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .top-list-scroll::-webkit-scrollbar-thumb {
-        border-radius: 999px;
-        background: rgba(148, 163, 184, 0.7);
-    }
-
-    .top-list-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 4px;
-        border-radius: 10px;
-        transition:
-            background 140ms ease,
-            transform 140ms ease;
-    }
-
-    .top-list-item:hover {
-        background: #f1f5f9;
-        transform: translateY(-1px);
-    }
-
-    .top-list-thumb {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        overflow: hidden;
-        flex-shrink: 0;
-    }
-
-    .top-list-thumb img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .top-list-meta {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .top-list-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: #0f172a;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-    }
-
-    .top-list-info {
-        font-size: 11px;
-        color: #64748b;
-    }
-
-    .top-list-btn {
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px solid #e2e8f0;
-        background: white;
-        font-size: 11px;
-        cursor: pointer;
-        transition:
-            background 120ms ease,
-            transform 120ms ease,
-            box-shadow 120ms ease;
-        white-space: nowrap;
-    }
-
-    .top-list-btn:hover {
-        background: #0ea5a4;
-        color: white;
-        border-color: transparent;
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(14, 165, 164, 0.35);
-    }
-
-    /* ====== BUTTONS ====== */
-
-    button {
-        cursor: pointer;
-    }
-
-    .btn-primary {
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-weight: 600;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        transition:
-            transform 140ms ease,
-            box-shadow 140ms ease,
-            filter 140ms ease;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-1px) scale(1.02);
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        filter: brightness(1.02);
-    }
-
-    .btn-disabled {
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: none;
-        background: #94a3b8;
-        color: #f1f5f9;
-        cursor: not-allowed;
-        filter: grayscale(20%);
-    }
-
-    .btn-ghost,
-    .btn-secondary {
-        padding: 12px 16px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        background: transparent;
-        transition:
-            background 140ms ease,
-            transform 140ms ease,
-            box-shadow 140ms ease,
-            border-color 140ms ease;
-    }
-
-    .btn-ghost:hover,
-    .btn-secondary:hover {
-        background: #f8fafc;
-        transform: translateY(-1px);
-        box-shadow: 0 10px 20px rgba(148, 163, 184, 0.25);
-        border-color: #cbd5f5;
-    }
-
-    .btn-small-primary {
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 0;
-        background: #111827;
-        color: white;
-        transition:
-            transform 120ms ease,
-            box-shadow 120ms ease;
-    }
-
-    .btn-small-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.35);
-    }
-
-    .btn-small-ghost {
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        background: transparent;
-        transition:
-            background 120ms ease,
-            transform 120ms ease,
-            border-color 120ms ease;
-    }
-
-    .btn-small-ghost:hover {
-        background: #f8fafc;
-        transform: translateY(-1px);
-        border-color: #cbd5f5;
-    }
-
-    /* modal */
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 60;
-        animation: fadeDown 160ms ease forwards;
-    }
-
-    .modal {
-        background: white;
-        width: min(920px, 96%);
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 22px 60px rgba(15, 23, 42, 0.4);
-        animation: modalIn 220ms ease forwards;
-    }
-
-    /* ====== PAGINATION ====== */
-
-    .pagination {
-        padding: 4px 24px 28px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 14px;
-    }
-
-    .pagination-btn {
-        padding: 8px 12px;
-        border-radius: 999px;
-        border: 1px solid #e2e8f0;
-        background: white;
-        font-size: 13px;
-    }
-
-    .pagination-btn:disabled {
-        opacity: 0.4;
-        cursor: default;
-    }
-
-    .pagination-pages {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .page-dot {
-        min-width: 32px;
-        height: 32px;
-        border-radius: 999px;
-        border: 1px solid #e2e8f0;
-        background: white;
-        font-size: 13px;
-    }
-
-    .page-dot.active {
-        background: #0ea5a4;
-        border-color: transparent;
-        color: white;
-        font-weight: 600;
-    }
-
-    .page-ellipsis {
-        padding: 0 4px;
-        font-size: 14px;
-        color: #94a3b8;
-    }
-
-    .btn-disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-        background-color: grey !important;
-    }
-
-    @media (max-width: 700px) {
-        .hero {
-            padding: 18px;
-        }
-        .hero-left {
-            max-width: 100%;
-        }
-        .card img {
-            height: 140px;
-        }
-        .controls {
-            flex-wrap: wrap;
-        }
-    }
-</style>

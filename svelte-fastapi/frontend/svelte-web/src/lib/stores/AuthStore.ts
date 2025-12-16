@@ -48,6 +48,7 @@ export const adminAuthStore = {
     if (browser) {
       localStorage.removeItem("admin_access_token");
       localStorage.removeItem("admin_refresh_token");
+      localStorage.removeItem("employee_name")
       window.location.href = "/employees/login"
     }
     set({ token: null, role: null, id: null, isAuthenticated: false });

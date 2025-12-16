@@ -7,6 +7,8 @@
     import { adminAuthStore } from "$lib/stores/AuthStore";
     import { adminApi } from "../../hooks/apiFetch";
     import Header from "../../components/header/header.svelte";
+    import ModalConfirm from "../../components/modal-confirm/ModalConfirm.svelte";
+    import MessageModal from "../../components/modal-success/MessageModal.svelte";
 
     interface OrderItem {
         id: string;
@@ -22,6 +24,10 @@
     let loading = $state(false);
     let message = $state("");
     let totalRecords = $state(0);
+    let employee_name = $state("");
+    let isDeleteModalOpen = $state(false);
+    let deletingItemId: string | null = $state(null);
+    let isDeleteItem = $state(false);
 
     let pageSize = 10;
     let page = 1;
@@ -57,6 +63,7 @@
     function handleLogout() {
         localStorage.removeItem("admin_access_token");
         localStorage.removeItem("admin_refresh_token");
+        localStorage.removeItem("employee_name");
         goto("/employees/login");
     }
 
@@ -79,31 +86,47 @@
         }
     }
 
-    /** 🔥 DELETE ORDER ITEM */
-    async function deleteItem(id: string) {
-        if (!confirm("Bạn có chắc chắn muốn xóa Order Item này?")) return;
+    function openDeleteModal(id: string) {
+        deletingItemId = id;
+        isDeleteModalOpen = true;
+    }
+
+    function onCloseModal() {
+        isDeleteModalOpen = false;
+        isDeleteItem = false;
+    }
+
+    async function deleteItem() {
+        if (!deletingItemId) return;
+
         try {
             const res = await adminApi(
-                `${import.meta.env.VITE_API_BASE_URL}/order_items/${id}`,
-                {
-                    method: "DELETE",
-                },
+                `${import.meta.env.VITE_API_BASE_URL}/order_items/${deletingItemId}`,
+                { method: "DELETE" },
             );
 
-            if (!res.ok) throw new Error("Xóa thất bại!");
+            if (!res.ok) throw new Error("Delete failed");
 
-            alert("Xóa thành công!");
-            fetchItems(); // reload lại dữ liệu
+            message = "Deleted successfully!";
+            isDeleteItem = true;
+            fetchItems();
         } catch (err) {
             console.error(err);
-            alert("Không thể xóa Order Item. Kiểm tra log.");
+            message = "Unable to delete Order Item.";
+            isDeleteItem = true;
+        } finally {
+            isDeleteModalOpen = false;
+            deletingItemId = null;
         }
     }
 
-    onMount(() => fetchItems());
+    onMount(() => {
+        fetchItems();
+        employee_name = localStorage.getItem("employee_name") || "";
+    });
 </script>
 
-<Header {handleLogout} username="tuanchu" />
+<Header {handleLogout} username={employee_name} />
 <div style="display: flex; min-height: 100vh">
     <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
     <div style="width: 100%; background: #f5f5f5; padding: 20px">
@@ -132,7 +155,9 @@
 
             <button
                 onclick={handleSearch}
-                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+                >Search</button
+            >
         </div>
 
         <div class={styles.tableContainer}>
@@ -176,8 +201,11 @@
                                 </td>
                                 <td>
                                     <button
-                                        style="color: white; background: red; padding: 6px 10px; border-radius: 4px;"
-                                        onclick={() => deleteItem(item.id)}
+                                        style="color: white; background: red; padding: 6px 10px; border-radius: 4px; cursor: pointer"
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            openDeleteModal(item.id);
+                                        }}
                                     >
                                         Delete
                                     </button>
@@ -199,4 +227,11 @@
             {/if}
         </div>
     </div>
+    <ModalConfirm
+        show={isDeleteModalOpen}
+        message="Are you sure you want to delete this order item?"
+        onConfirm={deleteItem}
+        onCancel={() => (isDeleteModalOpen = false)}
+    />
+    <MessageModal show={isDeleteItem} {message} onClose={onCloseModal} />
 </div>

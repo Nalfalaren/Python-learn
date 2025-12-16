@@ -78,7 +78,8 @@ def login(employee_info: AccountSchema, db: Session = Depends(get_db)):
         "message": "✅ Login successful",
         "access_token": tokens['access_token'],
         "refresh_token": tokens['refresh_token'],
-        "role": employee.role
+        "role": employee.role,
+        "employee_name" : employee.employee_name
     }
 
 @router.post("/refresh")

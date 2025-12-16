@@ -47,7 +47,7 @@
         if (search) url.searchParams.set("search_product", search);
         if (cursor) url.searchParams.set("next_cursor", cursor);
 
-        const newUrl = `?${url.toString()}`;
+        const newUrl = `?${url.searchParams.toString()}`;
 
         goto(newUrl, { replaceState: true, noScroll: true });
         return url.toString();
@@ -316,7 +316,7 @@
     }
 
     .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #0c59b6;
         border-radius: 24px;
         padding: 48px 32px;
         margin-bottom: 32px;
@@ -428,7 +428,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #0c59b6;
         color: white;
         transition: all 0.2s;
     }
@@ -589,7 +589,7 @@
     }
 
     .card-category {
-        color: #667eea;
+        color: #0c59b6;
         font-size: 12px;
         font-weight: 600;
         text-transform: uppercase;
@@ -682,7 +682,7 @@
     .price-value {
         font-size: 22px;
         font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #0c59b6;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -690,7 +690,7 @@
 
     .btn-buy {
         padding: 12px 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #0c59b6;
         color: white;
         font-weight: 600;
         font-size: 14px;

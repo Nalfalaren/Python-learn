@@ -9,6 +9,7 @@
   import { adminApi } from "../../hooks/apiFetch";
   import MessageModal from "../../components/modal-success/MessageModal.svelte";
   import Header from "../../components/header/header.svelte";
+  import ModalConfirm from "../../components/modal-confirm/ModalConfirm.svelte";
 
   interface Product {
     id: string;
@@ -26,6 +27,7 @@
   let products: Product[] = $state([]);
   let loading = $state(false);
   let message = $state("");
+  let employee_name = $state("");
 
   let searchId = $state("");
   let searchName = $state("");
@@ -38,6 +40,9 @@
   let pageSize = 10;
 
   let showModal = $state(false);
+  let isDeleteModalOpen = $state(false);
+  let deletingItemId: string | null = $state(null);
+  let isDeleteItem = $state(false);
 
   // === Helper ===
   function showMessage(msg: string) {
@@ -92,21 +97,40 @@
     fetchProducts(prevCursor);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  async function handleDelete() {
+    if (!deletingItemId) return;
+    try {
+      const res = await adminApi(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/products/${deletingItemId}`,
+        { method: "DELETE" },
+      );
 
-    const res = await adminApi(
-      `${import.meta.env.VITE_API_BASE_URL}/admin/products/${id}`,
-      { method: "DELETE" },
-    );
-
-    if (res.ok) {
-      showMessage("✅ Product deleted successfully!");
-      fetchProducts(currentCursor);
-    } else {
-      const error = await res.json();
-      showMessage(error.detail || "❌ Failed to delete product.");
+      if (res.ok) {
+        showMessage("✅ Product deleted successfully!");
+        isDeleteItem = true;
+        fetchProducts(currentCursor);
+      } else {
+        const error = await res.json();
+        showMessage(error.detail || "❌ Failed to delete product.");
+      }
+    } catch (error) {
+      console.log(error);
+      message = "Unable to delete Product.";
+      isDeleteItem = true;
+    } finally {
+      isDeleteModalOpen = false;
+      deletingItemId = null;
     }
+  }
+
+  function openDeleteModal(id: string) {
+    deletingItemId = id;
+    isDeleteModalOpen = true;
+  }
+
+  function onCloseModal() {
+    isDeleteModalOpen = false;
+    isDeleteItem = false;
   }
 
   async function handleLogout() {
@@ -124,17 +148,19 @@
     } finally {
       localStorage.removeItem("admin_access_token");
       localStorage.removeItem("admin_refresh_token");
+      localStorage.removeItem("employee_name");
       goto("/employees/login");
     }
   }
 
   onMount(() => {
     fetchProducts(null);
+    employee_name = localStorage.getItem("employee_name") || '';
   });
 </script>
 
 <!-- === UI === -->
-<Header {handleLogout} username="tuanchu" />
+<Header {handleLogout} username={employee_name || ""} />
 <div style="display: flex; min-height: 100vh">
   <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
   <div style="width: 100%; background: #f5f5f5; padding: 20px">
@@ -165,86 +191,95 @@
       </div>
       <button
         onclick={handleSearch}
-        style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+        style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+        >Search</button
+      >
       {#if $adminAuthStore.role === "ADMIN"}
         <button
           style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
-          onclick={() => goto("/employees/signup")}>+ Add Products</button
+          onclick={() => goto("/products/add")}>+ Add Products</button
         >
       {/if}
     </div>
-<!-- TABLE -->
-<div class={styles.tableContainer}>
-  {#if loading}
-    <p>Loading products...</p>
-  {:else if $adminAuthStore.role !== "ADMIN"}
-    <div class={styles.forbiddenBox}>
-      <h2>403 – Forbidden</h2>
-      <p>You do not have permission to access this page.</p>
-    </div>
-  {:else if products.length === 0}
-    <p>No products found.</p>
-  {:else}
-    <table class={styles.table}>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Product Name</th>
-          <th>Category</th>
-          <th>Price ($)</th>
-          <th>Rating</th>
-          <th>Stock</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each products as p}
-          <tr onclick={() => goto(`/products/${p.id}`)}>
-            <td>{p.id}</td>
-            <td>{p.product_name}</td>
-            <td>{p.category}</td>
-            <td>{p.price.toFixed(2)}</td>
-            <td>{p.rating}</td>
-            <td>{p.stock || 0}</td>
-            <td>
-              <button
-                onclick={(event) => {
-                  event.stopPropagation();
-                  goto(`/products/${p.id}/edit`);
-                }}
-              >
-                Edit
-              </button>
+    <!-- TABLE -->
+    <div class={styles.tableContainer}>
+      {#if loading}
+        <p>Loading products...</p>
+      {:else if $adminAuthStore.role !== "ADMIN"}
+        <div class={styles.forbiddenBox}>
+          <h2>403 – Forbidden</h2>
+          <p>You do not have permission to access this page.</p>
+        </div>
+      {:else if products.length === 0}
+        <p>No products found.</p>
+      {:else}
+        <table class={styles.table}>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Price ($)</th>
+              <th>Rating</th>
+              <th>Stock</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each products as product}
+              <tr onclick={() => goto(`/products/${product.id}`)}>
+                <td>{product.id}</td>
+                <td>{product.product_name}</td>
+                <td>{product.category}</td>
+                <td>{product.price.toFixed(2)}</td>
+                <td>{product.rating}</td>
+                <td>{product.stock || 0}</td>
+                <td>
+                  <button
+                    onclick={(event) => {
+                      event.stopPropagation();
+                      goto(`/products/${product.id}/edit`);
+                    }}
+                  >
+                    Edit
+                  </button>
 
-              <button
-                onclick={(event) => {
-                  event.stopPropagation();
-                  handleDelete(p.id);
-                }}
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+                  <button
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      openDeleteModal(product.id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
 
-    <!-- Pagination -->
-    <div class={styles.paginationControls}>
-      <button onclick={handlePrev} disabled={cursorStack.length === 0}>
-        Previous
-      </button>
-      <button
-        onclick={handleNext}
-        disabled={!nextCursor || loadedCount >= totalRecords}
-      >
-        Next
-      </button>
+        <!-- Pagination -->
+        <div class={styles.paginationControls}>
+          <button onclick={handlePrev} disabled={cursorStack.length === 0}>
+            Previous
+          </button>
+          <button
+            onclick={handleNext}
+            disabled={!nextCursor || loadedCount >= totalRecords}
+          >
+            Next
+          </button>
+        </div>
+      {/if}
     </div>
-  {/if}
-</div>
-</div>
+  </div>
+  <ModalConfirm
+    show={isDeleteModalOpen}
+    message="Are you sure you want to delete this order item?"
+    onConfirm={handleDelete}
+    onCancel={() => (isDeleteModalOpen = false)}
+  />
+  <MessageModal show={isDeleteItem} {message} onClose={onCloseModal} />
 </div>
 
 <MessageModal show={showModal} {message} onClose={() => (showModal = false)} />

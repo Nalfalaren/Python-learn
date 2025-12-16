@@ -24,6 +24,7 @@
     let orders: Order[] = $state([]);
     let loading = $state(false);
     let message = $state("");
+    let employee_name = $state("")
     let totalRecords = $state(0);
 
     let pageSize = 10;
@@ -159,11 +160,14 @@
         }
     }
 
-    onMount(fetchOrders);
+    onMount(() => {
+        fetchOrders()
+        employee_name = localStorage.getItem("employee_name")
+    });
 </script>
 
 <!-- HEADER -->
-<Header {handleLogout} username="tuanchu" />
+<Header {handleLogout} username={employee_name || ""} />
 <div style="display: flex; min-height: 100vh">
     <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
     <div style="width: 100%; background: #f5f5f5; padding: 20px">
@@ -193,7 +197,9 @@
 
             <button
                 onclick={handleSearch}
-                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)">Search</button>
+                style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+                >Search</button
+            >
         </div>
 
         <!-- TABLE -->

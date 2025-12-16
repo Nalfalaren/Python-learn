@@ -7,10 +7,10 @@
 </script>
 
 {#if visible}
-  <div class="overlay" on:click={onClose}>
-    <div class="modal" on:click|stopPropagation>
+  <div class="overlay" onclick={onClose}>
+    <div class="modal">
       <p>{message}</p>
-      <button class="close-btn" on:click={onClose}>Close</button>
+      <button class="close-btn" onclick={onClose}>Close</button>
     </div>
   </div>
 {/if}

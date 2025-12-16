@@ -22,6 +22,7 @@
   let customers: Customer[] = $state([]);
   let loading = $state(false);
   let message = $state("");
+  let employee_name = $state("");
 
   let searchId = $state("");
   let searchName = $state("");
@@ -29,15 +30,11 @@
   const pageSize = 10;
   let totalRecords = $state(0);
 
-  // Cursor-based pagination
-  let cursorStack: (string | null)[] = [];
-  let nextCursor: string | null = null;
+  let cursorStack: (string | null)[] = $state([]);
+  let nextCursor: string | null = $state(null);
   let currentCursor: string | null = null;
   let loadedCount = $state(0);
 
-  /** ============================
-   *  Helpers
-   * ============================ */
   function buildUrl(cursor: string | null = null) {
     const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/customers`);
     url.searchParams.set("limit", String(pageSize));
@@ -50,9 +47,6 @@
     return url;
   }
 
-  /** ============================
-   *  Fetch Customers
-   * ============================ */
   async function fetchCustomers(cursor: string | null = null) {
     loading = true;
     try {
@@ -76,9 +70,6 @@
     }
   }
 
-  /** ============================
-   *  Pagination
-   * ============================ */
   function nextPage() {
     if (!nextCursor) return;
     cursorStack.push(currentCursor);
@@ -91,9 +82,6 @@
     fetchCustomers(prevCursor);
   }
 
-  /** ============================
-   *  Search
-   * ============================ */
   function handleSearch() {
     cursorStack = [];
     currentCursor = null;
@@ -106,11 +94,12 @@
       goto("/employees/login");
       return;
     }
+    employee_name = localStorage.getItem("employee_name") || ''
     fetchCustomers(null);
   });
 </script>
 
-<Header handleLogout={() => adminAuthStore.logout()} username="tuanchu" />
+<Header handleLogout={() => adminAuthStore.logout()} username={employee_name ?? ""}/>
 <div style="display: flex; min-height: 100vh">
   <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
   <div style="width: 100%; background: #f5f5f5; padding: 20px">

@@ -106,7 +106,7 @@
     onMount(() => fetchOrders());
 </script>
 
-<Header handleLogout={() => adminAuthStore.logout()} username="tuanchu" />
+<Header handleLogout={() => adminAuthStore.logout()} username={localStorage.getItem("employee_name") || ''} />
 <div style="display: flex; min-height: 100vh">
     <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
     <div style="width: 100%; background: #f5f5f5; padding: 20px">
@@ -171,7 +171,7 @@
                                 <td>{order.email}</td>
                                 <td>{order.phone}</td>
                                 <td>{order.address}</td>
-                                <td>{order.total}đ</td>
+                                <td>{order.total}$</td>
                                 <td>{order.status.toUpperCase()}</td>
                                 <td>
                                     <button

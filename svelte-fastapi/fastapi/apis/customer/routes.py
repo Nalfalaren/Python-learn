@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 from fastapi.responses import JSONResponse
 from passlib.hash import argon2 
 from fastapi import APIRouter, Body, HTTPException, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 import uuid
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_token, get_current_user, handle_login_role, require_admin
@@ -118,7 +119,8 @@ def get_customers(
     if search_id:
         query = query.filter(CustomerBase.id == search_id)
     if search_name:
-        query = query.filter(CustomerBase.customer_name.like(f"%{search_name}%"))
+        query = query.filter(func.lower(CustomerBase.customer_name).like(f"%{search_name.lower()}%")
+)
 
     # Cursor pagination
     if next_cursor:

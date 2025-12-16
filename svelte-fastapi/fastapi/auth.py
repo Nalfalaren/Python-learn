@@ -34,6 +34,8 @@ def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         exp = payload.get("exp")
+        if payload.get("token_type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
         if exp is None:
             raise HTTPException(status_code=StatusCode.HTTP_UNAUTHORIZE_401.value, detail="Token missing expiration")
 
@@ -60,12 +62,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 
 def handle_login_role(employee_info: any):
     access_token = create_token(
-        {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id},
+        {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id, "token_type": "access"},
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
     refresh_token = create_token(
-        {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id},
+        {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id, "token_type": "refresh"},
         timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     )
 

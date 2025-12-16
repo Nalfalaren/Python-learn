@@ -23,7 +23,7 @@
 
 <div class="menu-wrapper" bind:this={menuRef}>
     <button class="menu-btn" onclick={toggle}>
-        {username}
+        Welcome {username}
         <span class="arrow"></span>
     </button>
 

@@ -8,7 +8,9 @@
   import { adminAuthStore } from "$lib/stores/AuthStore";
   import { adminApi } from "../../hooks/apiFetch";
   import UserMenu from "../../components/user-menu/UserMenu.svelte";
-    import Header from "../../components/header/header.svelte";
+  import Header from "../../components/header/header.svelte";
+  import ModalConfirm from "../../components/modal-confirm/ModalConfirm.svelte";
+  import MessageModal from "../../components/modal-success/MessageModal.svelte";
 
   interface Employee {
     id: string;
@@ -21,21 +23,26 @@
 
   // === Reactive state ===
   let employees: Employee[] = $state([]);
+  let employee_name = $state("");
   let loading = $state(false);
   let message = $state("");
   let totalRecords = $state(0);
 
   // pagination states
   let pageSize = 10;
-  let nextCursor: string | null = null;
+  let nextCursor: string | null = $state(null);
   let currentCursor: string | null = null;
-  let cursorStack: (string | null)[] = []; // keep history for Previous
+  let cursorStack: (string | null)[] = $state([]); // keep history for Previous
   let loadedCount = $state(0);
 
   // search
   let searchId = $state("");
   let searchName = $state("");
   let searchRole = $state("");
+
+  let isDeleteModalOpen = $state(false);
+  let deletingItemId: string | null = $state(null);
+  let isDeleteItem = $state(false);
 
   // === Helper ===
   function buildUrl(cursor: string | null = null) {
@@ -89,19 +96,40 @@
     fetchEmployees(null);
   }
 
-  async function handleDelete(id: string) {
-    const response = await adminApi(
-      `${import.meta.env.VITE_API_BASE_URL}/employee/${id}`,
-      {
-        method: "DELETE",
-      },
-    );
+  function openDeleteModal(id: string) {
+    deletingItemId = id;
+    isDeleteModalOpen = true;
+  }
 
-    if (response.ok) {
-      message = "Employee deleted";
-      await fetchEmployees(currentCursor); // reload current page
-    } else {
-      message = "Delete failed";
+  function onCloseModal() {
+    isDeleteModalOpen = false;
+    isDeleteItem = false;
+  }
+
+  async function handleDelete() {
+    if (!deletingItemId) return;
+    try {
+      const response = await adminApi(
+        `${import.meta.env.VITE_API_BASE_URL}/employee/${deletingItemId}`,
+        {
+          method: "DELETE",
+        },
+      );
+      if (response.ok) {
+        message = "Employee deleted";
+        isDeleteItem = true;
+        await fetchEmployees(currentCursor);
+      } else {
+        message = "Delete failed";
+        isDeleteItem = true;
+      }
+    } catch (error) {
+      console.error(error);
+      message = "Unable to delete Employee.";
+      isDeleteItem = true;
+    } finally {
+      isDeleteModalOpen = false;
+      deletingItemId = null;
     }
   }
 
@@ -130,6 +158,7 @@
     } finally {
       localStorage.removeItem("admin_access_token");
       localStorage.removeItem("admin_refresh_token");
+      localStorage.removeItem("employee_name");
       goto("/employees/login");
     }
   }
@@ -138,12 +167,13 @@
     if (!$adminAuthStore.isAuthenticated) {
       goto("/employees/login");
     }
+    employee_name = localStorage.getItem("employee_name") ?? "";
     fetchEmployees(null);
   });
 </script>
 
 <!-- === UI === -->
-<Header handleLogout={handleLogout} username="tuanchu" />
+<Header {handleLogout} username={employee_name ?? ""} />
 <div style="display: flex; min-height: 100vh">
   <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
   <div style="width: 100%; background: #f5f5f5; padding: 20px">
@@ -175,7 +205,9 @@
         />
       </div>
       <div class={styles.tableSearchInput}>
-        <label style="color: rgba(0, 0, 0, 0.88); display: flex; flex-direction: column; gap: 4px; margin-bottom: 25px">
+        <label
+          style="color: rgba(0, 0, 0, 0.88); display: flex; flex-direction: column; gap: 4px; margin-bottom: 25px"
+        >
           Search Role
           <select bind:value={searchRole} class={styles.selectInput}>
             <option value="" disabled selected hidden>Select role…</option>
@@ -187,12 +219,16 @@
       <button
         onclick={handleSearch}
         style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
-        >Search</button
       >
+        Search
+      </button>
       {#if $adminAuthStore.role === "ADMIN"}
         <button
           style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
-          onclick={() => goto("/employees/signup")}>+ Add Employee</button
+          onclick={(e) => {
+            e.stopPropagation();
+            goto("/employees/signup");
+          }}>+ Add Employee</button
         >
       {/if}
     </div>
@@ -240,13 +276,7 @@
                       class="delete-btn"
                       onclick={(e) => {
                         e.stopPropagation();
-                        if (
-                          confirm(
-                            "Are you sure to delete this employee?",
-                          )
-                        ) {
-                          handleDelete(emp.id);
-                        }
+                        openDeleteModal(emp.id);
                       }}
                       disabled={emp.role === "ADMIN"}
                     >
@@ -274,6 +304,13 @@
       {/if}
     </div>
   </div>
+  <ModalConfirm
+    show={isDeleteModalOpen}
+    message="Are you sure you want to delete this employee?"
+    onConfirm={handleDelete}
+    onCancel={() => (isDeleteModalOpen = false)}
+  />
+  <MessageModal show={isDeleteItem} {message} onClose={onCloseModal} />
 </div>
 
 <style>

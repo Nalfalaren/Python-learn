@@ -17,29 +17,24 @@
         stock?: number;
     };
 
-    let drones: Product[] = [];
-    let loading = true;
-    let error: string | null = null;
+    let drones = $state<Product[]>([]);
+    let loading = $state(true);
+    let error = $state<string | null>(null);
 
-    // Pagination (Cursor-based)
-    let limit = 6;
-    let total = 0;
-    let currentCursor: string | null = null;
-    let nextCursor: string | null = null;
-    let cursorStack: (string | null)[] = []; // Stack to track previous cursors
-    let currentPage = 1;
+    let limit = $state(6);
+    let total = $state(0);
+    let currentCursor = $state<string | null>(null);
+    let nextCursor = $state<string | null>(null);
+    let cursorStack = $state<(string | null)[]>([]);
+    let currentPage = $state(1);
 
-    // Search/Filter
-    let search = "";
+    let search = $state("");
+    let selected = $state<Product | null>(null);
+    let showModal = $state(false);
 
-    // Modal
-    let selected: Product | null = null;
-    let showModal = false;
-
-    // Computed
-    $: totalPages = Math.max(1, Math.ceil(total / limit));
-    $: hasPrev = currentPage > 1;
-    $: hasNext = nextCursor !== null && currentPage < totalPages;
+    let totalPages = $derived(Math.max(1, Math.ceil(total / limit)));
+    let hasPrev = $derived(currentPage > 1);
+    let hasNext = $derived(nextCursor !== null && currentPage < totalPages);
 
     const buildUrl = (cursor: string | null = null) => {
         const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/products`);
@@ -203,7 +198,7 @@
                         />
                         <div class="card-badge">
                             {#if item.stock === 0}
-                                <span class="badge sold-out">Sold Out</span>
+                                <span class="badge sold-out">OUT OF STOCK</span>
                             {:else if item.stock && item.stock < 5}
                                 <span class="badge low-stock">Low Stock</span>
                             {:else if item.stock && item.stock > 10}
@@ -863,7 +858,7 @@
     }
 
     .badge.sold-out {
-        background: rgba(239, 68, 68, 0.9);
+        background: #999;
         color: white;
     }
 

@@ -3,19 +3,20 @@
   import styles from "$lib/styles/update-employee/update.module.css";
   import { goto } from "$app/navigation";
   import { adminAuthStore } from "$lib/stores/AuthStore";
-    import { adminApi } from "../../../../hooks/apiFetch";
+  import { adminApi } from "../../../../hooks/apiFetch";
 
-  let employeeId: string;
-  let employee = {
+  let { params } = $props();
+  
+  let employeeId = $state(params.id);
+  let employee = $state({
     employee_name: "",
     role: "",
     email: "",
     is_active: "",
-  };
-
-  export let params;
-  employeeId = params.id;
-  let active_status = false;
+  });
+  
+  let active_status = $state(false);
+  let message = $state("");
 
   onMount(async () => {
     const res = await adminApi(
@@ -26,7 +27,7 @@
       employee = await res.json();
       active_status = employee.is_active === "Active";
     } else {
-      alert("❌ Failed to load employee data");
+      message = "❌ Failed to load employee data";
     }
   });
 
@@ -40,11 +41,11 @@
     );
 
     if (res.ok) {
-      alert("✅ Employee updated successfully!");
+      message = "✅ Employee updated successfully!";
       goto("/employees");
     } else {
       const err = await res.json().catch(() => ({}));
-      alert(`❌ Error: ${err.detail || "Update failed"}`);
+      message = `❌ Error: ${err.detail || "Update failed"}`;
     }
   }
 
@@ -103,7 +104,7 @@
       </label>
     </div>
 
-    <button on:click={handleUpdate} class={styles.button}>
+    <button onclick={handleUpdate} class={styles.button}>
       💾 Save Changes
     </button>
   </div>

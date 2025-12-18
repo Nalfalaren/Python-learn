@@ -2,24 +2,27 @@
   import { goto } from "$app/navigation";
   import { CartStore } from "$lib/stores/CartStore";
   import { get } from "svelte/store";
-  import { authCustomer } from "$lib/stores/AuthCustomer"
+  import { authCustomer } from "$lib/stores/AuthCustomer";
   import { clientApi } from "../../hooks/apiFetch";
+  import MessageModal from "../../components/modal-success/MessageModal.svelte";
 
   let cart = get(CartStore);
 
   // Customer form
-  let name = "";
-  let email = "";
-  let phone = "";
-  let address = "";
+  let name = $state("");
+  let email = $state("");
+  let phone = $state("");
+  let address = $state("");
+  let message = $state("");
+  let isCloseModal = $state(false);
 
-  $: total = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  let total = $derived(cart.reduce((sum, i) => sum + i.price * i.quantity, 0));
   async function handleCheckout() {
     if (!name || !email || !phone || !address) {
-      alert("Please fill in all fields");
+      message = "Please fill in all fields";
       return;
     }
-    let customer_id = $authCustomer.id
+    let customer_id = $authCustomer.id;
     try {
       const payload = {
         customer: { customer_id, name, email, phone, address },
@@ -30,24 +33,36 @@
           price: i.price,
         })),
       };
-      const token = localStorage.getItem('accessToken')
-      const res = await clientApi(`${import.meta.env.VITE_API_BASE_URL}/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      });
+      const token = localStorage.getItem("accessToken");
+      const res = await clientApi(
+        `${import.meta.env.VITE_API_BASE_URL}/checkout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
 
       if (res.ok) {
-        alert("Order placed successfully!");
+        message = "Order placed successfully!";
+        isCloseModal = true
         CartStore.set([]);
-        goto("/");
       } else {
-        const error = await res.json()
-        alert(error.detail || "Failed to place order");
+        const error = await res.json();
+        message = error.detail || "Failed to place order";
+        isCloseModal = true
       }
     } catch (e) {
       console.error(e);
     }
+  }
+
+  function onClose() {
+    isCloseModal = false;
+    goto("/");
   }
 </script>
 
@@ -70,14 +85,20 @@
                 <span class="qty">x{item.quantity}</span>
               </div>
 
-              <strong class="price">{Number(item.price * item.quantity).toFixed(2).replace(/\.00$/, "") + "$"}</strong>
+              <strong class="price"
+                >{Number(item.price * item.quantity)
+                  .toFixed(2)
+                  .replace(/\.00$/, "") + "$"}</strong
+              >
             </li>
           {/each}
         </ul>
 
         <div class="total-box">
           <span>Total</span>
-          <strong class="total">{Number(total).toFixed(2).replace(/\.00$/, "") + "$"}</strong>
+          <strong class="total"
+            >{Number(total).toFixed(2).replace(/\.00$/, "") + "$"}</strong
+          >
         </div>
       {/if}
     </section>
@@ -113,6 +134,7 @@
     </section>
   </div>
 </div>
+<MessageModal {message} {onClose} show={isCloseModal} />
 
 <style>
   /* PAGE LAYOUT */

@@ -1,9 +1,6 @@
 <script lang="ts">
-  export let show = false;
-  export let message = "";
-  export let onClose = () => {};
-
-  $: visible = show && message.length > 0;
+  let { show, message, onClose } = $props()
+  let visible = $derived(show && message.length > 0);
 </script>
 
 {#if visible}

@@ -106,7 +106,7 @@
 }
 
 .searchBar:focus-within {
-    border-color: #f47800;
+    border-color: #FCBD01;
 }
 
 .headerBtn {
@@ -139,7 +139,7 @@
     position: absolute;
     top: -5px;
     right: -8px;
-    background: #f47800;
+    background: #FCBD01;
     color: white;
     border-radius: 50%;
     padding: 3px 2px;
@@ -173,7 +173,7 @@
 }
 
 .navItem {
-    background: #f47800 !important;
+    background: #FCBD01 !important;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -314,8 +314,8 @@
 
 .viewAllBtn {
     background: transparent;
-    border: 2px solid #f47800;
-    color: #f47800;
+    border: 2px solid #FCBD01;
+    color: #333333;
     padding: 8px 20px;
     border-radius: 20px;
     cursor: pointer;
@@ -324,7 +324,7 @@
 }
 
 .viewAllBtn:hover {
-    background: #f47800;
+    background: #FCBD01;
     color: white;
 }
 
@@ -365,7 +365,7 @@
     position: absolute;
     top: 10px;
     left: 10px;
-    background: #f47800;
+    background: #FCBD01;
     color: white;
     padding: 6px 12px;
     border-radius: 20px;
@@ -406,7 +406,7 @@
 }
 
 .dealPriceDetail {
-    color: #f47800 !important;
+    color: #FCBD01 !important;
     margin-left: 4px;
 }
 
@@ -506,21 +506,32 @@
 }
 
 .discountBadge,
-.outOfStockBadge {
+.outOfStockBadge,
+.hotBadge {
     position: absolute;
     top: 10px;
-    right: 10px;
-    background: #f47800;
-    color: white;
+    left: 10px;
+    background: #FCBD01;
+    color: #191C1F;
     padding: 5px 10px;
     border-radius: 15px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     z-index: 1;
 }
 
 .outOfStockBadge {
     background: #999;
+    color: white;
+}
+
+.hotBadge{
+    top: 40px;
+    left: 10px;
+    font-size: 11px;
+    background: #EE5858;
+    color: #FFFFFF;
+    z-index: 1;
 }
 
 .productImage {
@@ -574,7 +585,7 @@
 
 .actionBtn:hover {
     transform: scale(1.1);
-    background: #f47800;
+    background: #FCBD01;
 }
 
 .actionBtn:disabled {
@@ -637,9 +648,10 @@ button {
 
 .productCategory {
     font-size: 11px;
-    color: #666;
+    color: #0c59b6;
     text-transform: uppercase;
     margin-bottom: 5px;
+    font-weight: 600;
 }
 
 .productName {
@@ -693,7 +705,7 @@ button {
 .priceCurrent {
     font-size: 18px;
     font-weight: 700;
-    color: #f47800;
+    color: #0c59b6;
 }
 
 .priceOld {
@@ -754,7 +766,7 @@ button {
 }
 
 .modalClose:hover {
-    background: #f47800;
+    background: #FCBD01;
     color: white;
 }
 
@@ -825,7 +837,7 @@ button {
 .priceLarge {
     font-size: 32px;
     font-weight: 700;
-    color: #f47800;
+    color: #0c59b6
 }
 
 .priceOldLarge {
@@ -967,7 +979,7 @@ button {
 .cartItemPrice {
     font-size: 18px;
     font-weight: 700;
-    color: #f47800;
+    color: #0c59b6;
     margin-bottom: 10px;
 }
 
@@ -1001,7 +1013,7 @@ button {
 .totalFinal {
     font-size: 22px;
     font-weight: 700;
-    color: #f47800;
+    color: #0c59b6;
     padding-top: 10px;
 }
 
@@ -1041,80 +1053,6 @@ button {
 .loginRequired p {
     color: #666;
     margin-bottom: 25px;
-}
-
-/* FOOTER */
-.footer {
-    background: #232f3e;
-    color: white;
-    padding: 40px 0 20px;
-    margin-top: 50px;
-}
-
-.footerContent {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 40px;
-    margin-bottom: 30px;
-}
-
-.footerCol h4 {
-    margin: 0 0 15px 0;
-    font-size: 16px;
-}
-
-.footerCol a {
-    display: block;
-    color: #aaa;
-    text-decoration: none;
-    margin-bottom: 10px;
-    font-size: 14px;
-    transition: color 0.2s;
-}
-
-.footerCol a:hover {
-    color: #f47800;
-}
-
-.footerCol p {
-    color: #aaa;
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.footerLogo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.logoIcon {
-    font-size: 32px;
-}
-
-.logoText {
-    font-size: 20px;
-    font-weight: 700;
-    color: #f47800;
-}
-
-.socialLinks {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.footerBottom {
-    border-top: 1px solid #444;
-    padding-top: 20px;
-    text-align: center;
-}
-
-.footerBottom p {
-    margin: 0;
-    color: #aaa;
-    font-size: 14px;
 }
 
 .loading,

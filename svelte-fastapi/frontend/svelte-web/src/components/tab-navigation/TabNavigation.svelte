@@ -3,20 +3,22 @@
     import { page } from "$app/stores";
     import styles from "./tab-navigation.module.css";
 
-    export let is_admin: boolean = false;
+    const { is_admin } = $props();
     
     let tabList = is_admin
         ? ["Employees", "Customers", "Products", "Orders", "Order Items"]
         : ["Employees", "Employee Orders"];
 
-    $: currentPath = $page.url.pathname;
+    let currentPath = $derived($page.url.pathname);
     
-    $: chosenTab = tabList.find(tab => {
-        const tabPath = tab.includes(" ")
-            ? `/${tab.toLowerCase().replace(" ", "_")}`
-            : `/${tab.toLowerCase()}`;
-        return currentPath === tabPath;
-    }) || tabList[0];
+    let chosenTab = $derived.by(() => {
+        return tabList.find(tab => {
+            const tabPath = tab.includes(" ")
+                ? `/${tab.toLowerCase().replace(" ", "_")}`
+                : `/${tab.toLowerCase()}`;
+            return currentPath === tabPath;
+        }) || tabList[0];
+    });
 
     const handleClick = (tabName: string) => {
         const path = tabName.includes(" ")
@@ -31,7 +33,7 @@
         {#each tabList as tabName}
             <button
                 class={`${styles.tabButton} ${chosenTab === tabName ? styles.active : ""}`}
-                on:click={() => handleClick(tabName)}
+                onclick={() => handleClick(tabName)}
             >
                 {tabName}
             </button>

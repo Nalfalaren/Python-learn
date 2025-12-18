@@ -3,23 +3,22 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { get } from "svelte/store";
-    import { adminApi } from "../../../../hooks/apiFetch";
+  import { adminApi } from "../../../../hooks/apiFetch";
 
   // form state
-  let product_id: string = "";
-  let product_name: string = "";
-  let category: string = "";
-  let price: number | string = "";
-  let description: string = "";
-  let rating: number | string = "";
-  let stock: number = 0;
-  let message: string = "";
-  let loading = false;
-  let saving = false;
+  let product_id = $state("");
+  let product_name = $state("");
+  let category = $state("");
+  let price = $state<number | string>("");
+  let description = $state("");
+  let rating = $state<number | string>("");
+  let stock = $state(0);
+  let message = $state("");
+  let loading = $state(false);
+  let saving = $state(false);
 
   // get id from route params
-  const productId = get(page).params.id;
+  let productId = $derived($page.params.id);
 
   onMount(async () => {
     if (!productId) {
@@ -46,7 +45,7 @@
       price = data.price ?? "";
       description = data.description ?? "";
       rating = data.rating ?? "";
-      stock = data.stock ?? 0
+      stock = data.stock ?? 0;
 
       message = "";
     } catch (err) {
@@ -60,7 +59,12 @@
   async function handleSubmit(e?: Event) {
     e?.preventDefault();
 
-    if (!product_name.trim() || !category.trim() || price === "" || price === null) {
+    if (
+      !product_name.trim() ||
+      !category.trim() ||
+      price === "" ||
+      price === null
+    ) {
       alert("Please fill required fields");
       return;
     }
@@ -73,7 +77,7 @@
         price: Number(price),
         description: description.trim(),
         rating: rating ? Number(rating).toFixed(2) : 0,
-        stock: stock || 0
+        stock: stock || 0,
       };
       const res = await adminApi(
         `${import.meta.env.VITE_API_BASE_URL}/admin/products/${productId}`,
@@ -174,7 +178,7 @@
         />
       </label>
 
-       <label class={styles.field}>
+      <label class={styles.field}>
         <span class={styles.label}>Stock</span>
         <input
           class={styles.input}

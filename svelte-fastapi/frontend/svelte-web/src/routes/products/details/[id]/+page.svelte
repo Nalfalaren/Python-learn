@@ -4,12 +4,15 @@
   import { onMount } from "svelte";
   import { cart, type Product } from "$lib/stores/CartStore";
   import { clientApi } from "../../../../hooks/apiFetch";
-  let product: Product | null = null;
-  let isLoading = true;
-  let error = "";
+    import MessageModal from "../../../../components/modal-success/MessageModal.svelte";
+  let product = $state<Product | null>(null);
+  let isLoading = $state(true);
+  let error = $state("");
   let productId = $page.params.id;
-  let quantity = 1;
-  let isLoggedIn = false;
+  let quantity = $state(1);
+  let isLoggedIn = $state(false);
+  let message = $state("")
+  let isConfirmModalClose = $state(false)
 
   // Subscribe to cart for count badge
   let cartCount = 0;
@@ -59,7 +62,7 @@
 
   function addToCart() {
     if (!isLoggedIn) {
-      alert("Please login to add items to cart");
+      message = "Please login to add items to cart";
       goto("/login");
       return;
     }
@@ -67,7 +70,8 @@
     if (!product || product.stock === 0) return;
 
     cart.addItem(product, quantity);
-    alert(`Added ${quantity} × ${product.product_name} to cart! 🛒`);
+    message = `Added ${quantity} × ${product.product_name} to cart! 🛒`;
+    isConfirmModalClose = true
     quantity = 1;
   }
 
@@ -88,6 +92,11 @@
     if (quantity > 1) {
       quantity--;
     }
+  }
+
+  function onClose(){
+    isConfirmModalClose = false
+    goto("/")
   }
 </script>
 
@@ -161,7 +170,7 @@
             <label>Quantity:</label>
             <div class="quantity-controls">
               <button
-                on:click={decreaseQuantity}
+                onclick={decreaseQuantity}
                 class="qty-btn"
                 disabled={product.stock === 0}>−</button
               >
@@ -174,7 +183,7 @@
                 disabled={product.stock === 0}
               />
               <button
-                on:click={increaseQuantity}
+                onclick={increaseQuantity}
                 class="qty-btn"
                 disabled={product.stock === 0}>+</button
               >
@@ -182,14 +191,21 @@
           </div>
 
           <div class="action-buttons">
-            <button
-              on:click={addToCart}
-              class="btn-primary"
-              disabled={quantity <= 0 || !isLoggedIn}
-            >
-              Add to cart
-            </button>
-            <button class="btn-secondary" on:click={() => goto("/")}>
+            <div style="display: flex; flex-direction: column">
+              <button
+                onclick={addToCart}
+                class="btn-primary"
+                disabled={quantity <= 0 || !isLoggedIn}
+              >
+                Add to cart
+              </button>
+              {#if quantity <= 0 || !isLoggedIn}
+                <span style="color: #EE5858"
+                  >You must sign in to use this function!</span
+                >
+              {/if}
+            </div>
+            <button class="btn-secondary" onclick={() => goto("/")}>
               Continue Shopping
             </button>
           </div>
@@ -217,6 +233,7 @@
     </div>
   </section>
 {/if}
+<MessageModal show={isConfirmModalClose} message={message} onClose={onClose} />
 
 <style>
   :global(body) {

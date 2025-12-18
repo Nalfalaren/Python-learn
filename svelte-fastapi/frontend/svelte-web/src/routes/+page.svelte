@@ -5,7 +5,7 @@
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
     import { derived } from "svelte/store";
     import { clientApi } from "../hooks/apiFetch";
-    import styles from "$lib/styles/landing/landing.module.css"
+    import styles from "$lib/styles/landing/landing.module.css";
     import droneImage from "$lib/assets/uav.png";
     import shoppingCart from "$lib/assets/shopping_cart.svg";
     import shoppingAddToCart from "$lib/assets/shopping_cart_white.svg";
@@ -16,32 +16,38 @@
     import Trophy from "$lib/assets/trophy.svg";
     import Package from "$lib/assets/package.svg";
     import Eye from "$lib/assets/eye.svg";
+    import HeaderLogo from "$lib/assets/header_logo.svelte";
+    import Rating from "$lib/assets/rating.svelte";
+    import ProductContainer from "../components/product-container/ProductContainer.svelte";
+    import { filterCategoryOptions, filterOptions } from "../utils/utils";
+    import Footer from "../components/footer/Footer.svelte";
+    import RequireSignInModal from "../components/require-sign-in-modal/RequireSignInModal.svelte";
+    import MessageModal from "../components/modal-success/MessageModal.svelte";
     /** Products list */
-    let products: Product[] = [];
-    let query = "";
-    let category = "All";
-    let sortBy = "featured";
+    let products: Product[] = $state([]);
+    let query = $state("");
+    let category = $state("All");
+    let sortBy = $state("featured");
     let quickView: Product | null = null;
 
-    // categories
-    let categories = ["All", "Multirotor", "Fixed-wing"];
-
-    let isLoading = false;
-    let error = "";
-    let mounted = false;
+    let isLoading = $state(false);
+    let error = $state("");
+    let mounted = $state(false);
 
     let currentPage = 1;
     let limit = 5;
 
     /** Add to cart modal */
-    let addToCartProduct: Product | null = null;
-    let showAddToCartModal = false;
-    let showAddToCardListModal = false;
-    let addToCartQuantity = 1;
-    let isLoggedIn = false;
+    let addToCartProduct = $state<Product | null>(null);
+    let showAddToCartModal = $state(false);
+    let showAddToCardListModal = $state(false);
+    let addToCartQuantity = $state(1);
+    let isLoggedIn = $state(false);
+    let message = $state("")
+    let isConfirmModalClose = $state(false)
 
     // Subscribe to cart store
-    let cartItems: CartItem[] = [];
+    let cartItems = $state<CartItem[]>([]);
     cart.subscribe((value) => {
         cartItems = value;
     });
@@ -93,7 +99,6 @@
             } else {
                 currentPage = 1;
             }
-
             updateURL();
             mounted = true;
         } catch (e) {
@@ -120,7 +125,7 @@
         fetchProducts();
     });
 
-    $: topFive = products.slice(0, 5);
+    let dealProducts = $derived(products.slice(0, 5));
 
     const cartCount = derived(cart, ($cart) =>
         $cart.reduce((total, item) => total + item.quantity, 0),
@@ -128,10 +133,6 @@
 
     function openQuickView(product: Product) {
         quickView = product;
-    }
-
-    function closeQuickView() {
-        quickView = null;
     }
 
     function openAddToCartModal(product: Product) {
@@ -158,17 +159,16 @@
         showAddToCardListModal = false;
     }
 
-    function deleteCart(id: string) {
-        cart.removeItem(id);
-    }
-
     function confirmAddToCart() {
         if (!addToCartProduct) return;
         cart.addItem(addToCartProduct, addToCartQuantity);
         closeAddToCartModal();
-        alert(
-            `Added ${addToCartQuantity} × ${addToCartProduct.product_name} to cart!`,
-        );
+        message = `Added ${addToCartQuantity} × ${addToCartProduct.product_name} to cart!`,
+        isConfirmModalClose = true
+    }
+
+    function onClose(){
+        isConfirmModalClose = false
     }
 
     const handleSearch = () => {
@@ -214,26 +214,23 @@
         <div class={styles.headerMain}>
             <div class={styles.brand}>
                 <div class={styles.logo}>
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <rect width="32" height="32" rx="6" fill="#000000" />
-                        <path d="M16 8L20 14H12L16 8Z" fill="white" />
-                        <circle cx="16" cy="18" r="3" fill="white" />
-                        <path
-                            d="M12 22L16 20L20 22"
-                            stroke="white"
-                            stroke-width="2"
-                        />
-                    </svg>
+                    <HeaderLogo />
                 </div>
                 <div>
-                    <div style="font-weight:700; font-size: 20px, color: #000000">
-                        DRONERACK
+                    <div
+                        style="font-weight:700; font-size: 20px, color: #000000"
+                    >
+                        DRONESELL
                     </div>
                 </div>
             </div>
 
             <div class={styles.searchBar}>
-                <img src={searchIcon} alt="search_icon" class={styles.searchIcon} />
+                <img
+                    src={searchIcon}
+                    alt="search_icon"
+                    class={styles.searchIcon}
+                />
                 <input
                     placeholder="Search for drones, parts, accessories..."
                     bind:value={query}
@@ -281,7 +278,8 @@
     <a href="/products/list" class={styles.container}>
         <div class={styles.bannerContent}>
             <div class={styles.bannerText}>
-                <span class={styles.bannerBadge}>Best Deal Online on drone</span>
+                <span class={styles.bannerBadge}>Best Deal Online on drone</span
+                >
                 <h1 class={styles.bannerTitle}>LATEST DRONE MODELS</h1>
                 <h2 class={styles.bannerSubtitle}>Up to 50% OFF</h2>
             </div>
@@ -307,18 +305,28 @@
                 <img class={styles.featureIcon} src={Trophy} alt="trophy" />
                 <div>
                     <div class={styles.featureTitle}>24 Hours Return</div>
-                    <div class={styles.featureDesc}>100% money-back guarantee</div>
+                    <div class={styles.featureDesc}>
+                        100% money-back guarantee
+                    </div>
                 </div>
             </div>
             <div class={styles.featureItem}>
-                <img class={styles.featureIcon} src={CreditCard} alt="credit_card" />
+                <img
+                    class={styles.featureIcon}
+                    src={CreditCard}
+                    alt="credit_card"
+                />
                 <div>
                     <div class={styles.featureTitle}>Secure Payment</div>
                     <div class={styles.featureDesc}>Your money is safe</div>
                 </div>
             </div>
             <div class={styles.featureItem}>
-                <img class={styles.featureIcon} src={HeadPhone} alt="headphone" />
+                <img
+                    class={styles.featureIcon}
+                    src={HeadPhone}
+                    alt="headphone"
+                />
                 <div>
                     <div class={styles.featureTitle}>Support 24/7</div>
                     <div class={styles.featureDesc}>Live contact/message</div>
@@ -329,7 +337,7 @@
 </section>
 
 <!-- TODAY'S DEALS -->
-{#if topFive.length}
+{#if dealProducts.length}
     <section class={styles.dealsSection}>
         <div class={styles.container}>
             <div class={styles.sectionHeader}>
@@ -340,28 +348,24 @@
                 >
             </div>
             <div class={styles.dealsGrid}>
-                {#each topFive as product, i}
-                    <div
-                        class={styles.dealCard}
-                        style={`animation-delay: ${i * 60}ms`}
-                    >
-                        <div class={styles.dealBadge}>🔥 HOT</div>
+                {#each dealProducts as product, i}
+                    <ProductContainer keyNumber={i}>
+                        <div class={styles.dealBadge}>NEW</div>
                         <img src={product.img} alt={product.product_name} />
                         <div class={styles.dealContent}>
-                            <div class={styles.dealCategory}>{product.category}</div>
-                            <h2 class={styles.dealTitle}>{product.product_name}</h2>
+                            <div class={styles.dealCategory}>
+                                {product.category}
+                            </div>
+                            <h2 class={styles.dealTitle}>
+                                {product.product_name}
+                            </h2>
                             <div class={styles.rating}>
                                 <span class={styles.stars}>
                                     {#each Array(5) as _, i}
-                                        <svg
-                                            viewBox="0 0 24 24"
-                                            class:filled={i <
-                                                Math.floor(product.rating || 0)}
-                                        >
-                                            <path
-                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                            />
-                                        </svg>
+                                        <Rating
+                                            keyNumber={i}
+                                            rating={product?.rating}
+                                        />
                                     {/each}
                                 </span>
                                 <span class={styles.ratingText}
@@ -380,7 +384,7 @@
                                 </span>
                             </span>
                         </a>
-                    </div>
+                    </ProductContainer>
                 {/each}
             </div>
         </div>
@@ -398,17 +402,19 @@
                     onchange={handleSearch}
                     class={styles.filterSelect}
                 >
-                    {#each categories as c}<option value={c}>{c}</option>{/each}
+                    {#each filterCategoryOptions as category}<option
+                            value={category.value}>{category.label}</option
+                        >
+                    {/each}
                 </select>
                 <select
                     bind:value={sortBy}
                     onchange={handleSearch}
                     class={styles.filterSelect}
                 >
-                    <option value="featured">Featured</option>
-                    <option value="price-asc">Price: Low → High</option>
-                    <option value="price-desc">Price: High → Low</option>
-                    <option value="rating">Top Rated</option>
+                    {#each filterOptions as option}<option value={option.value}
+                            >{option.label}</option
+                        >{/each}
                 </select>
             </div>
         </div>
@@ -422,9 +428,18 @@
                 <div class={styles.featuredProduct}>
                     <article class="{styles.productCard} {styles.productFirst}">
                         {#if products?.[0]?.stock === 0}
-                            <div class={styles.outOfStockBadge}>OUT OF STOCK</div>
+                            <div class={styles.outOfStockBadge}>
+                                OUT OF STOCK
+                            </div>
                         {:else}
-                            <div class={styles.discountBadge}>HOT</div>
+                            <div class={styles.discountBadge}>
+                                {Math.floor(
+                                    ((products?.[0]?.price * 0.4) /
+                                        (products?.[0]?.price * 1.4)) *
+                                        100,
+                                )}% OFF
+                            </div>
+                            <div class={styles.hotBadge}>HOT</div>
                         {/if}
                         <a
                             class={styles.productImage}
@@ -454,7 +469,8 @@
                                 <button
                                     type="button"
                                     class={styles.actionBtn}
-                                    onclick={() => openAddToCartModal(products?.[0])}
+                                    onclick={() =>
+                                        openAddToCartModal(products?.[0])}
                                     disabled={products?.[0]?.stock === 0}
                                 >
                                     <div class={styles.cartImgContainer}>
@@ -478,17 +494,12 @@
                             <div class={styles.rating}>
                                 <span class={styles.stars}>
                                     {#each Array(5) as _, i}
-                                        <svg
-                                            viewBox="0 0 24 24"
-                                            class:filled={i <
-                                                Math.floor(
-                                                    products?.[0]?.rating || 0,
-                                                )}
-                                        >
-                                            <path
-                                                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                            />
-                                        </svg>
+                                        <Rating
+                                            keyNumber={i}
+                                            rating={Math.floor(
+                                                products?.[0]?.rating || 0,
+                                            )}
+                                        />
                                     {/each}
                                 </span>
                                 <span class={styles.ratingText}
@@ -500,11 +511,13 @@
                                     >${products?.[0]?.price}</span
                                 >
                                 <span class={styles.priceOld}
-                                    >${(products?.[0]?.price * 1.4).toFixed(0)}</span
+                                    >${(products?.[0]?.price * 1.4).toFixed(
+                                        0,
+                                    )}</span
                                 >
                             </div>
                             <div class={styles.productInformation}>
-                                <span style="color: #5F6C72"
+                                <span style="color: #5F6C72; line-height: 1.5"
                                     ><span style="font-weight: bold"
                                         >Description:</span
                                     >
@@ -536,23 +549,20 @@
                 </div>
 
                 <div class={styles.productsGrid}>
-                    {#each products.slice(1).filter(product => 
-                        product && 
-                        product.id && 
-                        product.product_name && 
-                        product.img &&
-                        !isNaN(product.price)
-                    ) as product, i}
-                        <article
-                            class={styles.productCard}
-                            style={`animation-delay: ${i * 40}ms`}
-                        >
+                    {#each products.slice(1) as product, i}
+                        <ProductContainer keyNumber={i}>
                             {#if product.stock === 0}
                                 <div class={styles.outOfStockBadge}>
                                     OUT OF STOCK
                                 </div>
-                            {:else if i % 3 === 0}
-                                <div class={styles.discountBadge}>-32% OFF</div>
+                            {:else}
+                                <div class={styles.discountBadge}>
+                                    {Math.floor(
+                                        ((product?.price * 0.4) /
+                                            (product?.price * 1.4)) *
+                                            100,
+                                    )}% OFF
+                                </div>
                             {/if}
                             <a
                                 class={styles.productImage}
@@ -605,122 +615,36 @@
                                 <div class={styles.rating}>
                                     <span class={styles.stars}>
                                         {#each Array(5) as _, i}
-                                            <svg
-                                                viewBox="0 0 24 24"
-                                                class:filled={i <
-                                                    Math.floor(
-                                                        product.rating || 0,
-                                                    )}
-                                            >
-                                                <path
-                                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                                                />
-                                            </svg>
+                                            <Rating
+                                                keyNumber={i}
+                                                rating={Math.floor(
+                                                    product.rating || 0,
+                                                )}
+                                            />
                                         {/each}
                                     </span>
-                                    <span class={styles.ratingText}>{product.rating || 0}</span>
+                                    <span class={styles.ratingText}
+                                        >{product.rating || 0}</span
+                                    >
                                 </div>
                                 <div class={styles.productPrice}>
-                                    <span class={styles.priceCurrent}>${product.price}</span>
-                                    <span class={styles.priceOld}>${(product.price * 1.4).toFixed(0)}</span>
+                                    <span class={styles.priceCurrent}
+                                        >${product.price}</span
+                                    >
+                                    <span class={styles.priceOld}
+                                        >${(product.price * 1.4).toFixed(
+                                            0,
+                                        )}</span
+                                    >
                                 </div>
                             </div>
-                        </article>
+                        </ProductContainer>
                     {/each}
                 </div>
             </div>
         {/if}
     </div>
 </section>
-
-<!-- QUICK VIEW MODAL -->
-{#if quickView}
-    <div
-        class={styles.modalBackdrop}
-        role="button"
-        tabindex="0"
-        aria-label="Close quick view"
-        onclick={closeQuickView}
-        onkeydown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                closeQuickView();
-            }
-        }}
-    >
-        <div
-            class={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="quick-view-title"
-        >
-            <button
-                type="button"
-                class={styles.modalClose}
-                aria-label="Close"
-                onclick={closeQuickView}
-            >
-                ×
-            </button>
-
-            <div class={styles.modalContent}>
-                <div class={styles.modalImage}>
-                    <img src={quickView.img} alt={quickView.product_name} />
-                </div>
-
-                <div class={styles.modalDetails}>
-                    <div class={styles.modalCategory}>
-                        {quickView.category}
-                    </div>
-
-                    <h2 id="quick-view-title" class={styles.modalTitle}>
-                        {quickView.product_name}
-                    </h2>
-
-                    <div class={styles.modalRating}>
-                        {"⭐".repeat(Math.floor(quickView.rating || 0))}
-                        <span>
-                            ({quickView.rating?.toFixed(1) || "—"})
-                        </span>
-                    </div>
-
-                    <p class={styles.modalDescription}>
-                        {quickView.description ||
-                            "High-quality drone perfect for photography and aerial exploration."}
-                    </p>
-
-                    <div class={styles.modalPrice}>
-                        <span class={styles.priceLarge}>
-                            ${quickView.price}
-                        </span>
-                        <span class={styles.priceOldLarge}>
-                            ${(quickView.price * 1.4).toFixed(0)}
-                        </span>
-                    </div>
-                    <div class={styles.modalActions}>
-                        <button
-                            type="button"
-                            class={styles.btnAddCart}
-                            onclick={() => {
-                                openAddToCartModal(quickView);
-                                closeQuickView();
-                            }}
-                            disabled={quickView.stock === 0}
-                        >
-                            Add to Cart
-                        </button>
-
-                        <a
-                            class={styles.btnBuyNow}
-                            href={`/products/details/${quickView.id}`}
-                        >
-                            Buy Now
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{/if}
 
 <!-- ADD TO CART MODAL -->
 {#if isLoggedIn && showAddToCartModal && addToCartProduct}
@@ -805,194 +729,14 @@
 {/if}
 
 <!-- CART LIST MODAL -->
-{#if showAddToCardListModal}
-    <div
-        class={styles.modalBackdrop}
-        role="button"
-        tabindex="0"
-        aria-label="Close cart dialog"
-        onkeydown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                closeCartList();
-            }
-        }}
-    >
-        {#if isLoggedIn}
-            <div
-                class="{styles.modal} {styles.modalCart}"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="cart-dialog-title"
-            >
-                <button
-                    type="button"
-                    class={styles.modalClose}
-                    aria-label="Close"
-                    onclick={closeCartList}
-                >
-                    ×
-                </button>
-
-                <h2 id="cart-dialog-title" class={styles.modalTitle}>
-                    Your Shopping Cart
-                </h2>
-
-                {#if cartItems.length === 0}
-                    <div class={styles.emptyCart}>
-                        <div class={styles.emptyIcon}>
-                            <img src={shoppingCart} alt="cart_img" />
-                        </div>
-                        <p>Your cart is empty</p>
-                        <button
-                            type="button"
-                            class={styles.btnPrimaryFull}
-                            onclick={closeCartList}
-                        >
-                            Continue Shopping
-                        </button>
-                    </div>
-                {:else}
-                    <div class={styles.cartItems}>
-                        {#each cartItems as item}
-                            <div class={styles.cartItem}>
-                                <img src={item.img} alt={item.product_name} />
-
-                                <div class={styles.cartItemDetails}>
-                                    <h4>{item.product_name}</h4>
-                                    <div class={styles.cartItemMeta}>
-                                        {item.category} • ${item.price}
-                                    </div>
-                                    <div class={styles.cartItemQuantity}>
-                                        Qty: {item.quantity}
-                                    </div>
-                                </div>
-
-                                <div class={styles.cartItemActions}>
-                                    <div class={styles.cartItemPrice}>
-                                        ${Number((item.price * item.quantity).toFixed(2))}
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class={styles.removeBtn}
-                                        aria-label="Remove item"
-                                        onclick={() => deleteCart(item.id!)}
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        {/each}
-                    </div>
-                    <div class={styles.cartTotal}>
-                        <div class="{styles.totalRow} {styles.totalFinal}">
-                            <span>Total:</span>
-                            <span>
-                                ${Number(cart.getTotalPrice().toFixed(2))}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class={styles.cartActions}>
-                        <button
-                            type="button"
-                            class={styles.btnSecondaryFull}
-                            onclick={closeCartList}
-                        >
-                            Continue Shopping
-                        </button>
-
-                        <a class={styles.btnPrimaryFull} href="/checkout">
-                            Proceed to Checkout
-                        </a>
-                    </div>
-                {/if}
-            </div>
-        {:else}
-            <div
-                class="{styles.modal} {styles.modalSm}"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="login-required-title"
-            >
-                <button
-                    type="button"
-                    class={styles.modalClose}
-                    aria-label="Close"
-                    onclick={closeCartList}
-                >
-                    ×
-                </button>
-
-                <div class={styles.loginRequired}>
-                    <div class={styles.loginIcon}>🔒</div>
-
-                    <h3 id="login-required-title">Login Required</h3>
-
-                    <p>
-                        Please log in to view your cart and complete your
-                        purchase.
-                    </p>
-
-                    <div class={styles.modalActions}>
-                        <button
-                            type="button"
-                            class={styles.btnPrimaryFull}
-                            onclick={redirectToLogin}
-                        >
-                            Login
-                        </button>
-
-                        <button
-                            type="button"
-                            class={styles.btnSecondaryFull}
-                            onclick={closeCartList}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        {/if}
-    </div>
-{/if}
-
-<!-- FOOTER -->
-<footer class={styles.footer}>
-    <div class={styles.container}>
-        <div class={styles.footerContent}>
-            <div class={styles.footerCol}>
-                <div class={styles.footerLogo}>
-                    <span class={styles.logoIcon}>🚁</span>
-                    <span class={styles.logoText}>DRONERACK</span>
-                </div>
-                <p>
-                    Your trusted marketplace for drones, parts, and accessories.
-                </p>
-            </div>
-            <div class={styles.footerCol}>
-                <h4>Quick Links</h4>
-                <a href="#">About Us</a>
-                <a href="#">Contact</a>
-                <a href="#">FAQs</a>
-            </div>
-            <div class={styles.footerCol}>
-                <h4>Support</h4>
-                <a href="#">Shipping Info</a>
-                <a href="#">Returns</a>
-                <a href="#">Warranty</a>
-            </div>
-            <div class={styles.footerCol}>
-                <h4>Follow Us</h4>
-                <div class={styles.socialLinks}>
-                    <a href="#">Facebook</a>
-                    <a href="#">Twitter</a>
-                    <a href="#">Instagram</a>
-                </div>
-            </div>
-        </div>
-        <div class={styles.footerBottom}>
-            <p>© 2024 DroneRack. All rights reserved.</p>
-        </div>
-    </div>
-</footer>
-
+<RequireSignInModal
+    {showAddToCardListModal}
+    {closeCartList}
+    {isLoggedIn}
+    {cartItems}
+    shoppingCartImage={shoppingCart}
+    {redirectToLogin}
+/>
+<MessageModal show={isConfirmModalClose} message={message} onClose />
+<!-- Footer -->
+<Footer />

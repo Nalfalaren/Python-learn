@@ -1,7 +1,7 @@
 <script>
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
-    import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthAdmin";
     let employeeName = "";
     let email = "";
     let password = "";

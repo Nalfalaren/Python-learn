@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { goto } from "$app/navigation";
+    import { goto, replaceState } from "$app/navigation";
     import { onMount } from "svelte";
     import { jwtDecode } from "jwt-decode";
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
@@ -16,15 +16,16 @@
     import Trophy from "$lib/assets/trophy.svg";
     import Package from "$lib/assets/package.svg";
     import Eye from "$lib/assets/eye.svg";
-    import HeaderLogo from "$lib/assets/header_logo.svelte";
     import Rating from "$lib/assets/rating.svelte";
     import ProductContainer from "../components/product-container/ProductContainer.svelte";
-    import { filterCategoryOptions, filterOptions } from "../utils/utils";
+    import { listBrands } from "../utils/utils";
     import Footer from "../components/footer/Footer.svelte";
     import RequireSignInModal from "../components/require-sign-in-modal/RequireSignInModal.svelte";
     import MessageModal from "../components/modal-success/MessageModal.svelte";
+    import HeaderClient from "../components/header-client/HeaderClient.svelte";
     /** Products list */
     let products: Product[] = $state([]);
+    let userName = $state<string>("")
     let query = $state("");
     let category = $state("All");
     let sortBy = $state("featured");
@@ -43,8 +44,8 @@
     let showAddToCardListModal = $state(false);
     let addToCartQuantity = $state(1);
     let isLoggedIn = $state(false);
-    let message = $state("")
-    let isConfirmModalClose = $state(false)
+    let message = $state("");
+    let isConfirmModalClose = $state(false);
 
     // Subscribe to cart store
     let cartItems = $state<CartItem[]>([]);
@@ -59,7 +60,7 @@
         if (sortBy) params.set("sortBy", sortBy);
         if (currentPage > 1) params.set("page", String(currentPage));
         const newUrl = `?${params.toString()}`;
-        goto(newUrl, { replaceState: true, noScroll: true });
+        goto(newUrl, { noScroll: true });
     }
 
     /** Fetch products from API */
@@ -121,6 +122,7 @@
     }
     onMount(() => {
         const token = localStorage.getItem("accessToken");
+        userName = localStorage.getItem("customer_name") || ''
         isLoggedIn = isTokenValid(token);
         fetchProducts();
     });
@@ -163,25 +165,21 @@
         if (!addToCartProduct) return;
         cart.addItem(addToCartProduct, addToCartQuantity);
         closeAddToCartModal();
-        message = `Added ${addToCartQuantity} × ${addToCartProduct.product_name} to cart!`,
-        isConfirmModalClose = true
-    }
-
-    function onClose(){
-        isConfirmModalClose = false
+        (message = `Added ${addToCartQuantity} × ${addToCartProduct.product_name} to cart!`),
+            (isConfirmModalClose = true);
     }
 
     const handleSearch = () => {
-        currentPage = 1;
-        fetchProducts(null, "initial");
-    };
+    if (query.trim()) {
+        goto(`/products/list?search_product=${query}`, {replaceState: true});
+    }
+};
 
     async function logout() {
         try {
             const token = localStorage.getItem("accessToken");
             const decoded = token ? jwtDecode<{ id: string }>(token) : null;
             const currentUserId = decoded?.id;
-
             const res = await fetch(
                 `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
                 {
@@ -209,77 +207,24 @@
     }
 </script>
 
-<header class={styles.header} class:anim-in={mounted}>
-    <div class={styles.container}>
-        <div class={styles.headerMain}>
-            <div class={styles.brand}>
-                <div class={styles.logo}>
-                    <HeaderLogo />
-                </div>
-                <div>
-                    <div
-                        style="font-weight:700; font-size: 20px, color: #000000"
-                    >
-                        DRONESELL
-                    </div>
-                </div>
-            </div>
-
-            <div class={styles.searchBar}>
-                <img
-                    src={searchIcon}
-                    alt="search_icon"
-                    class={styles.searchIcon}
-                />
-                <input
-                    placeholder="Search for drones, parts, accessories..."
-                    bind:value={query}
-                    onkeypress={(e) => e.key === "Enter" && handleSearch()}
-                />
-            </div>
-
-            <div class={styles.headerActions}>
-                <div class={styles.headerBtn}>
-                    <img src={user} alt="user" />
-                    {#if isLoggedIn}
-                        <button class={styles.logoutBtn} onclick={logout}>
-                            Logout
-                        </button>
-                    {:else}
-                        <button
-                            class={styles.loginBtn}
-                            onclick={() => goto("/login")}
-                        >
-                            Sign In
-                        </button>
-                    {/if}
-                </div>
-                <button class={styles.iconBtn} onclick={openCartList}>
-                    <img src={shoppingCart} alt="cart_img" />
-                    <span class={styles.label}>Cart</span>
-                    {#if $cartCount > 0}
-                        <span class={styles.cartBadge}>{$cartCount}</span>
-                    {/if}
-                </button>
-            </div>
-        </div>
-
-        <nav class={styles.mainNav}>
-            <a href="#" class={styles.navItem}>
-                <span class={styles.navIcon}>☰</span>
-                All Categories
-            </a>
-        </nav>
-    </div>
-</header>
+<!-- Header client -->
+<HeaderClient
+    {userName}
+    bind:query={query}
+    {mounted}
+    {handleSearch}
+    {isLoggedIn}
+    {logout}
+    {openCartList}
+    {cartCount}
+/>
 
 <!-- HERO BANNER -->
 <section class={styles.heroBanner} class:anim-in={mounted}>
     <a href="/products/list" class={styles.container}>
         <div class={styles.bannerContent}>
             <div class={styles.bannerText}>
-                <span class={styles.bannerBadge}>Best Deal Online on drone</span
-                >
+                <span class={styles.bannerBadge}>Best Deal Online on drone</span>
                 <h1 class={styles.bannerTitle}>LATEST DRONE MODELS</h1>
                 <h2 class={styles.bannerSubtitle}>Up to 50% OFF</h2>
             </div>
@@ -336,6 +281,24 @@
     </div>
 </section>
 
+<!-- SHOP BY BRANDS -->
+{#if dealProducts.length}
+    <section class={styles.dealsSection}>
+        <div class={styles.container}>
+            <div class={styles.sectionHeader}>
+                <h2 class={styles.sectionTitle}>SHOP BY BRANDS</h2>
+            </div>
+            <div class={styles.listBrands}>
+                {#each listBrands as brand, i}
+                <div style="width: 168px; height: 168px; background-color: #F4F4F4; border-radius: 10px">
+                    <img src={brand} alt={brand} style="width: 100%; height: 100%">
+                </div>
+                {/each}
+            </div>
+        </div>
+    </section>
+{/if}
+
 <!-- TODAY'S DEALS -->
 {#if dealProducts.length}
     <section class={styles.dealsSection}>
@@ -351,7 +314,9 @@
                 {#each dealProducts as product, i}
                     <ProductContainer keyNumber={i}>
                         <div class={styles.dealBadge}>NEW</div>
-                        <img src={product.img} alt={product.product_name} />
+                        <div class={styles.productImage}>
+                            <img src={product.img} alt={product.product_name} />
+                        </div>
                         <div class={styles.dealContent}>
                             <div class={styles.dealCategory}>
                                 {product.category}
@@ -368,9 +333,7 @@
                                         />
                                     {/each}
                                 </span>
-                                <span class={styles.ratingText}
-                                    >{product.rating || 0}</span
-                                >
+                                <span class={styles.ratingText}>{product.rating || 0}</span>
                             </div>
                         </div>
                         <a
@@ -379,9 +342,7 @@
                         >
                             <span class={styles.dealPriceText}>
                                 BUY NOW
-                                <span class={styles.dealPriceDetail}>
-                                    -{product.price}$
-                                </span>
+                                <span class={styles.dealPriceDetail}>-{product.price}$</span>
                             </span>
                         </a>
                     </ProductContainer>
@@ -396,27 +357,6 @@
     <div class={styles.container}>
         <div class={styles.sectionHeader}>
             <h2 class={styles.sectionTitle}>FREQUENTLY BOUGHT TOGETHER</h2>
-            <div class={styles.controls}>
-                <select
-                    bind:value={category}
-                    onchange={handleSearch}
-                    class={styles.filterSelect}
-                >
-                    {#each filterCategoryOptions as category}<option
-                            value={category.value}>{category.label}</option
-                        >
-                    {/each}
-                </select>
-                <select
-                    bind:value={sortBy}
-                    onchange={handleSearch}
-                    class={styles.filterSelect}
-                >
-                    {#each filterOptions as option}<option value={option.value}
-                            >{option.label}</option
-                        >{/each}
-                </select>
-            </div>
         </div>
 
         {#if isLoading}
@@ -502,27 +442,25 @@
                                         />
                                     {/each}
                                 </span>
-                                <span class={styles.ratingText}
-                                    >{products?.[0]?.rating || 0}</span
-                                >
+                                <span class={styles.ratingText}>
+                                    {products?.[0]?.rating || 0}
+                                </span>
                             </div>
                             <div class={styles.productPrice}>
-                                <span class={styles.priceCurrent}
-                                    >${products?.[0]?.price}</span
-                                >
-                                <span class={styles.priceOld}
-                                    >${(products?.[0]?.price * 1.4).toFixed(
-                                        0,
-                                    )}</span
-                                >
+                                <span class={styles.priceCurrent}>
+                                    ${products?.[0]?.price}
+                                </span>
+                                <span class={styles.priceOld}>
+                                    ${(products?.[0]?.price * 1.4).toFixed(0)}
+                                </span>
                             </div>
                             <div class={styles.productInformation}>
-                                <span style="color: #5F6C72; line-height: 1.5"
-                                    ><span style="font-weight: bold"
-                                        >Description:</span
-                                    >
-                                    {products?.[0]?.description || "N/A"}</span
-                                >
+                                <span style="color: #5F6C72; line-height: 1.5">
+                                    <span style="font-weight: bold">
+                                       Description:
+                                    </span>
+                                    {products?.[0]?.description || "N/A"}
+                                </span>
                             </div>
                             <div style="position: relative">
                                 <button
@@ -573,7 +511,6 @@
                                     src={product.img}
                                     alt={product.product_name}
                                 />
-
                                 <div class={styles.productActions}>
                                     <button
                                         type="button"
@@ -623,19 +560,17 @@
                                             />
                                         {/each}
                                     </span>
-                                    <span class={styles.ratingText}
-                                        >{product.rating || 0}</span
-                                    >
+                                    <span class={styles.ratingText}>
+                                        {product.rating || 0}
+                                    </span>
                                 </div>
                                 <div class={styles.productPrice}>
-                                    <span class={styles.priceCurrent}
-                                        >${product.price}</span
-                                    >
-                                    <span class={styles.priceOld}
-                                        >${(product.price * 1.4).toFixed(
-                                            0,
-                                        )}</span
-                                    >
+                                    <span class={styles.priceCurrent}>
+                                        ${product.price}
+                                    </span>
+                                    <span class={styles.priceOld}>
+                                        ${(product.price * 1.4).toFixed(0,)}
+                                    </span>
                                 </div>
                             </div>
                         </ProductContainer>
@@ -737,6 +672,7 @@
     shoppingCartImage={shoppingCart}
     {redirectToLogin}
 />
-<MessageModal show={isConfirmModalClose} message={message} onClose />
+<MessageModal show={isConfirmModalClose} {message} onClose />
+
 <!-- Footer -->
 <Footer />

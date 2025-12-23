@@ -48,12 +48,12 @@
 
       if (res.ok) {
         message = "Order placed successfully!";
-        isCloseModal = true
+        isCloseModal = true;
         CartStore.set([]);
       } else {
         const error = await res.json();
         message = error.detail || "Failed to place order";
-        isCloseModal = true
+        isCloseModal = true;
       }
     } catch (e) {
       console.error(e);
@@ -130,7 +130,7 @@
         ></textarea>
       </div>
 
-      <button class="btn" on:click={handleCheckout}>Place Order</button>
+      <button class="btn" onclick={handleCheckout}>Place Order</button>
     </section>
   </div>
 </div>
@@ -252,7 +252,7 @@
 
   input,
   textarea {
-    width: 100%;
+    width: 95%;
     padding: 12px;
     border-radius: 10px;
     border: 1px solid #cbd5e1;
@@ -265,6 +265,7 @@
   textarea:focus {
     border-color: #007bff;
     background: #fff;
+    outline: none;
   }
 
   textarea {

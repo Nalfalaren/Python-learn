@@ -45,6 +45,7 @@
             message = data.message || "Login successful!";
             localStorage.setItem("accessToken", data.access_token);
             localStorage.setItem("customer_refresh_token", data.refresh_token);
+            localStorage.setItem("customer_name", data.customer_name)
             window.location.href = `/`;
         } catch (err) {
             console.error(err);

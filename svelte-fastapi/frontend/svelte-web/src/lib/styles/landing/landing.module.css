@@ -1,7 +1,7 @@
 :global(body) {
     font-family: "Arial", sans-serif;
     margin: 0;
-    background: #f5f5f5;
+    background: white;
     color: #333;
 }
 
@@ -71,6 +71,8 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    text-decoration: none;
+    color: #666666;
 }
 
 .logo svg {
@@ -114,9 +116,15 @@
     align-items: center;
 }
 
-.headerActions {
+.headerActions, .headerLogin {
     display: flex;
     gap: 15px;
+    align-items: center;
+}
+
+.headerUser{
+    display: flex;
+    align-items: center;
 }
 
 .iconBtn {
@@ -224,11 +232,9 @@
 
 .bannerBadge {
     display: inline-block;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 8px 16px;
+    padding: 8px 0px;
     border-radius: 20px;
-    font-size: 12px;
-    margin-bottom: 15px;
+    font-size: 20px;
 }
 
 .bannerTitle {
@@ -343,22 +349,10 @@
     gap: 20px;
 }
 
-.dealCard {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    position: relative;
-    transition:
-        transform 0.2s,
-        box-shadow 0.2s;
-    animation: fadeUp 0.4s ease forwards;
-    opacity: 0;
-}
-
-.dealCard:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+.listBrands{
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 40px;
 }
 
 .dealBadge {
@@ -366,19 +360,14 @@
     top: 10px;
     left: 10px;
     background: #FCBD01;
-    color: white;
+    color: #000000;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 500;
     z-index: 1;
 }
 
-.dealCard img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-}
 
 .dealCategory {
     font-size: 11px;
@@ -1069,7 +1058,8 @@ button {
 
 @media (max-width: 1024px) {
     .productsGrid,
-    .dealsGrid {
+    .dealsGrid,
+    .listBrands {
         grid-template-columns: repeat(3, 1fr);
     }
     .productsContainer {

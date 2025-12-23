@@ -8,10 +8,10 @@
             <div class={styles.footerCol}>
                 <div class={styles.footerLogo}>
                     <span class={styles.logoIcon}>🚁</span>
-                    <span class={styles.logoText}>DRONERACK</span>
+                    <span class={styles.logoText}>DRONESELL</span>
                 </div>
                 <p>
-                    Your trusted marketplace for drones, parts, and accessories.
+                    Your trusted marketplace for drones.
                 </p>
             </div>
             <div class={styles.footerCol}>
@@ -34,9 +34,6 @@
                     <a href="#">Instagram</a>
                 </div>
             </div>
-        </div>
-        <div class={styles.footerBottom}>
-            <p>© 2024 DroneRack. All rights reserved.</p>
         </div>
     </div>
 </footer>

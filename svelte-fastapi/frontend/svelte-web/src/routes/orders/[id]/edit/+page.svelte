@@ -3,7 +3,7 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthAdmin";
   import { adminApi } from "../../../../hooks/apiFetch";
     import MessageModal from "../../../../components/modal-success/MessageModal.svelte";
 

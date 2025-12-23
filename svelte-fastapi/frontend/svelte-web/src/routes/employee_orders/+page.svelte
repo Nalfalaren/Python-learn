@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import styles from "$lib/styles/header/orders.module.css";
-    import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthAdmin";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
     import TextField from "../../components/input/TextField.svelte";
     import { goto } from "$app/navigation";

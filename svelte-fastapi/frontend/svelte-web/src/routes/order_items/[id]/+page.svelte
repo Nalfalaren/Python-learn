@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import styles from "$lib/styles/detail/employee-detail.module.css"; 
   import { goto } from "$app/navigation";
-  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthAdmin";
     import { adminApi } from "../../../hooks/apiFetch";
 
   let itemId: string;

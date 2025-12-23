@@ -57,14 +57,11 @@ function createCartStore() {
     addItem: (product: Product, qty = 1) =>
       update((cart) => {
         if (!product.id) return cart;
-        
-        const idx = cart.findIndex((c) => c.id === product.id);
-        if (idx !== -1) {
-          // Update existing item
+        let addedProduct = cart.find((p) => p.id === product.id)
+        if (addedProduct) {
           const maxQty = product.stock ?? Number.MAX_SAFE_INTEGER;
-          cart[idx].quantity = Math.min(cart[idx].quantity + qty, maxQty);
+          addedProduct.quantity = Math.min(addedProduct.quantity + qty, maxQty);
         } else {
-          // Add new item
           const newItem: CartItem = {
             ...product,
             quantity: Math.min(qty, product.stock ?? Number.MAX_SAFE_INTEGER),

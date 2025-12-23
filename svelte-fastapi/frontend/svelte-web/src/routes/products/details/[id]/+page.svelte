@@ -2,9 +2,10 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { cart, type Product } from "$lib/stores/CartStore";
+  import { cart, CartStore, type Product } from "$lib/stores/CartStore";
   import { clientApi } from "../../../../hooks/apiFetch";
-    import MessageModal from "../../../../components/modal-success/MessageModal.svelte";
+  import MessageModal from "../../../../components/modal-success/MessageModal.svelte";
+    import Header from "../../../../components/header/header.svelte";
   let product = $state<Product | null>(null);
   let isLoading = $state(true);
   let error = $state("");
@@ -16,6 +17,7 @@
 
   // Subscribe to cart for count badge
   let cartCount = 0;
+  
   cart.subscribe(() => {
     cartCount = cart.getTotalCount();
   });
@@ -142,7 +144,7 @@
         <p class="description">{product.description}</p>
 
         <div class="specs">
-          <h3>Specifications</h3>
+          <h3 style="color: #0c59b6">Specifications</h3>
           <ul>
             <li><strong>Category:</strong> {product.category}</li>
             <li>
@@ -163,7 +165,7 @@
           {/if}
 
           <div class="price-container">
-            <div class="price">${product.price}</div>
+            <div class="price">${product.price * quantity}</div>
           </div>
 
           <div class="quantity-selector">
@@ -245,7 +247,7 @@
       Roboto,
       "Helvetica Neue",
       Arial;
-    background: #f8fafc;
+    background: white;
     color: #0f172a;
     margin: 0;
   }
@@ -270,12 +272,12 @@
   .breadcrumb {
     display: inline-block;
     font-size: 14px;
-    color: #0ea5e9;
+    color: #0c59b6;
     text-decoration: none;
     transition: color 140ms ease;
   }
   .breadcrumb:hover {
-    color: #0284c7;
+    color: #0c59b6;
     text-decoration: underline;
   }
 
@@ -375,7 +377,7 @@
   .title {
     font-size: 32px;
     margin: 0;
-    color: #0f172a;
+    color: #0c59b6;
   }
 
   .meta {
@@ -459,7 +461,7 @@
   .price {
     font-size: 32px;
     font-weight: 800;
-    color: #0f172a;
+    color: #0c59b6;
   }
 
   .price-note {
@@ -537,11 +539,10 @@
     padding: 14px 24px;
     border-radius: 12px;
     border: 0;
-    background: linear-gradient(135deg, #0ea5e9, #22c55e);
+    background: #0c59b6;
     color: white;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 12px 28px rgba(14, 165, 164, 0.35);
     transition:
       transform 140ms ease,
       box-shadow 140ms ease,
@@ -550,8 +551,6 @@
 
   .btn-primary:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 18px 40px rgba(14, 165, 164, 0.45);
-    filter: brightness(1.05);
   }
 
   .btn-secondary {

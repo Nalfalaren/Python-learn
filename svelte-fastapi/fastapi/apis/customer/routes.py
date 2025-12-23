@@ -82,6 +82,7 @@ def login(customer_info: AccountSchema, db: Session = Depends(get_db)):
         "message": "✅ Login successful",
         "access_token": tokens['access_token'],
         "refresh_token": tokens['refresh_token'],
+        "customer_name": customer.customer_name
     }
 
 # @router.post("/admin/login-as-client")

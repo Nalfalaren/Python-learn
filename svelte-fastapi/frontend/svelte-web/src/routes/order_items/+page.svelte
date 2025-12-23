@@ -4,7 +4,7 @@
     import styles from "$lib/styles/header/orders.module.css";
     import TextField from "../../components/input/TextField.svelte";
     import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
-    import { adminAuthStore } from "$lib/stores/AuthStore";
+    import { adminAuthStore } from "$lib/stores/AuthAdmin";
     import { adminApi } from "../../hooks/apiFetch";
     import Header from "../../components/header/header.svelte";
     import ModalConfirm from "../../components/modal-confirm/ModalConfirm.svelte";

@@ -8,7 +8,7 @@
 
 <div class={styles.pageWrapper}>
   <div class={styles.headerContainer}>
-    <div style="display: flex; justify-content: flex-end">
+    <div class={styles.header}>
       <UserMenu username={username} signOut={handleLogout} />
     </div>
   </div>

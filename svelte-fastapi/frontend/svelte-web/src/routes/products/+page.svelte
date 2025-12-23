@@ -5,7 +5,7 @@
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode";
-  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthAdmin";
   import { adminApi } from "../../hooks/apiFetch";
   import MessageModal from "../../components/modal-success/MessageModal.svelte";
   import Header from "../../components/header/header.svelte";

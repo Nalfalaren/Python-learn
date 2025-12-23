@@ -1,20 +1,25 @@
 <script>
     import { onMount } from "svelte";
 
-    let email = "";
-    let password = "";
-    let remember = false;
-    let showPassword = false;
-    let loading = false;
-    let message = "";
-    let errors = { email: "", password: "", confirmPassword: "" };
+    let email = $state("");
+    let password = $state("");
+    let remember = $state(false);
+    let showPassword = $state(false);
+    let loading = $state(false);
+    let message = $state("");
+    let errors = $state({
+        email: "",
+        password: "",
+        confirmPassword: "",
+    });
 
     function validate() {
         errors = { email: "", password: "", confirmPassword: "" };
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email.trim()) errors.email = "Please enter your email.";
-        else if (!emailRegex.test(email)) errors.email = "Invalid email address.";
+        else if (!emailRegex.test(email))
+            errors.email = "Invalid email address.";
 
         if (!password) errors.password = "Please enter your password.";
         else if (password.length < 6)
@@ -28,7 +33,9 @@
         if (!validate()) return;
         loading = true;
         try {
-            const url = new URL(`${import.meta.env.VITE_API_BASE_URL}/auth/login`);
+            const url = new URL(
+                `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+            );
             const res = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -42,10 +49,9 @@
             const data = await res.json().catch(() => ({}));
             message = data.message || "Login successful";
             localStorage.setItem("admin_access_token", data.access_token);
-            localStorage.setItem("admin_refresh_token", data.refresh_token)
-            localStorage.setItem("employee_name", data?.employee_name)
+            localStorage.setItem("admin_refresh_token", data.refresh_token);
+            localStorage.setItem("employee_name", data?.employee_name);
             window.location.href = `/employees?role=${data?.role?.toLowerCase()}`;
-         
         } catch (err) {
             console.error(err);
             message = "Unable to connect to the server.";
@@ -54,7 +60,7 @@
         }
     }
 
-    let emailInput;
+    let emailInput = $state();
     onMount(() => {
         emailInput && emailInput.focus();
     });
@@ -63,7 +69,7 @@
 <section class="container">
     <form
         class="card"
-        on:submit|preventDefault={handleSubmit}
+        onsubmit={handleSubmit}
         aria-describedby={message ? "status" : undefined}
     >
         <h1>Login</h1>
@@ -98,7 +104,7 @@
                 <button
                     type="button"
                     class="toggle"
-                    on:click={() => (showPassword = !showPassword)}
+                    onclick={() => (showPassword = !showPassword)}
                     aria-pressed={showPassword}
                     aria-label="Show/Hide password"
                     >{showPassword ? "Hide" : "Show"}</button

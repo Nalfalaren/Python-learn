@@ -5,12 +5,12 @@
   import TextField from "../../components/input/TextField.svelte";
   import TabNavigation from "../../components/tab-navigation/TabNavigation.svelte";
   import { jwtDecode } from "jwt-decode"; /** Product type */
-  import { adminAuthStore } from "$lib/stores/AuthStore";
+  import { adminAuthStore } from "$lib/stores/AuthAdmin";
   import { adminApi } from "../../hooks/apiFetch";
-  import UserMenu from "../../components/user-menu/UserMenu.svelte";
   import Header from "../../components/header/header.svelte";
   import ModalConfirm from "../../components/modal-confirm/ModalConfirm.svelte";
   import MessageModal from "../../components/modal-success/MessageModal.svelte";
+  import { roleList } from "../../utils/utils";
 
   interface Employee {
     id: string;
@@ -172,15 +172,15 @@
   });
 </script>
 
-<!-- === UI === -->
+<!-- Header -->
 <Header {handleLogout} username={employee_name ?? ""} />
-<div style="display: flex; min-height: 100vh">
+
+<!-- Body -->
+<div class={styles.container}>
   <TabNavigation is_admin={$adminAuthStore.role === "ADMIN"} />
-  <div style="width: 100%; background: #f5f5f5; padding: 20px">
+  <div class={styles.body}>
     <div>
-      <span style="font-size: 20px; color: rgb(26 59 105); font-weight: 700"
-        >Employees</span
-      >
+      <span class={styles.title}>Employees</span>
     </div>
     <!-- Search -->
     <div class={styles.tableSearch}>
@@ -205,26 +205,25 @@
         />
       </div>
       <div class={styles.tableSearchInput}>
-        <label
-          style="color: rgba(0, 0, 0, 0.88); display: flex; flex-direction: column; gap: 4px; margin-bottom: 25px"
-        >
+        <label class={styles.searchContainer}>
           Search Role
           <select bind:value={searchRole} class={styles.selectInput}>
             <option value="" disabled selected hidden>Select role…</option>
-            <option value="ADMIN">Admin</option>
-            <option value="EMPLOYEE">Employee</option>
+            {#each roleList as role}
+              <option value={role.value}>{role.label}</option>
+            {/each}
           </select>
         </label>
       </div>
       <button
         onclick={handleSearch}
-        style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+        class={styles.searchButton}
       >
         Search
       </button>
       {#if $adminAuthStore.role === "ADMIN"}
         <button
-          style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
+          class={styles.searchButton}
           onclick={(e) => {
             e.stopPropagation();
             goto("/employees/signup");

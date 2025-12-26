@@ -51,3 +51,26 @@ export const roleList = [
         value: 'EMPLOYEE'
     },
 ]
+
+export const orderStatusList = [
+    {
+        label: 'Pending', 
+        value: 'PENDING'
+    },
+    {
+        label: 'Assigned',
+        value: 'ASSIGNED'
+    },
+    {
+        label: 'Processing',
+        value: 'PROCESSING'
+    },
+    {
+        label: 'Completed',
+        value: 'COMPLETED'
+    },
+    {
+        label: 'Cancelled',
+        value: 'CANCELLED'
+    },
+]

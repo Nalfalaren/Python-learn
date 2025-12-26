@@ -216,25 +216,25 @@
         <table class={styles.table}>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Product Name</th>
-              <th>Category</th>
+              <th class={styles.text_left}>ID</th>
+              <th class={styles.text_left}>Product Name</th>
+              <th class={styles.text_left}>Category</th>
               <th>Price ($)</th>
               <th>Rating</th>
               <th>Stock</th>
-              <th>Action</th>
+              <th class={styles.text_left}>Action</th>
             </tr>
           </thead>
           <tbody>
             {#each products as product}
               <tr onclick={() => goto(`/products/${product.id}`)}>
-                <td>{product.id}</td>
-                <td>{product.product_name}</td>
-                <td>{product.category}</td>
+                <td class={styles.text_left}>{product.id}</td>
+                <td class={styles.text_left}>{product.product_name}</td>
+                <td class={styles.text_left}>{product.category}</td>
                 <td>{product.price.toFixed(2)}</td>
                 <td>{product.rating}</td>
                 <td>{product.stock || 0}</td>
-                <td>
+                <td class={styles.text_left}>
                   <button
                     onclick={(event) => {
                       event.stopPropagation();

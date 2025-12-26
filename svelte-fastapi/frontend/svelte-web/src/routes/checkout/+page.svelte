@@ -6,7 +6,12 @@
   import { clientApi } from "../../hooks/apiFetch";
   import MessageModal from "../../components/modal-success/MessageModal.svelte";
 
-  let cart = get(CartStore);
+  let cart = $state(get(CartStore));
+
+  // Subscribe to CartStore changes
+  CartStore.subscribe((value) => {
+    cart = value;
+  });
 
   // Customer form
   let name = $state("");
@@ -17,9 +22,47 @@
   let isCloseModal = $state(false);
 
   let total = $derived(cart.reduce((sum, i) => sum + i.price * i.quantity, 0));
+
+  function increaseQuantity(itemId: number) {
+    const updatedCart = cart.map((item) => {
+      if (item.id === itemId && item.quantity < (item.stock ?? 99)) {
+        return { ...item, quantity: item.quantity + 1 };
+      }
+      return item;
+    });
+    CartStore.set(updatedCart);
+  }
+
+  function decreaseQuantity(itemId: string) {
+    const updatedCart = cart.map((item) => {
+      if (item.id === itemId && item.quantity > 1) {
+        return { ...item, quantity: item.quantity - 1 };
+      }
+      return item;
+    });
+    CartStore.set(updatedCart);
+  }
+
+  function updateQuantity(itemId: string, newQuantity: number) {
+    const qty = Math.max(1, Math.min(newQuantity, 99));
+    const updatedCart = cart.map((item) => {
+      if (item.id === itemId) {
+        return { ...item, quantity: qty };
+      }
+      return item;
+    });
+    CartStore.set(updatedCart);
+  }
+
+  function removeItem(itemId: string) {
+    const updatedCart = cart.filter((item) => item.id !== itemId);
+    CartStore.set(updatedCart);
+  }
+
   async function handleCheckout() {
     if (!name || !email || !phone || !address) {
       message = "Please fill in all fields";
+      isCloseModal = true;
       return;
     }
     let customer_id = $authCustomer.id;
@@ -57,12 +100,16 @@
       }
     } catch (e) {
       console.error(e);
+      message = "An error occurred. Please try again.";
+      isCloseModal = true;
     }
   }
 
   function onClose() {
     isCloseModal = false;
-    goto("/");
+    if (message.includes("successfully")) {
+      goto("/");
+    }
   }
 </script>
 
@@ -77,28 +124,73 @@
       {#if cart.length === 0}
         <p class="empty">Your cart is currently empty.</p>
       {:else}
-        <ul class="cart-list">
-          {#each cart as item}
-            <li class="item">
-              <div class="info">
-                <strong>{item.product_name}</strong>
-                <span class="qty">x{item.quantity}</span>
-              </div>
+        <div class="cart-header">
+  <div class="header-left">Product</div>
+  <div class="header-right">
+    <span>Price</span>
+    <span>Quantity</span>
+    <span>Total</span>
+    <span style="width: 24px;"></span> <!-- Spacer for remove button -->
+  </div>
+</div>
 
-              <strong class="price"
-                >{Number(item.price * item.quantity)
-                  .toFixed(2)
-                  .replace(/\.00$/, "") + "$"}</strong
-              >
-            </li>
-          {/each}
-        </ul>
+<ul class="cart-list">
+  {#each cart as item (item.id)}
+    <li class="item">
+      <div class="item-content">
+        <a href={`/products/details/${item.id}`} class="info">
+          <strong class="product-name">{item.product_name}</strong>
+        </a>
+      </div>
+
+      <div class="item-right">
+        <span class="unit-price">${Number(item.price).toFixed(2).replace(/\.00$/, "")}</span>
+        <div class="quantity-controls">
+          <button
+            onclick={() => decreaseQuantity(item.id)}
+            class="qty-btn"
+            disabled={item.quantity <= 1}
+            aria-label="Decrease quantity">−</button
+          >
+          <input
+            type="number"
+            value={item.quantity}
+            oninput={(e) =>
+              updateQuantity(
+                item.id,
+                parseInt(e.currentTarget.value) || 1,
+              )}
+            min="1"
+            max={item.stock ?? 99}
+            class="qty-input"
+          />
+          <button
+            onclick={() => increaseQuantity(item.id)}
+            class="qty-btn"
+            disabled={item.quantity >= (item.stock ?? 99)}
+            aria-label="Increase quantity">+</button
+          >
+        </div>
+        <strong class="price">
+          ${Number(item.price * item.quantity)
+            .toFixed(2)
+            .replace(/\.00$/, "")}
+        </strong>
+        <button
+          class="remove-btn"
+          onclick={() => removeItem(item.id)}
+          aria-label="Remove item">×</button
+        >
+      </div>
+    </li>
+  {/each}
+</ul>
 
         <div class="total-box">
           <span>Total</span>
-          <strong class="total"
-            >{Number(total).toFixed(2).replace(/\.00$/, "") + "$"}</strong
-          >
+          <strong class="total">
+            ${Number(total).toFixed(2).replace(/\.00$/, "")}
+          </strong>
         </div>
       {/if}
     </section>
@@ -114,12 +206,12 @@
 
       <div class="field">
         <label>Email</label>
-        <input bind:value={email} placeholder="you@example.com" />
+        <input bind:value={email} placeholder="you@example.com" type="email" />
       </div>
 
       <div class="field">
         <label>Phone Number</label>
-        <input bind:value={phone} placeholder="0123 456 789" />
+        <input bind:value={phone} placeholder="0123 456 789" type="tel" />
       </div>
 
       <div class="field">
@@ -130,10 +222,13 @@
         ></textarea>
       </div>
 
-      <button class="btn" onclick={handleCheckout}>Place Order</button>
+      <button class="btn" onclick={handleCheckout} disabled={cart.length === 0}>
+        Place Order
+      </button>
     </section>
   </div>
 </div>
+
 <MessageModal {message} {onClose} show={isCloseModal} />
 
 <style>
@@ -157,6 +252,52 @@
     grid-template-columns: 1fr 1fr;
     gap: 32px;
   }
+
+  /* CART HEADER */
+.cart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-right span:nth-child(1) {
+  width: 80px;
+  text-align: center;
+}
+
+.header-right span:nth-child(2) {
+  width: 140px;
+  text-align: center;
+}
+
+.header-right span:nth-child(3) {
+  width: 80px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .cart-header {
+    display: none;
+  }
+}
 
   /* CARD BASE STYLE */
   .card {
@@ -199,27 +340,122 @@
   .item {
     display: flex;
     justify-content: space-between;
-    padding: 14px 0;
+    align-items: center;
+    padding: 16px 0;
     border-bottom: 1px solid #f1f1f1;
+    gap: 16px;
   }
 
   .item:last-child {
     border-bottom: none;
   }
 
+  .item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+  }
+
   .info {
     display: flex;
     flex-direction: column;
+    gap: 4px;
+    text-decoration: none;
+    color: black;
   }
 
-  .qty {
-    font-size: 14px;
-    color: #777;
+  .product-name, .unit-price {
+    font-size: 16px;
+    color: #111;
+  }
+
+  .item-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
   }
 
   .price {
-    font-size: 16px;
+    font-size: 18px;
     color: #111;
+    font-weight: 600;
+  }
+
+  /* QUANTITY CONTROLS */
+  .quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fa;
+    padding: 6px;
+    border-radius: 8px;
+    width: fit-content;
+  }
+
+  .qty-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: #333;
+  }
+
+  .qty-btn:hover:not(:disabled) {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+
+  .qty-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .qty-input {
+    width: 60px;
+    height: 32px;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0;
+    background: white;
+  }
+
+  .qty-input:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+
+  /* REMOVE BUTTON */
+  .remove-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #fee;
+    color: #e11d48;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .remove-btn:hover {
+    background: #e11d48;
+    color: white;
   }
 
   /* TOTAL PRICE BOX */
@@ -233,8 +469,9 @@
   }
 
   .total {
-    font-size: 22px;
+    font-size: 24px;
     color: #007bff;
+    font-weight: 700;
   }
 
   /* FORM INPUTS */
@@ -289,14 +526,32 @@
     transition: 0.25s ease;
   }
 
-  .btn:hover {
+  .btn:hover:not(:disabled) {
     background: linear-gradient(135deg, #0063d8, #004fb5);
     transform: translateY(-1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 
   @media (max-width: 768px) {
     .grid {
       grid-template-columns: 1fr;
+    }
+
+    .item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .item-right {
+      width: 100%;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
     }
   }
 </style>

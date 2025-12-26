@@ -8,6 +8,7 @@
     import { adminApi } from "../../hooks/apiFetch";
     import MessageModal from "../../components/modal-success/MessageModal.svelte";
     import Header from "../../components/header/header.svelte";
+    import { orderStatusList } from "../../utils/utils";
 
     interface Order {
         id: string;
@@ -24,23 +25,21 @@
     let orders: Order[] = $state([]);
     let loading = $state(false);
     let message = $state("");
-    let employee_name = $state("")
+    let employee_name = $state("");
     let totalRecords = $state(0);
-
-    let pageSize = 10;
-    let page = 1;
-
+    let pageSize = $state(10);
+    let page = $state(1);
     let searchId = $state("");
     let searchName = $state("");
-
     let showAssignModal = $state(false);
-    let selectedOrder: Order | null = null;
+    let selectedOrder = $state<Order | null>(null);
     let employees = $state([]);
-    let selectedEmployee: string | null = null;
+    let selectedEmployee = $state<string | null>(null);
+    let searchStatus = $state("")
 
     // message modal
     let showMessageModal = $state(false);
-    let messageType: "success" | "error" = "success";
+    let messageType = $state<"success" | "error">("success");
 
     function showMessage(msg: string, type: "success" | "error" = "success") {
         message = msg;
@@ -57,6 +56,7 @@
         url.searchParams.set("limit", String(pageSize));
         if (searchId) url.searchParams.set("search_id", searchId);
         if (searchName) url.searchParams.set("customer_name", searchName);
+        if (searchStatus) url.searchParams.set("status", searchStatus)
         return url;
     }
 
@@ -119,22 +119,6 @@
         }
     }
 
-    async function handleDelete(id: string) {
-        const res = await adminApi(
-            `${import.meta.env.VITE_API_BASE_URL}/orders/${id}`,
-            {
-                method: "DELETE",
-            },
-        );
-
-        if (res.ok) {
-            showMessage("Order deleted!", "success");
-            fetchOrders();
-        } else {
-            showMessage("Delete failed", "error");
-        }
-    }
-
     function handleLogout() {
         localStorage.removeItem("admin_access_token");
         localStorage.removeItem("admin_refresh_token");
@@ -161,8 +145,8 @@
     }
 
     onMount(() => {
-        fetchOrders()
-        employee_name = localStorage.getItem("employee_name")
+        fetchOrders();
+        employee_name = localStorage.getItem("employee_name") || "";
     });
 </script>
 
@@ -195,6 +179,18 @@
                 onValueChange={(v) => (searchName = v)}
             />
 
+            <div class={styles.tableSearchInput}>
+                <label class={styles.searchContainer}>
+                    Search Role
+                    <select bind:value={searchStatus} class={styles.selectInput}>
+                        <option value="" disabled selected hidden>Select status</option>
+                        {#each orderStatusList as status}
+                            <option value={status.value}>{status.label}</option>
+                        {/each}
+                    </select>
+                </label>
+            </div>
+
             <button
                 onclick={handleSearch}
                 style="background-color: white; border: 1px solid #d9d9d9; color: rgba(0, 0, 0, 0.88)"
@@ -214,22 +210,33 @@
                 <table class={styles.table}>
                     <thead>
                         <tr>
-                            <th>ID</th><th>Name</th><th>Email</th>
-                            <th>Phone</th><th>Address</th><th>Total</th>
-                            <th>Status</th><th>Actions</th>
+                            <th class={styles.text_left}>ID</th><th
+                                class={styles.text_left}>Name</th
+                            ><th class={styles.text_left}>Email</th>
+                            <th class={styles.text_left}>Phone</th><th
+                                class={styles.text_left}>Address</th
+                            ><th>Total</th>
+                            <th class={styles.text_left}>Status</th><th
+                                class={styles.text_left}>Actions</th
+                            >
                         </tr>
                     </thead>
                     <tbody>
                         {#each orders as order}
                             <tr onclick={() => goto(`/orders/${order.id}`)}>
-                                <td>{order.id}</td>
-                                <td>{order.customer_name}</td>
-                                <td>{order.email}</td>
-                                <td>{order.phone}</td>
-                                <td>{order.address}</td>
+                                <td class={styles.text_left}>{order.id}</td>
+                                <td class={styles.text_left}
+                                    >{order.customer_name}</td
+                                >
+                                <td class={styles.text_left}>{order.email}</td>
+                                <td class={styles.text_left}>{order.phone}</td>
+                                <td class={styles.text_left}>{order.address}</td
+                                >
                                 <td>{order.total}$</td>
-                                <td>{order.status.toUpperCase()}</td>
-                                <td>
+                                <td class={styles.text_left}
+                                    >{order.status.toUpperCase()}</td
+                                >
+                                <td class={styles.text_left}>
                                     <button
                                         onclick={(e) => {
                                             e.stopPropagation();
@@ -253,19 +260,6 @@
                                         {order.status !== "PENDING"
                                             ? "Assigned"
                                             : "Assign"}
-                                    </button>
-
-                                    <button
-                                        onclick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(order.id);
-                                        }}
-                                        disabled={order.status !==
-                                            "COMPLETED" &&
-                                            order.status !== "CANCELLED"}
-                                        class={styles.disabledButton}
-                                    >
-                                        Delete
                                     </button>
                                 </td>
                             </tr>

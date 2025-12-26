@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Constants
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -70,7 +70,6 @@ def handle_login_role(employee_info: any):
         {"sub": employee_info.email, "role": employee_info.role, "id": employee_info.id, "token_type": "refresh"},
         timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
     )
-
     return {"access_token": access_token, "refresh_token": refresh_token}
 
 def require_admin(current_user: dict = Depends(get_current_user)) -> dict:

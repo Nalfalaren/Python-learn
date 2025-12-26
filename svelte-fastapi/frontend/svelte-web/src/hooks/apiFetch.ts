@@ -34,7 +34,7 @@ async function refreshAccessToken(userType: UserType): Promise<string> {
         .then(async res => {
             if (!res.ok) throw new Error("Refresh failed");
             const data = await res.json();
-
+            
             localStorage.setItem(accessKey, data.access_token);
             if (data.refresh_token) {
                 localStorage.setItem(refreshKey, data.refresh_token);

@@ -246,47 +246,50 @@
       {:else}
         <table class={styles.table}>
           <thead>
-            <tr>
-              <th>ID</th>
-              <th>Employee Name</th>
-              <th>Role</th>
-              <th>Email</th>
-              <th>Status</th>
-              {#if $adminAuthStore.role === "ADMIN"}<th>Action</th>{/if}
-            </tr>
+              <tr>
+                  <th class={styles.text_left}>ID</th>
+                  <th class={styles.text_left}>Employee Name</th>
+                  <th class={styles.text_left}>Role</th>
+                  <th class={styles.text_left}>Email</th>
+                  <th class={styles.text_left}>Status</th>
+                  <th class={styles.text_left}>Action</th>
+              </tr>
           </thead>
           <tbody>
             {#each employees as emp}
               <tr onclick={() => goto(`/employees/${emp.id}`)}>
-                <td>{emp.id}</td>
-                <td>{emp.employee_name}</td>
-                <td>{emp.role}</td>
-                <td>{emp.email}</td>
-                <td>{emp.is_active === "Active" ? "Active" : "Inactive"}</td>
-                {#if $adminAuthStore.role === "ADMIN"}
-                  <td>
-                    <button
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        goto(`/employees/update/${emp.id}`);
-                      }}>Edit</button
-                    >
-                    <button
-                      class="delete-btn"
-                      onclick={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(emp.id);
-                      }}
-                      disabled={emp.role === "ADMIN"}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                {/if}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+                <td class={styles.text_left}>{emp.id}</td>
+                <td class={styles.text_left}>{emp.employee_name}</td>
+                <td class={styles.text_left}>{emp.role}</td>
+                <td class={styles.text_left}>{emp.email}</td>
+                <td class={styles.text_left}>
+                   {emp.is_active === "Active" ? "Active" : "Inactive"}
+                </td>
+                <td class={styles.text_left}>
+          {#if $adminAuthStore.role === "ADMIN"}
+            <button
+              onclick={(e) => {
+                e.stopPropagation();
+                goto(`/employees/update/${emp.id}`);
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onclick={(e) => {
+                e.stopPropagation();
+                openDeleteModal(emp.id);
+              }}
+              disabled={emp.role === "ADMIN"}
+            >
+              Delete
+            </button>
+          {/if}
+        </td>
+      </tr>
+    {/each}
+  </tbody>
+</table>
 
         <!-- Pagination -->
         <div class={styles.paginationControls}>

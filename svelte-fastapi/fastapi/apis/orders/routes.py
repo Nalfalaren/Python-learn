@@ -34,6 +34,7 @@ def get_list_orders(
     search_id: str = '',
     customer_name: str = '',
     employee_id: str = '',
+    status: str = '',
     page: int = 1,
     limit: int = 10,
 ):
@@ -44,6 +45,8 @@ def get_list_orders(
         order_list = order_list.filter(OrderBase.id.contains(search_id))
     if customer_name:
         order_list = order_list.filter(OrderBase.customer_name.contains(customer_name))
+    if status:
+        order_list = order_list.filter(OrderBase.status.contains(status))
     
     total_orders = order_list.count() 
     offset = (page - 1) * limit

@@ -7,11 +7,13 @@
     import HeaderClient from "../../../components/header-client/HeaderClient.svelte";
     import { goto } from "$app/navigation";
     import { clientApi } from "../../../hooks/apiFetch";
-    import { cart } from "../../../lib/stores/CartStore";
+    import { cart, type CartItem } from "../../../lib/stores/CartStore";
     import { filterCategoryOptions, filterOptions } from "../../../utils/utils";
     import Rating from "$lib/assets/rating.svelte";
     import Badge from "../../../components/badge/BadgeStock.svelte";
     import BadgeStock from "../../../components/badge/BadgeStock.svelte";
+    import RequireSignInModal from "../../../components/require-sign-in-modal/RequireSignInModal.svelte";
+    import shoppingCart from "$lib/assets/shopping_cart.svg";
 
     type Product = {
         id?: string;
@@ -54,6 +56,13 @@
     let hasPrev = $derived(currentPage > 1);
     let hasNext = $derived(nextCursor !== null && currentPage < totalPages);
 
+    let showAddToCardListModal = $state(false)
+    let cartItems = $state<CartItem[]>([]);
+
+    cart.subscribe((value) => {
+    cartItems = value;
+  });
+
     const cartCount = derived(cart, ($cart) =>
         $cart.reduce((total, item) => total + item.quantity, 0),
     );
@@ -90,7 +99,7 @@
             drones = (data.search_result || []).map(
                 (p: Product, index: number) => ({
                     ...p,
-                    img: `https://picsum.photos/seed/drone${index + 1}/600/400`,
+                    img: `https://picsum.photos/seed/drone${data.id}-${index}/600/400`,
                     rating: p.rating || 0,
                     stock: p.stock || 0,
                 }),
@@ -192,13 +201,20 @@
             localStorage.removeItem("customer_refresh_token");
             cart.clear();
             isLoggedIn = false;
-            goto("/login");
         }
     }
 
-    function openCartList() {
-        goto("/cart");
-    }
+  function openCartList() {
+    showAddToCardListModal = true;
+  }
+
+  function closeCartList() {
+    showAddToCardListModal = false;
+  }
+
+   function redirectToLogin() {
+    goto("/login");
+  }
 
     onMount(() => {
         // Check login status
@@ -410,6 +426,15 @@
 {#if showModal && selected}
     <ProductDetailModal item={selected} on:close={() => (showModal = false)} />
 {/if}
+
+<RequireSignInModal
+    {showAddToCardListModal}
+    {closeCartList}
+    {isLoggedIn}
+    {cartItems}
+    shoppingCartImage={shoppingCart}
+    {redirectToLogin}
+    />
 
 <style>
     * {

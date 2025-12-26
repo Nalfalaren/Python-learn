@@ -174,24 +174,24 @@
                 <table class={styles.table}>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Order ID</th>
-                            <th>Product</th>
+                            <th class={styles.text_left}>ID</th>
+                            <th class={styles.text_left}>Order ID</th>
+                            <th class={styles.text_left}>Product</th>
                             <th>Qty</th>
                             <th>Price</th>
-                            <th>Created At</th>
-                            <th>Action</th>
+                            <th class={styles.text_left}>Created At</th>
+                            <th class={styles.text_left}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each items as item}
                             <tr>
-                                <td>{item.id}</td>
-                                <td>{item.order_id}</td>
-                                <td>{item.product_name}</td>
+                                <td class={styles.text_left}>{item.id}</td>
+                                <td class={styles.text_left}>{item.order_id}</td>
+                                <td class={styles.text_left}>{item.product_name}</td>
                                 <td>{item.qty}</td>
                                 <td>{item.price}$</td>
-                                <td>
+                                <td class={styles.text_left}>
                                     {new Date(item?.created_at).toLocaleString(
                                         "vi-VN",
                                         {
@@ -199,7 +199,7 @@
                                         },
                                     )}
                                 </td>
-                                <td>
+                                <td class={styles.text_left}>
                                     <button
                                         style="color: white; background: red; padding: 6px 10px; border-radius: 4px; cursor: pointer"
                                         onclick={(e) => {

@@ -63,7 +63,7 @@
                     <div class={styles.cartItems}>
                         {#each cartItems as item}
                             <div class={styles.cartItem}>
-                                <img src={item.img} alt={item.product_name} />
+                                <img src={item.imgList[0].url} alt={item.product_name} />
 
                                 <div class={styles.cartItemDetails}>
                                     <h4>{item.product_name}</h4>
@@ -87,7 +87,10 @@
                                         type="button"
                                         class={styles.removeBtn}
                                         aria-label="Remove item"
-                                        onclick={() => deleteCart(item.id!)}
+                                        onclick={(e) => {
+                                        e.stopPropagation()
+                                        deleteCart(item.id!)
+                                    }}
                                     >
                                         Remove
                                     </button>

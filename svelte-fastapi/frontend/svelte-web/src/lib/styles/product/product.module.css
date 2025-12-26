@@ -102,6 +102,10 @@
   color: #334155;
 }
 
+.table .text_left{
+  text-align: left!important;
+}
+
 .table tr:hover {
   background-color: #f1f5f9;
   transition: background-color 0.2s ease-in-out;

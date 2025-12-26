@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { goto, replaceState } from "$app/navigation";
+    import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import { jwtDecode } from "jwt-decode";
     import { cart, type Product, type CartItem } from "$lib/stores/CartStore";
@@ -9,8 +9,6 @@
     import droneImage from "$lib/assets/uav.png";
     import shoppingCart from "$lib/assets/shopping_cart.svg";
     import shoppingAddToCart from "$lib/assets/shopping_cart_white.svg";
-    import user from "$lib/assets/user.svg";
-    import searchIcon from "$lib/assets/search_icon.svg";
     import CreditCard from "$lib/assets/credit_card.svg";
     import HeadPhone from "$lib/assets/headphones.svg";
     import Trophy from "$lib/assets/trophy.svg";
@@ -23,9 +21,10 @@
     import RequireSignInModal from "../components/require-sign-in-modal/RequireSignInModal.svelte";
     import MessageModal from "../components/modal-success/MessageModal.svelte";
     import HeaderClient from "../components/header-client/HeaderClient.svelte";
+    // import Carousel from "../components/carousel/Carousel.svelte";
     /** Products list */
     let products: Product[] = $state([]);
-    let userName = $state<string>("")
+    let userName = $state<string>("");
     let query = $state("");
     let category = $state("All");
     let sortBy = $state("featured");
@@ -122,7 +121,7 @@
     }
     onMount(() => {
         const token = localStorage.getItem("accessToken");
-        userName = localStorage.getItem("customer_name") || ''
+        userName = localStorage.getItem("customer_name") || "";
         isLoggedIn = isTokenValid(token);
         fetchProducts();
     });
@@ -170,10 +169,12 @@
     }
 
     const handleSearch = () => {
-    if (query.trim()) {
-        goto(`/products/list?search_product=${query}`, {replaceState: true});
-    }
-};
+        if (query.trim()) {
+            goto(`/products/list?search_product=${query}`, {
+                replaceState: true,
+            });
+        }
+    };
 
     async function logout() {
         try {
@@ -202,7 +203,6 @@
             localStorage.removeItem("customer_refresh_token");
             cart.clear();
             isLoggedIn = false;
-            goto("/login");
         }
     }
 </script>
@@ -210,7 +210,7 @@
 <!-- Header client -->
 <HeaderClient
     {userName}
-    bind:query={query}
+    bind:query
     {mounted}
     {handleSearch}
     {isLoggedIn}
@@ -224,7 +224,8 @@
     <a href="/products/list" class={styles.container}>
         <div class={styles.bannerContent}>
             <div class={styles.bannerText}>
-                <span class={styles.bannerBadge}>Best Deal Online on drone</span>
+                <span class={styles.bannerBadge}>Best Deal Online on drone</span
+                >
                 <h1 class={styles.bannerTitle}>LATEST DRONE MODELS</h1>
                 <h2 class={styles.bannerSubtitle}>Up to 50% OFF</h2>
             </div>
@@ -288,13 +289,21 @@
             <div class={styles.sectionHeader}>
                 <h2 class={styles.sectionTitle}>SHOP BY BRANDS</h2>
             </div>
+            <!-- <Carousel autoplay="2000"> -->
             <div class={styles.listBrands}>
                 {#each listBrands as brand, i}
-                <div style="width: 168px; height: 168px; background-color: #F4F4F4; border-radius: 10px">
-                    <img src={brand} alt={brand} style="width: 100%; height: 100%">
-                </div>
+                    <div
+                        style="width: 150px; height: 150px; background-color: #F4F4F4; border-radius: 10px"
+                    >
+                        <img
+                            src={brand}
+                            alt={brand}
+                            style="width: 100%; height: 100%"
+                        />
+                    </div>
                 {/each}
             </div>
+            <!-- </Carousel> -->
         </div>
     </section>
 {/if}
@@ -333,17 +342,24 @@
                                         />
                                     {/each}
                                 </span>
-                                <span class={styles.ratingText}>{product.rating || 0}</span>
+                                <span class={styles.ratingText}
+                                    >{product.rating || 0}</span
+                                >
                             </div>
                         </div>
                         <a
                             class={styles.dealPrice}
                             href={`/products/details/${product.id}`}
                         >
-                            <span class={styles.dealPriceText}>
+                            <div class={styles.dealPriceText}>
                                 BUY NOW
-                                <span class={styles.dealPriceDetail}>-{product.price}$</span>
-                            </span>
+                                <div>
+                                    <span style="margin-left: 5px">-</span>
+                                    <span class={styles.dealPriceDetail}
+                                        >{product.price}$</span
+                                    >
+                                </div>
+                            </div>
                         </a>
                     </ProductContainer>
                 {/each}
@@ -457,7 +473,7 @@
                             <div class={styles.productInformation}>
                                 <span style="color: #5F6C72; line-height: 1.5">
                                     <span style="font-weight: bold">
-                                       Description:
+                                        Description:
                                     </span>
                                     {products?.[0]?.description || "N/A"}
                                 </span>
@@ -569,7 +585,7 @@
                                         ${product.price}
                                     </span>
                                     <span class={styles.priceOld}>
-                                        ${(product.price * 1.4).toFixed(0,)}
+                                        ${(product.price * 1.4).toFixed(0)}
                                     </span>
                                 </div>
                             </div>

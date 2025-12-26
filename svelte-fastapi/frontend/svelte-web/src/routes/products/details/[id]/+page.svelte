@@ -2,24 +2,86 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { cart, CartStore, type Product } from "$lib/stores/CartStore";
+  import {
+    cart,
+    CartStore,
+    type CartItem,
+    type Product,
+  } from "$lib/stores/CartStore";
   import { clientApi } from "../../../../hooks/apiFetch";
   import MessageModal from "../../../../components/modal-success/MessageModal.svelte";
-    import Header from "../../../../components/header/header.svelte";
+  import HeaderClient from "../../../../components/header-client/HeaderClient.svelte";
+  import RequireSignInModal from "../../../../components/require-sign-in-modal/RequireSignInModal.svelte";
+  import shoppingCart from "$lib/assets/shopping_cart.svg";
+  import { derived } from "svelte/store";
+  import type { ImgProps } from "../../../../interface/product-detail";
+
   let product = $state<Product | null>(null);
   let isLoading = $state(true);
   let error = $state("");
   let productId = $page.params.id;
   let quantity = $state(1);
   let isLoggedIn = $state(false);
-  let message = $state("")
-  let isConfirmModalClose = $state(false)
+  let message = $state("");
+  let isConfirmModalClose = $state(false);
+  let search = $state("");
+  let userName = $state<string>("");
+  let mounted = $state(false);
+  let showAddToCardListModal = $state(false);
+  let cartItems = $state<CartItem[]>([]);
+  let previewImage = $state("");
+  let listImages = $state<ImgProps[]>([]);
 
-  // Subscribe to cart for count badge
-  let cartCount = 0;
-  
-  cart.subscribe(() => {
-    cartCount = cart.getTotalCount();
+  cart.subscribe((value) => {
+    cartItems = value;
+  });
+
+  function handleSearch() {
+    if (search.trim()) {
+      goto(`/products/list?search_product=${search}`);
+    }
+  }
+
+  function openCartList() {
+    showAddToCardListModal = true;
+  }
+
+  function closeCartList() {
+    showAddToCardListModal = false;
+  }
+
+  const cartCount = derived(cart, ($cart) =>
+    $cart.reduce((total, item) => total + item.quantity, 0),
+  );
+
+  async function logout() {
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("customer_refresh_token");
+      cart.clear();
+      isLoggedIn = false;
+    }
+  }
+
+  onMount(() => {
+    const token = localStorage.getItem("accessToken");
+    userName = localStorage.getItem("customer_name") || "";
+    isLoggedIn = isTokenValid(token);
+    fetchProduct();
+    mounted = true;
   });
 
   function isTokenValid(token: string | null): boolean {
@@ -34,12 +96,6 @@
     }
   }
 
-  onMount(() => {
-    const token = localStorage.getItem("accessToken");
-    isLoggedIn = isTokenValid(token);
-    fetchProduct();
-  });
-
   async function fetchProduct() {
     try {
       const res = await clientApi(
@@ -47,13 +103,29 @@
       );
       if (!res.ok) throw new Error(`Failed to fetch product: ${res.status}`);
       const data = await res.json();
+      const imgList = [
+        {
+          url: `https://picsum.photos/seed/drone${data.id}-1/600/400`,
+        },
+        {
+          url: `https://picsum.photos/seed/drone${data.id}-2/600/400`,
+        },
+        {
+          url: `https://picsum.photos/seed/drone${data.id}-3/600/400`,
+        },
+        {
+          url: `https://picsum.photos/seed/drone${data.id}-4/600/400`,
+        },
+      ];
+
       product = {
         ...data,
-        img: data.img || `https://picsum.photos/seed/drone${data.id}/600/400`,
+        imgList: data.img || imgList,
         rating: data.rating || 4 + Math.random() * 1,
         stock: data.stock ?? 0,
         description: data.description ?? "No description",
       };
+      listImages = imgList || [];
     } catch (e) {
       console.error(e);
       error = "Không thể tải thông tin sản phẩm.";
@@ -73,7 +145,7 @@
 
     cart.addItem(product, quantity);
     message = `Added ${quantity} × ${product.product_name} to cart! 🛒`;
-    isConfirmModalClose = true
+    isConfirmModalClose = true;
     quantity = 1;
   }
 
@@ -96,9 +168,21 @@
     }
   }
 
-  function onClose(){
-    isConfirmModalClose = false
-    goto("/")
+  function handlePreviewImage(url: string) {
+    if (listImages.length === 0) return;
+    const chosenImage = listImages.find((image) => image.url === url);
+    if (chosenImage) {
+      previewImage = chosenImage.url;
+    }
+  }
+
+  function redirectToLogin() {
+    goto("/login");
+  }
+
+  function onClose() {
+    isConfirmModalClose = false;
+    goto("/");
   }
 </script>
 
@@ -108,18 +192,29 @@
   <div class="error">{error}</div>
 {:else if product}
   <section class="product-detail">
-    <div class="top-nav">
-      <a href="/" class="breadcrumb">← Marketplace</a>
-    </div>
-
+    <HeaderClient
+      bind:query={search}
+      {userName}
+      {mounted}
+      {handleSearch}
+      {isLoggedIn}
+      {logout}
+      {openCartList}
+      {cartCount}
+    />
     <div class="detail-container">
       <div class="image-section">
-        <img src={product.img} alt={product.product_name} class="main-img" />
+        <img
+          src={previewImage || listImages?.[0].url}
+          alt={product.product_name}
+          class="main-img"
+        />
         <div class="carousel">
-          {#each [1, 2, 3] as i}
+          {#each listImages as image}
             <img
-              src={`https://picsum.photos/seed/drone${product.id}${i}/120/80`}
-              alt=""
+              src={image.url}
+              alt="image"
+              onmouseenter={() => handlePreviewImage(image.url)}
             />
           {/each}
         </div>
@@ -235,7 +330,16 @@
     </div>
   </section>
 {/if}
-<MessageModal show={isConfirmModalClose} message={message} onClose={onClose} />
+<MessageModal show={isConfirmModalClose} {message} {onClose} />
+
+<RequireSignInModal
+  {showAddToCardListModal}
+  {closeCartList}
+  {isLoggedIn}
+  {cartItems}
+  shoppingCartImage={shoppingCart}
+  {redirectToLogin}
+/>
 
 <style>
   :global(body) {

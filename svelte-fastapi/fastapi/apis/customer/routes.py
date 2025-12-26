@@ -161,7 +161,7 @@ def refresh_token(request: RefreshTokenRequest):
         )
         email = payload.get("sub")
         new_access_token = create_token(
-            {"sub": email, "role": payload['role'], "id": payload['id']},
+            {"sub": email, "role": payload['role'], "id": payload['id'], "token_type": "access"},
             timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         return {"access_token": new_access_token}

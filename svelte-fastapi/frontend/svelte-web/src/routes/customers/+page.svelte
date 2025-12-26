@@ -155,22 +155,22 @@
         <table class={styles.table}>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Customer Name</th>
-              <th>Role</th>
-              <th>Email</th>
-              <th>Status</th>
+              <th class={styles.text_left}>ID</th>
+              <th class={styles.text_left}>Customer Name</th>
+              <th class={styles.text_left}>Role</th>
+              <th class={styles.text_left}>Email</th>
+              <th class={styles.text_left}>Status</th>
             </tr>
           </thead>
 
           <tbody>
             {#each customers as cus}
               <tr onclick={() => goto(`/customers/${cus.id}`)}>
-                <td>{cus.id}</td>
-                <td>{cus.customer_name}</td>
-                <td>{cus.role}</td>
-                <td>{cus.email}</td>
-                <td>{cus.is_active === "Active" ? "Active" : "Inactive"}</td>
+                <td class={styles.text_left}>{cus.id}</td>
+                <td class={styles.text_left}>{cus.customer_name}</td>
+                <td class={styles.text_left}>{cus.role}</td>
+                <td class={styles.text_left}>{cus.email}</td>
+                <td class={styles.text_left}>{cus.is_active === "Active" ? "Active" : "Inactive"}</td>
               </tr>
             {/each}
           </tbody>

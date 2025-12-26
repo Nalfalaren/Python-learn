@@ -396,7 +396,6 @@
 
 .dealPriceDetail {
     color: #FCBD01 !important;
-    margin-left: 4px;
 }
 
 .dealPrice span {
@@ -409,6 +408,8 @@
 
 .dealPriceText {
     width: 100%;
+    display: flex;
+    justify-content: center;
     font-size: 12px;
     padding-block: 15px;
     text-align: center;
@@ -606,7 +607,7 @@ button {
 }
 
 .addBtn {
-    margin-top: 50px;
+    margin-top: 30px;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -931,6 +932,8 @@ button {
     padding: 15px;
     border-bottom: 1px solid #eee;
     align-items: center;
+    text-decoration: none;
+    color: black;
 }
 
 .cartItem img {

@@ -2,6 +2,7 @@
   "dependencies": {
     "@sveltejs/adapter-node": "^5.4.0",
     "jwt-decode": "^4.0.0",
-    "lucide-svelte": "^0.556.0"
+    "lucide-svelte": "^0.556.0",
+    "siema": "^1.5.1"
   }
 }
